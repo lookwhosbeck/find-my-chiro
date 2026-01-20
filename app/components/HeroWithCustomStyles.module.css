@@ -1,0 +1,14 @@
+.heroContainer {
+  background-image: url('/hero-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  /* You can still access Radix variables! */
+  color: var(--gray-12);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: var(--radius-4);
+}
+
