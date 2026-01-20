@@ -1,8 +1,34 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Flex, Button, Box } from '@radix-ui/themes';
 import Link from 'next/link';
 import { Container } from './Container';
+import { supabase } from '@/app/lib/supabase';
 
 export function Header() {
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    } catch (error) {
+      console.error('Error checking user:', error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push('/');
+  };
   return (
     <header
       style={{
@@ -52,9 +78,28 @@ export function Header() {
             <Link href="/about" style={{ textDecoration: 'none', color: 'var(--gray-11)' }}>
               About
             </Link>
-            <Button size="2" variant="solid" asChild>
-              <Link href="/signup">Join Network</Link>
-            </Button>
+
+            {user ? (
+              // Logged in user
+              <Flex align="center" gap="2">
+                <Button size="2" variant="outline" asChild>
+                  <Link href="/account">My Account</Link>
+                </Button>
+                <Button size="2" variant="ghost" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </Flex>
+            ) : (
+              // Not logged in
+              <Flex align="center" gap="2">
+                <Button size="2" variant="ghost" asChild>
+                  <Link href="/signup">Join Network</Link>
+                </Button>
+                <Button size="2" variant="outline" asChild>
+                  <Link href="/account">Sign In</Link>
+                </Button>
+              </Flex>
+            )}
           </Flex>
         </Flex>
       </Container>

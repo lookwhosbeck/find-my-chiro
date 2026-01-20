@@ -139,9 +139,9 @@ export default function SignUpPage() {
       
       if (result.success) {
         setSubmitSuccess(true);
-        // Redirect to a success page or home after a delay
+        // Redirect to account page after successful signup
         setTimeout(() => {
-          router.push('/?signup=success');
+          router.push('/account');
         }, 2000);
       } else {
         setSubmitError(result.error || 'Failed to create account. Please try again.');
