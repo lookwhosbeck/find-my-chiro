@@ -33,6 +33,7 @@ yarn-error.log*
 
 # Supabase
 supabase-project/
+supabase/
 supabase/.temp
 *.sql.backup
 reset_cloud_db.sql
