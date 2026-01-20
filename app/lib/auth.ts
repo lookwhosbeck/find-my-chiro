@@ -99,9 +99,11 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
       .from('profiles')
       .upsert({
         id: userId,
+        first_name: data.firstName || null,
+        last_name: data.lastName || null,
+        email: data.email || null,
         updated_at: new Date().toISOString(),
         role: 'chiropractor', // Ensure role is set
-        website: data.website || null,
       }, {
         onConflict: 'id'
       });
@@ -112,31 +114,16 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
     }
 
     // Step 3: Create chiropractor record with all data
-    // Store arrays directly - Supabase/PostgreSQL will handle JSONB conversion automatically
-    const chiropractorData: any = {
+    // Only insert fields that actually exist in the database schema
+    const chiropractorData = {
       id: userId,
-      first_name: data.firstName,
-      last_name: data.lastName,
       bio: data.bio || null,
-      college: data.college || null,
+      chiropractic_college: data.college || null,
       graduation_year: data.graduationYear ? parseInt(data.graduationYear) : null,
       license_number: data.licenseNumber || null,
-      // Store arrays directly - Supabase handles JSONB conversion
-      modalities: data.modalities && data.modalities.length > 0 ? data.modalities : null,
-      modality: data.modalities && data.modalities.length > 0 ? data.modalities[0] : null,
-      philosophy: inferPhilosophy(data.modalities),
-      focus_areas: data.focusAreas && data.focusAreas.length > 0 ? data.focusAreas : null,
-      business_model: data.businessModel || null,
-      insurances: data.insurances && data.insurances.length > 0 ? data.insurances : null,
-      clinic_name: data.clinicName || null,
-      address: data.address || null,
-      city: data.city || null,
-      state: data.state || null,
-      zip: data.zip || null,
-      website: data.website || null,
-      instagram: data.instagram || null,
-      accepting_patients: true,
-      created_at: new Date().toISOString(),
+      website_url: data.website || null,
+      instagram_handle: data.instagram || null,
+      accepting_new_patients: true,
       updated_at: new Date().toISOString(),
     };
 
@@ -158,8 +145,10 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({
+          first_name: data.firstName || null,
+          last_name: data.lastName || null,
+          email: data.email || null,
           updated_at: new Date().toISOString(),
-          website: data.website || null,
         })
         .eq('id', userId);
 
