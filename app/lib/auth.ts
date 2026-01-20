@@ -63,67 +63,31 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
       },
     });
 
-    // Handle email confirmation errors gracefully
-    // If user was created but email failed, we still want to proceed
-    let userId: string | null = null;
-    
+    // Check if signup was successful
     if (authError) {
       console.error('Auth signup error:', {
         message: authError.message,
         status: authError.status,
         name: authError.name,
       });
-      
-      // Check if this is just an email sending error (user was still created)
-      const isEmailError = authError.message?.includes('Error sending confirmation email') || 
-                          authError.message?.includes('confirmation email') ||
-                          (authError.status === 500 && authError.message?.includes('email'));
-      
-      if (isEmailError) {
-        // User was likely created successfully, but email couldn't be sent
-        // This is common in local development - try to get the user
-        if (authData?.user) {
-          userId = authData.user.id;
-          console.warn('User created but confirmation email failed. Continuing with profile creation...');
-        } else {
-          // User might have been created but not returned in response
-          // Try to sign in immediately to get the user session
-          console.warn('Email error - attempting to sign in to get user session...');
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-          });
-          
-          if (signInError || !signInData?.user) {
-            // If sign in fails, the user might need to wait or email confirmation might be required
-            return { 
-              success: false, 
-              error: 'Account may have been created, but we couldn\'t complete setup. Please try signing in, or disable email confirmation in Supabase settings for local development.' 
-            };
-          }
-          
-          userId = signInData.user.id;
-          console.warn('Successfully signed in after email error. Continuing with profile creation...');
-        }
-      } else {
-        // Real error - return failure
-        let errorMessage = authError.message || 'Failed to create account.';
-        if (authError.message?.includes('Database error')) {
-          errorMessage = 'Database error: There may be a database trigger or constraint issue. Please check the database logs or contact support.';
-        } else if (authError.message?.includes('already registered')) {
-          errorMessage = 'An account with this email already exists. Please sign in instead.';
-        } else if (authError.message?.includes('Password')) {
-          errorMessage = 'Password does not meet requirements. Please use a stronger password.';
-        }
-        return { success: false, error: errorMessage };
+
+      let errorMessage = authError.message || 'Failed to create account.';
+      if (authError.message?.includes('Database error')) {
+        errorMessage = 'Database error: There may be a database trigger or constraint issue. Please check the database logs or contact support.';
+      } else if (authError.message?.includes('already registered')) {
+        errorMessage = 'An account with this email already exists. Please sign in instead.';
+      } else if (authError.message?.includes('Password')) {
+        errorMessage = 'Password does not meet requirements. Please use a stronger password.';
       }
-    } else {
-      // No error - user was created successfully
-      if (!authData?.user) {
-        return { success: false, error: 'Failed to create user account. Please try again.' };
-      }
-      userId = authData.user.id;
+      return { success: false, error: errorMessage };
     }
+
+    // Check if we have a user
+    if (!authData?.user) {
+      return { success: false, error: 'Failed to create user account. Please try again.' };
+    }
+
+    const userId = authData.user.id;
 
     if (!userId) {
       return { success: false, error: 'Failed to create user account. Please try again.' };

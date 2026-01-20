@@ -4,8 +4,7 @@ import { Container } from './Container';
 
 export function Header() {
   return (
-    <Box
-      as="header"
+    <header
       style={{
         borderBottom: '1px solid var(--gray-4)',
         background: 'var(--gray-1)',
@@ -34,8 +33,7 @@ export function Header() {
               }}
             >
             </Box>
-            <Box
-              as="span"
+            <span
               style={{
                 fontSize: '20px',
                 fontWeight: '600',
@@ -43,7 +41,7 @@ export function Header() {
               }}
             >
               Find My Chiro
-            </Box>
+            </span>
           </Flex>
 
           {/* Navigation */}
@@ -60,7 +58,7 @@ export function Header() {
           </Flex>
         </Flex>
       </Container>
-    </Box>
+    </header>
   );
 }
 

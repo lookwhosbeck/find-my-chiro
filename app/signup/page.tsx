@@ -81,12 +81,12 @@ export default function SignUpPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTextFieldChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = 'value' in e.target ? e.target.value : (e.target as HTMLInputElement).value;
+  const handleTextFieldChange = (field: string) => (e: any) => {
+    const value = e.target.value;
     handleInputChange(field, value);
   };
 
-  const handleTextAreaChange = (field: string) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextAreaChange = (field: string) => (e: any) => {
     handleInputChange(field, e.target.value);
   };
 
