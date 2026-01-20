@@ -25,7 +25,7 @@ git add .
 git commit -m "Initial commit: Find My Chiro app"
 
 # Create repo on GitHub, then:
-git remote add origin https://github.com/YOUR_USERNAME/find-my-chiro.git
+git remote add origin https://github.com/lookwhosbeck/find-my-chiro.git
 git branch -M main
 git push -u origin main
 ```
