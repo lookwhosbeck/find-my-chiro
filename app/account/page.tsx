@@ -40,11 +40,6 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');
 
   // Form states
-  const [signInForm, setSignInForm] = useState({
-    email: '',
-    password: ''
-  });
-
   const [profileForm, setProfileForm] = useState({
     first_name: '',
     last_name: '',
@@ -70,7 +65,7 @@ export default function AccountPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push('/');
+        router.push('/signin');
         return;
       }
 
@@ -166,25 +161,6 @@ export default function AccountPage() {
     }
   };
 
-  const handleSignIn = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: signInForm.email,
-        password: signInForm.password,
-      });
-
-      if (error) throw error;
-
-      // Refresh the page to load user data
-      window.location.reload();
-    } catch (error: any) {
-      console.error('Error signing in:', error);
-      alert(error.message || 'Error signing in. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const saveChiropractorProfile = async () => {
     if (!user) return;
@@ -233,54 +209,8 @@ export default function AccountPage() {
     );
   }
 
-  if (!user || !profile) {
-    return (
-      <Container>
-        <Flex direction="column" gap="6" py="9">
-          <Flex justify="center">
-            <Heading size="6">Sign In to Your Account</Heading>
-          </Flex>
-
-          <Card style={{ maxWidth: '400px', margin: '0 auto' }}>
-            <Flex direction="column" gap="4">
-              <Box>
-                <Text size="2" weight="bold" mb="2">Email</Text>
-                <TextField.Root
-                  value={signInForm.email}
-                  onChange={(e) => setSignInForm(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="Enter your email"
-                  type="email"
-                />
-              </Box>
-
-              <Box>
-                <Text size="2" weight="bold" mb="2">Password</Text>
-                <TextField.Root
-                  value={signInForm.password}
-                  onChange={(e) => setSignInForm(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Enter your password"
-                  type="password"
-                />
-              </Box>
-
-              <Button onClick={handleSignIn} disabled={saving} style={{ width: '100%' }}>
-                {saving ? 'Signing In...' : 'Sign In'}
-              </Button>
-
-              <Flex justify="center">
-                <Text size="2">
-                  Don't have an account?{' '}
-                  <Button variant="ghost" size="1" asChild>
-                    <Link href="/signup">Sign Up</Link>
-                  </Button>
-                </Text>
-              </Flex>
-            </Flex>
-          </Card>
-        </Flex>
-      </Container>
-    );
-  }
+  // If user is not authenticated, redirect happens in checkUser
+  // This component should only render for authenticated users
 
   return (
     <Container>

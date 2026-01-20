@@ -96,7 +96,7 @@ export function Header() {
                   <Link href="/signup">Join Network</Link>
                 </Button>
                 <Button size="2" variant="outline" asChild>
-                  <Link href="/account">Sign In</Link>
+                  <Link href="/signin">Sign In</Link>
                 </Button>
               </Flex>
             )}
