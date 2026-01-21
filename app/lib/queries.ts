@@ -49,6 +49,7 @@ export interface Patient {
   searchRadius?: number;
   preferredDays?: string[];
   preferredTimes?: string[];
+  avatarUrl?: string;
 }
 
 /**

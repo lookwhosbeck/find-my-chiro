@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Flex, Text, Button, Heading, Card, TextField, TextArea, Box, Avatar, Badge, Tabs, Grid, Select } from '@radix-ui/themes';
 import { supabase } from '@/app/lib/supabase';
 import { Container } from '@/app/components/Container';
+import { uploadAvatar, deleteAvatar, updateProfileAvatarUrl } from '@/app/lib/avatar-upload';
 
 interface UserProfile {
   id: string;
@@ -59,6 +60,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Form states
   const [profileForm, setProfileForm] = useState({
@@ -195,6 +197,81 @@ export default function AccountPage() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push('/');
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !event.target.files || event.target.files.length === 0) return;
+
+    const file = event.target.files[0];
+    setUploadingAvatar(true);
+
+    try {
+      // Upload the avatar
+      const avatarUrl = await uploadAvatar(file, user.id);
+      
+      if (!avatarUrl) {
+        throw new Error('Failed to upload avatar');
+      }
+
+      // Update the profile with the new avatar URL
+      const success = await updateProfileAvatarUrl(user.id, avatarUrl);
+      
+      if (!success) {
+        throw new Error('Failed to update profile');
+      }
+
+      // Update local state
+      setProfile(prev => prev ? {
+        ...prev,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      } : null);
+
+      alert('Avatar uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      alert('Error uploading avatar. Please try again.');
+    } finally {
+      setUploadingAvatar(false);
+      // Reset the input
+      event.target.value = '';
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    if (!user || !profile?.avatar_url) return;
+
+    if (!confirm('Are you sure you want to remove your avatar?')) {
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      // Delete the avatar from storage
+      await deleteAvatar(user.id);
+
+      // Update the profile to remove the avatar URL
+      const success = await updateProfileAvatarUrl(user.id, null);
+      
+      if (!success) {
+        throw new Error('Failed to update profile');
+      }
+
+      // Update local state
+      setProfile(prev => prev ? {
+        ...prev,
+        avatar_url: undefined,
+        updated_at: new Date().toISOString()
+      } : null);
+
+      alert('Avatar removed successfully!');
+    } catch (error) {
+      console.error('Error deleting avatar:', error);
+      alert('Error removing avatar. Please try again.');
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const saveProfile = async () => {
@@ -337,7 +414,7 @@ export default function AccountPage() {
             <Avatar
               size="4"
               src={profile.avatar_url}
-              fallback={profile.first_name?.[0]?.toUpperCase() || profile.email[0].toUpperCase()}
+              fallback={profile.first_name?.[0]?.toUpperCase() || profile.last_name?.[0]?.toUpperCase() || profile.email[0].toUpperCase()}
             />
             <Box>
               <Heading size="6">
@@ -377,6 +454,54 @@ export default function AccountPage() {
                 <Heading size="4">Account Information</Heading>
 
                 <Flex direction="column" gap="3">
+                  {/* Avatar Upload Section */}
+                  <Box>
+                    <Text size="2" weight="bold" mb="2">Profile Photo</Text>
+                    <Flex gap="4" align="center">
+                      <Avatar
+                        size="6"
+                        src={profile.avatar_url}
+                        fallback={profile.first_name?.[0]?.toUpperCase() || profile.last_name?.[0]?.toUpperCase() || profile.email[0].toUpperCase()}
+                      />
+                      <Flex direction="column" gap="2">
+                        <Flex gap="2">
+                          <label htmlFor="avatar-upload">
+                            <Button 
+                              as="span" 
+                              variant="outline" 
+                              size="2"
+                              disabled={uploadingAvatar}
+                            >
+                              {uploadingAvatar ? 'Uploading...' : profile.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                            </Button>
+                          </label>
+                          <input
+                            id="avatar-upload"
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handleAvatarUpload}
+                            disabled={uploadingAvatar}
+                          />
+                          {profile.avatar_url && (
+                            <Button 
+                              variant="outline" 
+                              size="2"
+                              color="red"
+                              onClick={handleAvatarDelete}
+                              disabled={uploadingAvatar}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </Flex>
+                        <Text size="1" color="gray">
+                          JPG, PNG or GIF. Max size 5MB.
+                        </Text>
+                      </Flex>
+                    </Flex>
+                  </Box>
+
                   <Box>
                     <Text size="2" weight="bold" mb="2">First Name</Text>
                     <TextField.Root
