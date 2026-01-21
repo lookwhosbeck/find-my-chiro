@@ -28,6 +28,9 @@ function SearchPageContent() {
     searchRadius: 25,
   });
 
+  // Live match score calculation
+  const [currentMatchScore, setCurrentMatchScore] = useState(0);
+
   // Available options
   const modalityOptions = ['Gonstead', 'Diversified', 'Activator', 'TRT', 'SOT', 'Thompson', 'Webster', 'Cox'];
   const focusAreaOptions = ['Pediatrics', 'Sports', 'Auto Injury', 'Wellness', 'Prenatal', 'Geriatric'];
@@ -35,6 +38,7 @@ function SearchPageContent() {
 
   useEffect(() => {
     performSearch();
+    calculateLiveMatchScore();
   }, [filters]);
 
   const performSearch = async () => {
@@ -73,6 +77,44 @@ function SearchPageContent() {
     performSearch();
   };
 
+  const calculateLiveMatchScore = () => {
+    // Calculate a theoretical match score based on filled parameters
+    let score = 0;
+    const maxScore = 100;
+
+    // Location (10 points if ZIP is provided)
+    if (filters.zipCode && filters.zipCode.trim()) {
+      score += 10;
+    }
+
+    // Modalities (20 points if any selected)
+    if (filters.preferredModalities && filters.preferredModalities.length > 0) {
+      score += 20;
+    }
+
+    // Focus areas (20 points if any selected)
+    if (filters.focusAreas && filters.focusAreas.length > 0) {
+      score += 20;
+    }
+
+    // Business model (15 points if specified)
+    if (filters.preferredBusinessModel && filters.preferredBusinessModel !== 'any') {
+      score += 15;
+    }
+
+    // Insurance (15 points if specified)
+    if (filters.insuranceType && filters.insuranceType !== 'any') {
+      score += 15;
+    }
+
+    // Budget range (20 points if specified)
+    if (filters.budgetRange && filters.budgetRange !== 'any') {
+      score += 20;
+    }
+
+    setCurrentMatchScore(Math.min(score, maxScore));
+  };
+
   return (
     <Flex direction="column" style={{ minHeight: '100vh' }}>
       <Header />
@@ -93,21 +135,45 @@ function SearchPageContent() {
 
             {/* Quick Search */}
             <Card>
-              <Flex gap="3" align="center">
-                <TextField.Root
-                  size="3"
-                  placeholder="Enter zip code"
-                  value={filters.zipCode}
-                  onChange={(e) => setFilters(prev => ({ ...prev, zipCode: e.target.value }))}
-                  style={{ flex: 1 }}
-                >
-                  <TextField.Slot>
-                    <MagnifyingGlassIcon />
-                  </TextField.Slot>
-                </TextField.Root>
-                <Button size="3" variant="solid" onClick={handleZipSearch}>
-                  Search
-                </Button>
+              <Flex direction="column" gap="3">
+                <Flex gap="3" align="center">
+                  <TextField.Root
+                    size="3"
+                    placeholder="Enter zip code"
+                    value={filters.zipCode}
+                    onChange={(e) => setFilters(prev => ({ ...prev, zipCode: e.target.value }))}
+                    style={{ flex: 1 }}
+                  >
+                    <TextField.Slot>
+                      <MagnifyingGlassIcon />
+                    </TextField.Slot>
+                  </TextField.Root>
+                  <Select.Root
+                    value={filters.searchRadius.toString()}
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, searchRadius: parseInt(value) }))}
+                  >
+                    <Select.Trigger style={{ width: '120px' }} />
+                    <Select.Content>
+                      <Select.Item value="5">5 miles</Select.Item>
+                      <Select.Item value="10">10 miles</Select.Item>
+                      <Select.Item value="15">15 miles</Select.Item>
+                      <Select.Item value="25">25 miles</Select.Item>
+                      <Select.Item value="50">50 miles</Select.Item>
+                      <Select.Item value="100">100 miles</Select.Item>
+                    </Select.Content>
+                  </Select.Root>
+                  <Button size="3" variant="solid" onClick={handleZipSearch}>
+                    Search
+                  </Button>
+                </Flex>
+                {currentMatchScore > 0 && (
+                  <Flex justify="center" align="center" gap="2">
+                    <Text size="2" color="gray">Estimated match quality:</Text>
+                    <Badge color={currentMatchScore >= 70 ? 'green' : currentMatchScore >= 40 ? 'yellow' : 'red'} size="2">
+                      {currentMatchScore}%
+                    </Badge>
+                  </Flex>
+                )}
               </Flex>
             </Card>
 
@@ -175,7 +241,7 @@ function SearchPageContent() {
                                 >
                                   <Select.Trigger />
                                   <Select.Content>
-                                    <Select.Item value="">Any</Select.Item>
+                                    <Select.Item value="any">Any</Select.Item>
                                     <Select.Item value="cash">Cash-Based</Select.Item>
                                     <Select.Item value="insurance">Insurance-Based</Select.Item>
                                     <Select.Item value="hybrid">Hybrid</Select.Item>
@@ -191,7 +257,7 @@ function SearchPageContent() {
                                 >
                                   <Select.Trigger />
                                   <Select.Content>
-                                    <Select.Item value="">Any</Select.Item>
+                                    <Select.Item value="any">Any</Select.Item>
                                     {insuranceOptions.map((insurance) => (
                                       <Select.Item key={insurance} value={insurance}>
                                         {insurance}
@@ -209,7 +275,7 @@ function SearchPageContent() {
                                 >
                                   <Select.Trigger />
                                   <Select.Content>
-                                    <Select.Item value="">Any</Select.Item>
+                                    <Select.Item value="any">Any</Select.Item>
                                     <Select.Item value="under-50">Under $50/month</Select.Item>
                                     <Select.Item value="50-100">$50 - $100/month</Select.Item>
                                     <Select.Item value="100-150">$100 - $150/month</Select.Item>
@@ -235,9 +301,16 @@ function SearchPageContent() {
                         {loading ? 'Searching...' : `${chiropractors.length} Results`}
                       </Heading>
                       {!loading && chiropractors.length > 0 && (
-                        <Text size="2" color="gray">
-                          Sorted by match score
-                        </Text>
+                        <Flex align="center" gap="3">
+                          <Text size="2" color="gray">
+                            Sorted by match score
+                          </Text>
+                          {currentMatchScore > 0 && (
+                            <Badge color={currentMatchScore >= 70 ? 'green' : currentMatchScore >= 40 ? 'yellow' : 'red'} size="1">
+                              Your filters: {currentMatchScore}% match potential
+                            </Badge>
+                          )}
+                        </Flex>
                       )}
                     </Flex>
 

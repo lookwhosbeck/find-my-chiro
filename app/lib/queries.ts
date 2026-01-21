@@ -232,6 +232,9 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
       query = query.ilike('organizations.zip_code', `%${filters.zipCode.trim()}%`);
     }
 
+    // Note: In a real implementation, you'd use geocoding to convert ZIP codes to lat/lng
+    // and perform radius-based filtering. For now, we're doing basic ZIP code matching.
+
     // Get initial results
     const { data, error } = await query.limit(limit * 2); // Get more for scoring
 
@@ -245,7 +248,7 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
     // Apply matching algorithm scoring
     chiropractors = scoreChiropractors(chiropractors, filters);
 
-    // Sort by score and return top results
+    // Sort by score (highest to lowest) and return top results
     return chiropractors
       .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
       .slice(0, limit);

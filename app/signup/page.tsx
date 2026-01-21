@@ -361,7 +361,7 @@ export default function SignUpPage() {
                                 </Select.Item>
                               ))
                             ) : (
-                              <Select.Item value="" disabled>
+                              <Select.Item value="none" disabled>
                                 No colleges available
                               </Select.Item>
                             )}

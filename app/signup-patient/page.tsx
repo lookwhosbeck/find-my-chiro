@@ -459,7 +459,7 @@ export default function PatientSignUpPage() {
                             >
                               <Select.Trigger />
                               <Select.Content>
-                                <Select.Item value="">No Insurance / Self-Pay</Select.Item>
+                                <Select.Item value="none">No Insurance / Self-Pay</Select.Item>
                                 <Select.Item value="BCBS">Blue Cross Blue Shield</Select.Item>
                                 <Select.Item value="Aetna">Aetna</Select.Item>
                                 <Select.Item value="Cigna">Cigna</Select.Item>
@@ -478,7 +478,7 @@ export default function PatientSignUpPage() {
                             >
                               <Select.Trigger />
                               <Select.Content>
-                                <Select.Item value="">No Preference</Select.Item>
+                                <Select.Item value="none">No Preference</Select.Item>
                                 <Select.Item value="under-50">Under $50</Select.Item>
                                 <Select.Item value="50-100">$50 - $100</Select.Item>
                                 <Select.Item value="100-150">$100 - $150</Select.Item>
