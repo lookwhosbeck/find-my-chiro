@@ -74,7 +74,6 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
       .select(`
         *,
         profiles!inner(id, first_name, last_name, avatar_url),
-        organizations(id, name, city, state, zip_code),
         chiropractor_modalities(modalities(name)),
         chiropractor_focus_areas(focus_areas(name)),
         chiropractor_payment_models(payment_models(name)),
@@ -137,6 +136,9 @@ function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropractor[] {
       // Add additional fields for matching
       focusAreas: focusAreas,
       businessModel: paymentModels.length > 0 ? paymentModels[0].toLowerCase() : undefined,
+      clinicName: item.organizations?.name || '',
+      city: item.organizations?.city || '',
+      state: item.organizations?.state || '',
     };
   });
 }
@@ -215,23 +217,20 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
       return [];
     }
 
-    // Build a complex query that joins with organizations for location data
+    // Build a complex query that includes chiropractor relationships
     let query = supabase
       .from('chiropractors')
       .select(`
         *,
         profiles!inner(first_name, last_name, email),
-        organizations!left(city, state, zip_code),
         chiropractor_modalities(modality_id, modalities!inner(name)),
         chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
         chiropractor_payment_models(payment_model_id, payment_models!inner(name))
       `)
       .eq('accepting_new_patients', true);
 
-    // Location-based filtering using organizations table
-    if (filters.zipCode && filters.zipCode.trim()) {
-      query = query.ilike('organizations.zip_code', `%${filters.zipCode.trim()}%`);
-    }
+    // Note: Location filtering removed in simplified schema
+    // ZIP code filtering would need to be implemented differently
 
     // Note: In a real implementation, you'd use geocoding to convert ZIP codes to lat/lng
     // and perform radius-based filtering. For now, we're doing basic ZIP code matching.
@@ -287,15 +286,9 @@ function scoreChiropractors(chiropractors: Chiropractor[], filters: PatientSearc
       score += (matchingFocusAreas.length / filters.focusAreas.length) * 30;
     }
 
-    // Philosophy matching (15 points)
-    if (filters.preferredPhilosophies && filters.preferredPhilosophies.length > 0 && chiro.philosophy) {
-      const matchingPhilosophies = filters.preferredPhilosophies.filter(phil =>
-        chiro.philosophy!.toLowerCase().includes(phil.toLowerCase())
-      );
-      if (matchingPhilosophies.length > 0) {
-        score += 15;
-      }
-    }
+    // Philosophy matching (15 points) - Note: This needs to be updated to work with junction tables
+    // For now, we'll skip philosophy matching in the algorithm
+    // score += 15; // Placeholder
 
     // Business model matching (20 points)
     if (filters.preferredBusinessModel && chiro.businessModel) {

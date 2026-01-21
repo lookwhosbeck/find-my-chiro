@@ -25,8 +25,6 @@ interface ChiropractorProfile {
   chiropractic_college?: string;
   graduation_year?: number;
   license_number?: string;
-  website_url?: string;
-  instagram_handle?: string;
   accepting_new_patients?: boolean;
   updated_at: string;
 }
@@ -74,8 +72,6 @@ export default function AccountPage() {
     chiropractic_college: '',
     graduation_year: '',
     license_number: '',
-    website_url: '',
-    instagram_handle: '',
     accepting_new_patients: true
   });
 
@@ -147,8 +143,6 @@ export default function AccountPage() {
             chiropractic_college: chiroData.chiropractic_college || '',
             graduation_year: chiroData.graduation_year?.toString() || '',
             license_number: chiroData.license_number || '',
-            website_url: chiroData.website_url || '',
-            instagram_handle: chiroData.instagram_handle || '',
             accepting_new_patients: chiroData.accepting_new_patients ?? true
           });
         }
@@ -320,8 +314,6 @@ export default function AccountPage() {
         chiropractic_college: chiropractorForm.chiropractic_college,
         graduation_year: chiropractorForm.graduation_year ? parseInt(chiropractorForm.graduation_year) : null,
         license_number: chiropractorForm.license_number,
-        website_url: chiropractorForm.website_url,
-        instagram_handle: chiropractorForm.instagram_handle,
         accepting_new_patients: chiropractorForm.accepting_new_patients,
         updated_at: new Date().toISOString()
       };
@@ -596,24 +588,7 @@ export default function AccountPage() {
                       />
                     </Box>
 
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Website</Text>
-                      <TextField.Root
-                        value={chiropractorForm.website_url}
-                        onChange={(e) => setChiropractorForm(prev => ({ ...prev, website_url: e.target.value }))}
-                        placeholder="https://your-website.com"
-                        type="url"
-                      />
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Instagram Handle</Text>
-                      <TextField.Root
-                        value={chiropractorForm.instagram_handle}
-                        onChange={(e) => setChiropractorForm(prev => ({ ...prev, instagram_handle: e.target.value }))}
-                        placeholder="@yourhandle"
-                      />
-                    </Box>
+                    {/* Note: Website and Instagram fields removed to match simplified schema */}
 
                     <Box>
                       <Flex align="center" gap="2">
@@ -636,8 +611,6 @@ export default function AccountPage() {
                       chiropractic_college: chiropractorProfile?.chiropractic_college || '',
                       graduation_year: chiropractorProfile?.graduation_year?.toString() || '',
                       license_number: chiropractorProfile?.license_number || '',
-                      website_url: chiropractorProfile?.website_url || '',
-                      instagram_handle: chiropractorProfile?.instagram_handle || '',
                       accepting_new_patients: chiropractorProfile?.accepting_new_patients ?? true
                     })}>
                       Reset
