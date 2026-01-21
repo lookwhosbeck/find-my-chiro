@@ -465,16 +465,6 @@ export default function AccountPage() {
                       />
                       <Flex direction="column" gap="2">
                         <Flex gap="2">
-                          <label htmlFor="avatar-upload">
-                            <Button 
-                              as="span" 
-                              variant="outline" 
-                              size="2"
-                              disabled={uploadingAvatar}
-                            >
-                              {uploadingAvatar ? 'Uploading...' : profile.avatar_url ? 'Change Photo' : 'Upload Photo'}
-                            </Button>
-                          </label>
                           <input
                             id="avatar-upload"
                             type="file"
@@ -483,6 +473,19 @@ export default function AccountPage() {
                             onChange={handleAvatarUpload}
                             disabled={uploadingAvatar}
                           />
+                          <Button 
+                            variant="outline" 
+                            size="2"
+                            disabled={uploadingAvatar}
+                            onClick={() => {
+                              const input = document.getElementById('avatar-upload') as HTMLInputElement;
+                              if (input && !uploadingAvatar) {
+                                input.click();
+                              }
+                            }}
+                          >
+                            {uploadingAvatar ? 'Uploading...' : profile.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                          </Button>
                           {profile.avatar_url && (
                             <Button 
                               variant="outline" 
