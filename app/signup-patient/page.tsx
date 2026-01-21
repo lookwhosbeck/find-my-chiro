@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Grid, Card, Flex, Text, Heading, TextField, Button, Select, TextArea, Tabs, Checkbox, RadioGroup, Box, Callout } from '@radix-ui/themes';
-import { GlobeIcon, PhoneIcon, CalendarIcon, InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { GlobeIcon, CalendarIcon, InfoCircledIcon, CheckCircledIcon, PersonIcon } from '@radix-ui/react-icons';
 import { useRouter } from 'next/navigation';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -33,8 +33,18 @@ export default function PatientSignUpPage() {
     emergencyContact: '',
     emergencyPhone: '',
     // Step 3
+    preferredModalities: [] as string[],
+    focusAreas: [] as string[],
+    preferredBusinessModel: '',
+    insuranceType: '',
+    budgetRange: '',
+    // Step 4
+    city: '',
+    state: '',
     zipCode: '',
     searchRadius: 25,
+    preferredDays: [] as string[],
+    preferredTimes: [] as string[],
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -46,7 +56,7 @@ export default function PatientSignUpPage() {
     handleInputChange(field, value);
   };
 
-  const handleCheckboxChange = (category: 'preferredModalities' | 'focusAreas' | 'preferredDays' | 'preferredTimes', value: string) => {
+  const handleCheckboxChange = (category: 'preferredModalities' | 'focusAreas' | 'preferredDays' | 'preferredTimes' | 'focusAreas', value: string) => {
     setFormData(prev => {
       const currentArray = prev[category];
       const newArray = currentArray.includes(value)
@@ -86,7 +96,7 @@ export default function PatientSignUpPage() {
     }
 
     // Validate location (required for Step 4)
-    if (!formData.city || !formData.state || !formData.zip) {
+    if (!formData.city || !formData.state || !formData.zipCode) {
       setSubmitError('Please provide your location information');
       setStep(4);
       return;
@@ -312,7 +322,7 @@ export default function PatientSignUpPage() {
                         placeholder="(555) 123-4567"
                       >
                         <TextField.Slot>
-                          <PhoneIcon />
+                          <PersonIcon />
                         </TextField.Slot>
                       </TextField.Root>
                     </Flex>
@@ -348,7 +358,7 @@ export default function PatientSignUpPage() {
                         placeholder="(555) 123-4567"
                       >
                         <TextField.Slot>
-                          <PhoneIcon />
+                          <PersonIcon />
                         </TextField.Slot>
                       </TextField.Root>
                     </Flex>
@@ -522,8 +532,8 @@ export default function PatientSignUpPage() {
                         <Text as="label" size="2" weight="bold">Zip Code</Text>
                         <TextField.Root
                           size="3"
-                          value={formData.zip}
-                          onChange={handleTextFieldChange('zip')}
+                          value={formData.zipCode}
+                          onChange={handleTextFieldChange('zipCode')}
                           placeholder="12345"
                           required
                         />

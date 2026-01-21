@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Flex, Text, Button, Heading, Card, Grid, Box, Badge, Tabs, Checkbox, Select, TextField } from '@radix-ui/themes';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
@@ -11,7 +11,7 @@ import { Container } from '../components/Container';
 import { ChiropractorCard } from '../components/ChiropractorCard';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const [chiropractors, setChiropractors] = useState<Chiropractor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -285,5 +285,13 @@ export default function SearchPage() {
 
       <Footer />
     </Flex>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SearchPageContent />
+    </Suspense>
   );
 }

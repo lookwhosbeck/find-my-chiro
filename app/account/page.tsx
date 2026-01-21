@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Flex, Text, Button, Heading, Card, TextField, TextArea, Box, Avatar, Badge, Tabs } from '@radix-ui/themes';
+import { Flex, Text, Button, Heading, Card, TextField, TextArea, Box, Avatar, Badge, Tabs, Grid, Select } from '@radix-ui/themes';
 import { supabase } from '@/app/lib/supabase';
 import { Container } from '@/app/components/Container';
 
