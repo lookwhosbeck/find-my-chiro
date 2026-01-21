@@ -1,10 +1,10 @@
-import { Flex, Text, Button, Heading, Section, TextField, Grid, Card, Box, ScrollArea } from '@radix-ui/themes';
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { Flex, Text, Button, Heading, Section, Grid, Card, Box, ScrollArea } from '@radix-ui/themes';
 import Link from 'next/link';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Container } from './components/Container';
 import { ChiropractorCard } from './components/ChiropractorCard';
+import { SearchSection } from './components/SearchSection';
 import { getChiropractors } from './lib/queries';
 
 export default async function Home() {
@@ -25,19 +25,17 @@ export default async function Home() {
               Search by location, insurance, and treatment philosophy—not just a name on a map.
             </Text>
             
-            {/* Search Bar */}
-            <Flex gap="3" width="100%" style={{ maxWidth: '600px' }}>
-              <TextField.Root size="3" placeholder="Enter zip code" style={{ flex: 1 }}>
-                <TextField.Slot>
-                  <MagnifyingGlassIcon />
-                </TextField.Slot>
-              </TextField.Root>
-              <Button size="3" variant="solid">Find Care</Button>
-            </Flex>
+            {/* Search Section */}
+            <SearchSection />
             
-            <Button size="2" variant="ghost" asChild>
-              <Link href="/signup">Are you a Chiropractor? Join the Network.</Link>
-            </Button>
+            <Flex direction="column" gap="2" align="center">
+              <Button size="2" variant="solid" asChild>
+                <Link href="/signup-patient">I'm a Patient - Find Care</Link>
+              </Button>
+              <Button size="2" variant="ghost" asChild>
+                <Link href="/signup">Are you a Chiropractor? Join the Network.</Link>
+              </Button>
+            </Flex>
           </Flex>
         </Container>
       </Section>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Flex, Text, Button, Heading, Card, TextField, TextArea, Box, Avatar, Badge, Tabs } from '@radix-ui/themes';
+import { Flex, Text, Button, Heading, Card, TextField, TextArea, Box, Avatar, Badge, Tabs, Grid, Select } from '@radix-ui/themes';
 import { supabase } from '@/app/lib/supabase';
 import { Container } from '@/app/components/Container';
 
@@ -30,11 +30,32 @@ interface ChiropractorProfile {
   updated_at: string;
 }
 
+interface PatientProfile {
+  id: string;
+  phone?: string;
+  date_of_birth?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  preferred_modalities?: string[];
+  focus_areas?: string[];
+  preferred_business_model?: string;
+  insurance_type?: string;
+  budget_range?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  search_radius?: number;
+  preferred_days?: string[];
+  preferred_times?: string[];
+  updated_at: string;
+}
+
 export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [chiropractorProfile, setChiropractorProfile] = useState<ChiropractorProfile | null>(null);
+  const [patientProfile, setPatientProfile] = useState<PatientProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
@@ -54,6 +75,24 @@ export default function AccountPage() {
     website_url: '',
     instagram_handle: '',
     accepting_new_patients: true
+  });
+
+  const [patientForm, setPatientForm] = useState({
+    phone: '',
+    date_of_birth: '',
+    emergency_contact: '',
+    emergency_phone: '',
+    preferred_modalities: [] as string[],
+    focus_areas: [] as string[],
+    preferred_business_model: '',
+    insurance_type: '',
+    budget_range: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    search_radius: 25,
+    preferred_days: [] as string[],
+    preferred_times: [] as string[],
   });
 
   useEffect(() => {
@@ -109,6 +148,38 @@ export default function AccountPage() {
             website_url: chiroData.website_url || '',
             instagram_handle: chiroData.instagram_handle || '',
             accepting_new_patients: chiroData.accepting_new_patients ?? true
+          });
+        }
+      }
+
+      // Fetch patient profile if user is a patient
+      if (profileData?.role === 'patient') {
+        const { data: patientData, error: patientError } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (patientError) {
+          console.error('Error fetching patient profile:', patientError);
+        } else {
+          setPatientProfile(patientData);
+          setPatientForm({
+            phone: patientData.phone || '',
+            date_of_birth: patientData.date_of_birth || '',
+            emergency_contact: patientData.emergency_contact || '',
+            emergency_phone: patientData.emergency_phone || '',
+            preferred_modalities: patientData.preferred_modalities || [],
+            focus_areas: patientData.focus_areas || [],
+            preferred_business_model: patientData.preferred_business_model || '',
+            insurance_type: patientData.insurance_type || '',
+            budget_range: patientData.budget_range || '',
+            city: patientData.city || '',
+            state: patientData.state || '',
+            zip_code: patientData.zip_code || '',
+            search_radius: patientData.search_radius || 25,
+            preferred_days: patientData.preferred_days || [],
+            preferred_times: patientData.preferred_times || [],
           });
         }
       }
@@ -199,6 +270,51 @@ export default function AccountPage() {
     }
   };
 
+  const savePatientProfile = async () => {
+    if (!user) return;
+
+    setSaving(true);
+    try {
+      const updateData = {
+        phone: patientForm.phone || null,
+        date_of_birth: patientForm.date_of_birth ? new Date(patientForm.date_of_birth).toISOString().split('T')[0] : null,
+        emergency_contact: patientForm.emergency_contact || null,
+        emergency_phone: patientForm.emergency_phone || null,
+        preferred_modalities: patientForm.preferred_modalities,
+        focus_areas: patientForm.focus_areas,
+        preferred_business_model: patientForm.preferred_business_model || null,
+        insurance_type: patientForm.insurance_type || null,
+        budget_range: patientForm.budget_range || null,
+        city: patientForm.city || null,
+        state: patientForm.state || null,
+        zip_code: patientForm.zip_code || null,
+        search_radius: patientForm.search_radius,
+        preferred_days: patientForm.preferred_days,
+        preferred_times: patientForm.preferred_times,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('patients')
+        .upsert(updateData, { onConflict: 'id' });
+
+      if (error) throw error;
+
+      // Update local state
+      setPatientProfile(prev => prev ? {
+        ...prev,
+        ...updateData
+      } : updateData as PatientProfile);
+
+      alert('Patient profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating patient profile:', error);
+      alert('Error updating patient profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Container>
@@ -248,6 +364,9 @@ export default function AccountPage() {
             <Tabs.Trigger value="profile">Account Details</Tabs.Trigger>
             {profile.role === 'chiropractor' && (
               <Tabs.Trigger value="chiropractor">Chiropractor Profile</Tabs.Trigger>
+            )}
+            {profile.role === 'patient' && (
+              <Tabs.Trigger value="patient">Patient Preferences</Tabs.Trigger>
             )}
           </Tabs.List>
 
@@ -396,6 +515,181 @@ export default function AccountPage() {
                       Reset
                     </Button>
                     <Button onClick={saveChiropractorProfile} disabled={saving}>
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </Flex>
+                </Flex>
+              </Card>
+            </Tabs.Content>
+          )}
+
+          {/* Patient Profile Tab */}
+          {profile.role === 'patient' && (
+            <Tabs.Content value="patient">
+              <Card>
+                <Flex direction="column" gap="4">
+                  <Heading size="4">Patient Preferences</Heading>
+
+                  <Flex direction="column" gap="3">
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Phone Number</Text>
+                      <TextField.Root
+                        value={patientForm.phone}
+                        onChange={(e) => setPatientForm(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Enter your phone number"
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Date of Birth</Text>
+                      <TextField.Root
+                        type="date"
+                        value={patientForm.date_of_birth}
+                        onChange={(e) => setPatientForm(prev => ({ ...prev, date_of_birth: e.target.value }))}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Emergency Contact Name</Text>
+                      <TextField.Root
+                        value={patientForm.emergency_contact}
+                        onChange={(e) => setPatientForm(prev => ({ ...prev, emergency_contact: e.target.value }))}
+                        placeholder="Emergency contact name"
+                      />
+                    </Box>
+
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Emergency Contact Phone</Text>
+                      <TextField.Root
+                        value={patientForm.emergency_phone}
+                        onChange={(e) => setPatientForm(prev => ({ ...prev, emergency_phone: e.target.value }))}
+                        placeholder="Emergency contact phone"
+                      />
+                    </Box>
+
+                    <Grid columns="3" gap="3">
+                      <Box>
+                        <Text size="2" weight="bold" mb="2">City</Text>
+                        <TextField.Root
+                          value={patientForm.city}
+                          onChange={(e) => setPatientForm(prev => ({ ...prev, city: e.target.value }))}
+                          placeholder="City"
+                        />
+                      </Box>
+                      <Box>
+                        <Text size="2" weight="bold" mb="2">State</Text>
+                        <TextField.Root
+                          value={patientForm.state}
+                          onChange={(e) => setPatientForm(prev => ({ ...prev, state: e.target.value }))}
+                          placeholder="State"
+                        />
+                      </Box>
+                      <Box>
+                        <Text size="2" weight="bold" mb="2">Zip Code</Text>
+                        <TextField.Root
+                          value={patientForm.zip_code}
+                          onChange={(e) => setPatientForm(prev => ({ ...prev, zip_code: e.target.value }))}
+                          placeholder="12345"
+                        />
+                      </Box>
+                    </Grid>
+
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Search Radius (miles)</Text>
+                      <Select.Root
+                        value={patientForm.search_radius.toString()}
+                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, search_radius: parseInt(value) }))}
+                      >
+                        <Select.Trigger />
+                        <Select.Content>
+                          <Select.Item value="5">5 miles</Select.Item>
+                          <Select.Item value="10">10 miles</Select.Item>
+                          <Select.Item value="15">15 miles</Select.Item>
+                          <Select.Item value="25">25 miles</Select.Item>
+                          <Select.Item value="50">50 miles</Select.Item>
+                          <Select.Item value="100">100 miles</Select.Item>
+                        </Select.Content>
+                      </Select.Root>
+                    </Box>
+
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Preferred Business Model</Text>
+                      <Select.Root
+                        value={patientForm.preferred_business_model}
+                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, preferred_business_model: value }))}
+                      >
+                        <Select.Trigger />
+                        <Select.Content>
+                          <Select.Item value="">No Preference</Select.Item>
+                          <Select.Item value="cash">Cash-Based</Select.Item>
+                          <Select.Item value="insurance">Insurance-Based</Select.Item>
+                          <Select.Item value="hybrid">Hybrid</Select.Item>
+                        </Select.Content>
+                      </Select.Root>
+                    </Box>
+
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Insurance Type</Text>
+                      <Select.Root
+                        value={patientForm.insurance_type}
+                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, insurance_type: value }))}
+                      >
+                        <Select.Trigger />
+                        <Select.Content>
+                          <Select.Item value="">No Insurance</Select.Item>
+                          <Select.Item value="BCBS">Blue Cross Blue Shield</Select.Item>
+                          <Select.Item value="Aetna">Aetna</Select.Item>
+                          <Select.Item value="Cigna">Cigna</Select.Item>
+                          <Select.Item value="UnitedHealthcare">UnitedHealthcare</Select.Item>
+                          <Select.Item value="Medicare">Medicare</Select.Item>
+                          <Select.Item value="Medicaid">Medicaid</Select.Item>
+                        </Select.Content>
+                      </Select.Root>
+                    </Box>
+
+                    <Box>
+                      <Text size="2" weight="bold" mb="2">Budget Range (Monthly)</Text>
+                      <Select.Root
+                        value={patientForm.budget_range}
+                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, budget_range: value }))}
+                      >
+                        <Select.Trigger />
+                        <Select.Content>
+                          <Select.Item value="">No Preference</Select.Item>
+                          <Select.Item value="under-50">Under $50</Select.Item>
+                          <Select.Item value="50-100">$50 - $100</Select.Item>
+                          <Select.Item value="100-150">$100 - $150</Select.Item>
+                          <Select.Item value="over-150">Over $150</Select.Item>
+                        </Select.Content>
+                      </Select.Root>
+                    </Box>
+                  </Flex>
+
+                  <Flex justify="end" gap="2">
+                    <Button variant="outline" onClick={() => {
+                      if (patientProfile) {
+                        setPatientForm({
+                          phone: patientProfile.phone || '',
+                          date_of_birth: patientProfile.date_of_birth || '',
+                          emergency_contact: patientProfile.emergency_contact || '',
+                          emergency_phone: patientProfile.emergency_phone || '',
+                          preferred_modalities: patientProfile.preferred_modalities || [],
+                          focus_areas: patientProfile.focus_areas || [],
+                          preferred_business_model: patientProfile.preferred_business_model || '',
+                          insurance_type: patientProfile.insurance_type || '',
+                          budget_range: patientProfile.budget_range || '',
+                          city: patientProfile.city || '',
+                          state: patientProfile.state || '',
+                          zip_code: patientProfile.zip_code || '',
+                          search_radius: patientProfile.search_radius || 25,
+                          preferred_days: patientProfile.preferred_days || [],
+                          preferred_times: patientProfile.preferred_times || [],
+                        });
+                      }
+                    }}>
+                      Reset
+                    </Button>
+                    <Button onClick={savePatientProfile} disabled={saving}>
                       {saving ? 'Saving...' : 'Save Changes'}
                     </Button>
                   </Flex>
