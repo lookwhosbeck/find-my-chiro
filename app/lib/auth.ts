@@ -6,19 +6,19 @@ export interface SignUpData {
   lastName: string;
   email: string;
   password: string;
-  
+
   // Step 2: Professional Details
   college: string;
   graduationYear: string;
   licenseNumber: string;
   bio: string;
-  
+
   // Step 3: Matching Data
   modalities: string[];
   focusAreas: string[];
   businessModel: string;
   insurances: string[];
-  
+
   // Step 4: Organization/Location
   clinicName: string;
   address: string;
@@ -27,6 +27,31 @@ export interface SignUpData {
   zip: string;
   website: string;
   instagram: string;
+}
+
+export interface PatientSignUpData {
+  // Step 1: Account
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+
+  // Step 2: Personal Details
+  phone?: string;
+  dateOfBirth?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+
+  // Step 3: Matching Preferences
+  preferredModalities: string[];
+  focusAreas: string[];
+  preferredBusinessModel: string;
+  insuranceType?: string;
+  budgetRange?: string;
+
+  // Step 4: Location & Preferences
+  zipCode: string;
+  searchRadius: number; // miles
 }
 
 export interface SignUpResult {
@@ -180,18 +205,107 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
 }
 
 /**
+ * Register a new patient user
+ * Creates auth user and stores patient preferences in profiles and patients tables
+ */
+export async function signUpPatient(data: PatientSignUpData): Promise<SignUpResult> {
+  try {
+    const supabase = createSupabaseClient();
+
+    // Step 1: Create auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+          role: 'patient',
+        },
+        emailRedirectTo: typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/callback`
+          : undefined,
+      },
+    });
+
+    if (authError) {
+      console.error('Auth signup error:', authError);
+      let errorMessage = authError.message || 'Failed to create account.';
+      if (authError.message?.includes('already registered')) {
+        errorMessage = 'An account with this email already exists. Please sign in instead.';
+      }
+      return { success: false, error: errorMessage };
+    }
+
+    if (!authData?.user) {
+      return { success: false, error: 'Failed to create user account. Please try again.' };
+    }
+
+    const userId = authData.user.id;
+
+    // Step 2: Create/update profile record
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        first_name: data.firstName || null,
+        last_name: data.lastName || null,
+        email: data.email || null,
+        role: 'patient',
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id'
+      });
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+    }
+
+    // Step 3: Create patient record with basic info
+    const patientData = {
+      id: userId,
+      preferred_zip_code: data.zipCode || null,
+      search_radius_miles: data.searchRadius || 25,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: patientError } = await supabase
+      .from('patients')
+      .insert(patientData);
+
+    if (patientError) {
+      console.error('Patient creation error:', patientError);
+      let errorMessage = 'Account created, but there was an issue saving your preferences. ';
+      return {
+        success: false,
+        error: errorMessage + patientError.message
+      };
+    }
+
+    // Step 4: Add patient preferences using junction tables
+    // Note: This assumes the reference tables (modalities, focus_areas, etc.) exist
+    // In a production system, you'd need to handle these relationships properly
+
+    return { success: true, userId };
+  } catch (error: any) {
+    console.error('Patient sign up error:', error);
+    return { success: false, error: error.message || 'An unexpected error occurred' };
+  }
+}
+
+/**
  * Helper function to infer philosophy from modalities
  */
 function inferPhilosophy(modalities: string[]): string {
   if (!modalities || modalities.length === 0) {
     return 'Evidence-Based';
   }
-  
+
   // Map modalities to philosophies
   const vitalisticModalities = ['SOT', 'TRT', 'Webster'];
   const evidenceModalities = ['Activator', 'Cox'];
   const traditionalModalities = ['Gonstead', 'Diversified', 'Thompson'];
-  
+
   if (modalities.some(m => vitalisticModalities.includes(m))) {
     return 'Vitalistic';
   }
@@ -201,7 +315,7 @@ function inferPhilosophy(modalities: string[]): string {
   if (modalities.some(m => traditionalModalities.includes(m))) {
     return 'Traditional';
   }
-  
+
   return 'Evidence-Based';
 }
 

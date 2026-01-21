@@ -1,13 +1,36 @@
-import { Flex, Text, Button, Heading, Section, TextField, Grid, Card, Box, ScrollArea } from '@radix-ui/themes';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Flex, Text, Button, Heading, Section, TextField, Grid, Card, Box, ScrollArea, Tabs } from '@radix-ui/themes';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Container } from './components/Container';
 import { ChiropractorCard } from './components/ChiropractorCard';
 import { getChiropractors } from './lib/queries';
 
-export default async function Home() {
+export default function Home() {
+  const router = useRouter();
+  const [zipCode, setZipCode] = useState('');
+  const [chiropractors, setChiropractors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load chiropractors on mount
+  useEffect(() => {
+    getChiropractors(4).then(setChiropractors).finally(() => setLoading(false));
+  }, []);
+
+  const handleSimpleSearch = () => {
+    if (zipCode) {
+      router.push(`/search?zip=${zipCode}`);
+    }
+  };
+
+  const handleAdvancedSearch = () => {
+    router.push('/search');
+  };
   // Fetch chiropractors from database
   const chiropractors = await getChiropractors(4);
   return (
@@ -25,19 +48,50 @@ export default async function Home() {
               Search by location, insurance, and treatment philosophy—not just a name on a map.
             </Text>
             
-            {/* Search Bar */}
-            <Flex gap="3" width="100%" style={{ maxWidth: '600px' }}>
-              <TextField.Root size="3" placeholder="Enter zip code" style={{ flex: 1 }}>
-                <TextField.Slot>
-                  <MagnifyingGlassIcon />
-                </TextField.Slot>
-              </TextField.Root>
-              <Button size="3" variant="solid">Find Care</Button>
-            </Flex>
+            {/* Search Section */}
+            <Tabs.Root defaultValue="simple" style={{ width: '100%', maxWidth: '600px' }}>
+              <Tabs.List style={{ justifyContent: 'center' }}>
+                <Tabs.Trigger value="simple">Quick Search</Tabs.Trigger>
+                <Tabs.Trigger value="advanced">Advanced Search</Tabs.Trigger>
+              </Tabs.List>
+
+              <Tabs.Content value="simple">
+                <Flex gap="3" width="100%" style={{ maxWidth: '600px' }}>
+                  <TextField.Root
+                    size="3"
+                    placeholder="Enter zip code"
+                    value={zipCode}
+                    onChange={(e) => setZipCode(e.target.value)}
+                    style={{ flex: 1 }}
+                  >
+                    <TextField.Slot>
+                      <MagnifyingGlassIcon />
+                    </TextField.Slot>
+                  </TextField.Root>
+                  <Button size="3" variant="solid" onClick={handleSimpleSearch}>Find Care</Button>
+                </Flex>
+              </Tabs.Content>
+
+              <Tabs.Content value="advanced">
+                <Flex direction="column" gap="3" align="center">
+                  <Text size="2" color="gray">
+                    Use detailed filters to find chiropractors who match your preferences perfectly.
+                  </Text>
+                  <Button size="3" variant="solid" onClick={handleAdvancedSearch}>
+                    Start Advanced Search
+                  </Button>
+                </Flex>
+              </Tabs.Content>
+            </Tabs.Root>
             
-            <Button size="2" variant="ghost" asChild>
-              <Link href="/signup">Are you a Chiropractor? Join the Network.</Link>
-            </Button>
+            <Flex direction="column" gap="2" align="center">
+              <Button size="2" variant="solid" asChild>
+                <Link href="/signup-patient">I'm a Patient - Find Care</Link>
+              </Button>
+              <Button size="2" variant="ghost" asChild>
+                <Link href="/signup">Are you a Chiropractor? Join the Network.</Link>
+              </Button>
+            </Flex>
           </Flex>
         </Container>
       </Section>

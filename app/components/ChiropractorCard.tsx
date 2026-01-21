@@ -52,6 +52,14 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
               </Text>
             </Flex>
           )}
+          {chiropractor.matchScore !== undefined && (
+            <Flex gap="2">
+              <Text size="2" color="gray">Match:</Text>
+              <Text size="2" weight="medium" style={{ color: 'var(--green-11)' }}>
+                {Math.round(chiropractor.matchScore)}%
+              </Text>
+            </Flex>
+          )}
         </Flex>
       </Flex>
     </Card>
