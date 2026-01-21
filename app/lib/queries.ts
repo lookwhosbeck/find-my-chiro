@@ -28,6 +28,7 @@ export interface PatientSearchFilters {
   searchRadius?: number;
   city?: string;
   state?: string;
+  preferredPhilosophies?: string[];
 }
 
 export interface Patient {
@@ -267,6 +268,9 @@ function scoreChiropractors(chiropractors: Chiropractor[], filters: PatientSearc
     let score = 0;
     const maxScore = 100;
 
+    // Base score for all chiropractors (to avoid 0% when no filters are set)
+    score = 20;
+
     // Modality matching (40 points)
     if (filters.preferredModalities && filters.preferredModalities.length > 0 && chiro.modalities) {
       const matchingModalities = filters.preferredModalities.filter(mod =>
@@ -281,6 +285,16 @@ function scoreChiropractors(chiropractors: Chiropractor[], filters: PatientSearc
         chiro.focusAreas!.some(chiroArea => chiroArea.toLowerCase().includes(area.toLowerCase()))
       );
       score += (matchingFocusAreas.length / filters.focusAreas.length) * 30;
+    }
+
+    // Philosophy matching (15 points)
+    if (filters.preferredPhilosophies && filters.preferredPhilosophies.length > 0 && chiro.philosophy) {
+      const matchingPhilosophies = filters.preferredPhilosophies.filter(phil =>
+        chiro.philosophy!.toLowerCase().includes(phil.toLowerCase())
+      );
+      if (matchingPhilosophies.length > 0) {
+        score += 15;
+      }
     }
 
     // Business model matching (20 points)
@@ -300,7 +314,7 @@ function scoreChiropractors(chiropractors: Chiropractor[], filters: PatientSearc
     }
 
     // Insurance matching (10 points)
-    if (filters.insuranceType && filters.insuranceType !== 'No Insurance / Self-Pay') {
+    if (filters.insuranceType && filters.insuranceType !== 'none') {
       // This would need insurance data from chiropractors table
       // For now, give benefit of doubt if they accept insurance in general
       if (chiro.businessModel && (chiro.businessModel.toLowerCase() === 'insurance' || chiro.businessModel.toLowerCase() === 'hybrid')) {

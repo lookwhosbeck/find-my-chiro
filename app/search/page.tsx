@@ -26,6 +26,7 @@ function SearchPageContent() {
     insuranceType: '',
     budgetRange: '',
     searchRadius: 25,
+    preferredPhilosophies: [],
   });
 
   // Live match score calculation
@@ -35,6 +36,7 @@ function SearchPageContent() {
   const modalityOptions = ['Gonstead', 'Diversified', 'Activator', 'TRT', 'SOT', 'Thompson', 'Webster', 'Cox'];
   const focusAreaOptions = ['Pediatrics', 'Sports', 'Auto Injury', 'Wellness', 'Prenatal', 'Geriatric'];
   const insuranceOptions = ['BCBS', 'Aetna', 'Cigna', 'UnitedHealthcare', 'Medicare', 'Medicaid'];
+  const philosophyOptions = ['Evidence-Based', 'Holistic', 'Traditional', 'Functional', 'Sports Medicine', 'Neurological'];
 
   useEffect(() => {
     performSearch();
@@ -71,6 +73,15 @@ function SearchPageContent() {
     }));
   };
 
+  const handlePhilosophyChange = (philosophy: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      preferredPhilosophies: checked
+        ? [...(prev.preferredPhilosophies || []), philosophy]
+        : (prev.preferredPhilosophies || []).filter(p => p !== philosophy)
+    }));
+  };
+
   const handleZipSearch = () => {
     // In a real app, you'd geocode the zip code to get city/state
     // For now, we'll just trigger a search
@@ -97,19 +108,24 @@ function SearchPageContent() {
       score += 20;
     }
 
+    // Philosophies (15 points if any selected)
+    if (filters.preferredPhilosophies && filters.preferredPhilosophies.length > 0) {
+      score += 15;
+    }
+
     // Business model (15 points if specified)
     if (filters.preferredBusinessModel && filters.preferredBusinessModel !== 'any') {
       score += 15;
     }
 
-    // Insurance (15 points if specified)
+    // Insurance (10 points if specified)
     if (filters.insuranceType && filters.insuranceType !== 'any') {
-      score += 15;
+      score += 10;
     }
 
-    // Budget range (20 points if specified)
+    // Budget range (10 points if specified)
     if (filters.budgetRange && filters.budgetRange !== 'any') {
-      score += 20;
+      score += 10;
     }
 
     setCurrentMatchScore(Math.min(score, maxScore));
@@ -125,12 +141,14 @@ function SearchPageContent() {
             {/* Header */}
             <Flex justify="between" align="center">
               <Heading size="6">Find Your Chiropractor</Heading>
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
-              </Button>
+              <Flex gap="2" align="center">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  {showFilters ? 'Hide Filters' : 'Show Filters'}
+                </Button>
+              </Flex>
             </Flex>
 
             {/* Quick Search */}
@@ -166,7 +184,7 @@ function SearchPageContent() {
                     Search
                   </Button>
                 </Flex>
-                {currentMatchScore > 0 && (
+                {currentMatchScore > 20 && (
                   <Flex justify="center" align="center" gap="2">
                     <Text size="2" color="gray">Estimated match quality:</Text>
                     <Badge color={currentMatchScore >= 70 ? 'green' : currentMatchScore >= 40 ? 'yellow' : 'red'} size="2">
@@ -189,6 +207,7 @@ function SearchPageContent() {
                         <Tabs.List>
                           <Tabs.Trigger value="techniques">Techniques</Tabs.Trigger>
                           <Tabs.Trigger value="specialties">Specialties</Tabs.Trigger>
+                          <Tabs.Trigger value="philosophy">Philosophy</Tabs.Trigger>
                           <Tabs.Trigger value="payment">Payment</Tabs.Trigger>
                         </Tabs.List>
 
@@ -225,6 +244,25 @@ function SearchPageContent() {
                                       }
                                     />
                                     <Text size="2">{area}</Text>
+                                  </Flex>
+                                ))}
+                              </Flex>
+                            </Flex>
+                          </Tabs.Content>
+
+                          <Tabs.Content value="philosophy">
+                            <Flex direction="column" gap="3">
+                              <Text size="2" weight="bold">Philosophy & Approach</Text>
+                              <Flex direction="column" gap="2">
+                                {philosophyOptions.map((philosophy) => (
+                                  <Flex key={philosophy} gap="2" align="center">
+                                    <Checkbox
+                                      checked={filters.preferredPhilosophies?.includes(philosophy) || false}
+                                      onCheckedChange={(checked) =>
+                                        handlePhilosophyChange(philosophy, checked as boolean)
+                                      }
+                                    />
+                                    <Text size="2">{philosophy}</Text>
                                   </Flex>
                                 ))}
                               </Flex>
@@ -324,9 +362,15 @@ function SearchPageContent() {
                           <Card key={chiropractor.id}>
                             <Flex direction="column" gap="3">
                               <ChiropractorCard chiropractor={chiropractor} />
-                              {chiropractor.matchScore !== undefined && (
+                              {chiropractor.matchScore !== undefined && chiropractor.matchScore > 0 && (
                                 <Flex justify="end">
-                                  <Badge color="green" size="1">
+                                  <Badge
+                                    color={
+                                      chiropractor.matchScore >= 70 ? 'green' :
+                                      chiropractor.matchScore >= 40 ? 'yellow' : 'red'
+                                    }
+                                    size="1"
+                                  >
                                     {Math.round(chiropractor.matchScore)}% match
                                   </Badge>
                                 </Flex>
