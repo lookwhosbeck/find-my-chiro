@@ -11,11 +11,11 @@ export default function AboutPage() {
 
       <Flex direction="column" gap="9">
         {/* Hero Section */}
-        <Section size="3" style={{ background: 'var(--gray-2)' }}>
+        <Section size="3" style={{ background: 'var(--gray-2)', paddingTop: '96px' }}>
           <Container>
             <Flex direction="column" align="center" gap="6" py="9">
               <Badge size="2" color="blue">Patient-First Healthcare</Badge>
-              <Heading size="9" align="center" style={{ maxWidth: '800px' }}>
+              <Heading size="9" align="center" style={{ maxWidth: '800px', fontFamily: '"Untitled Serif", Georgia, serif', fontWeight: '500' }}>
                 Finding a Chiropractor You "Align" With Shouldn't Be Hard
               </Heading>
               <Text size="5" color="gray" align="center" style={{ maxWidth: '600px' }}>

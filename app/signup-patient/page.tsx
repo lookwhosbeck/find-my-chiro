@@ -158,7 +158,7 @@ export default function PatientSignUpPage() {
     <Flex direction="column" style={{ minHeight: '100vh' }}>
       <Header />
 
-      <Box py="9" style={{ flex: 1 }}>
+      <Box py="9" style={{ flex: 1, paddingTop: '160px' }}>
         <Container>
         <Grid columns={{ initial: '1', lg: '2' }} gap="9">
           {/* Left Column: Progress and Value Proposition */}
