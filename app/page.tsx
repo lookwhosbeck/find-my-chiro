@@ -2,9 +2,9 @@ import { Flex, Text, Heading, Box } from '@radix-ui/themes';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Container } from './components/Container';
-import { ChiropractorCard } from './components/ChiropractorCard';
 import { SearchSection } from './components/SearchSection';
 import { FeatureCard } from './components/FeatureCard';
+import { AutoScrollingCarousel } from './components/AutoScrollingCarousel';
 import { getChiropractors } from './lib/queries';
 
 // Icons for feature cards (simplified SVG icons)
@@ -131,41 +131,7 @@ export default async function Home() {
         </Container>
         
         {chiropractors.length > 0 ? (
-          <Box
-            style={{
-              width: '100%',
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              paddingBottom: '20px',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(3, 3, 2, 0.2) transparent',
-              msOverflowStyle: '-ms-autohiding-scrollbar',
-            }}
-          >
-            <Flex
-              gap="4"
-              style={{
-                paddingLeft: '24px',
-                paddingRight: '24px',
-                paddingBottom: '4px',
-                width: 'max-content',
-                minWidth: '100%',
-              }}
-            >
-              {chiropractors.map((chiropractor) => (
-                <Box 
-                  key={chiropractor.id} 
-                  style={{ 
-                    width: '240px',
-                    flexShrink: 0,
-                  }}
-                >
-                  <ChiropractorCard chiropractor={chiropractor} />
-                </Box>
-              ))}
-            </Flex>
-          </Box>
+          <AutoScrollingCarousel chiropractors={chiropractors} />
         ) : (
           <Container>
             <Flex direction="column" align="center" gap="3" py="6" style={{ gap: '240px', alignItems: 'center' }}>
