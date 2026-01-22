@@ -136,9 +136,6 @@ function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropractor[] {
       // Add additional fields for matching
       focusAreas: focusAreas,
       businessModel: paymentModels.length > 0 ? paymentModels[0].toLowerCase() : undefined,
-      clinicName: item.organizations?.name || '',
-      city: item.organizations?.city || '',
-      state: item.organizations?.state || '',
     };
   });
 }
