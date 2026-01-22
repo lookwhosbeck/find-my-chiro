@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Flex, Button, Box, Text } from '@radix-ui/themes';
 import Link from 'next/link';
-import { Container } from './Container';
 import { supabase } from '@/app/lib/supabase';
 import styles from './Header.module.css';
 
@@ -256,7 +255,7 @@ export function Header() {
             </Flex>
           </Box>
         )}
-      </Container>
+      </Box>
     </header>
   );
 }
