@@ -4,14 +4,6 @@ import { useState } from 'react';
 import { Flex, Text, Button, TextField } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-// Custom slider icon SVG component
-const SliderIcon = ({ width = 16, height = 16 }: { width?: number; height?: number }) => (
-  <svg width={width} height={height} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
-    <circle cx="5" cy="8" r="2" fill="currentColor"/>
-    <circle cx="11" cy="8" r="2" fill="currentColor"/>
-  </svg>
-);
 
 export function SearchSection() {
   const router = useRouter();
@@ -25,41 +17,43 @@ export function SearchSection() {
 
   return (
     <Flex direction="column" gap="5" align="center" style={{ width: '100%', maxWidth: '666px' }}>
-      <Flex gap="3" align="center" style={{ width: '100%' }}>
-        <TextField.Root
-          size="3"
-          placeholder="Search by Zipcode"
-          value={zipCode}
-          onChange={(e) => setZipCode(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSimpleSearch();
-            }
-          }}
-          style={{
-            flex: 1,
-            borderRadius: '9999px 0 0 9999px',
-            border: '1px solid #030302',
-            boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
-            background: 'rgba(255, 255, 255, 0.6)',
-            backdropFilter: 'blur(2px)',
-          }}
-        />
-        <Button
-          size="3"
-          variant="solid"
-          onClick={handleSimpleSearch}
-          style={{
-            borderRadius: '0 9999px 9999px 0',
-            background: '#030302',
-            color: 'white',
-            boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
-            border: 'none',
-            padding: '12px 32px',
-          }}
-        >
-          Find Care
-        </Button>
+      <Flex gap="3" align="center" style={{ width: '100%', fontSize: '0px' }}>
+        <Flex align="center" style={{ flex: 1 }}>
+          <TextField.Root
+            size="3"
+            placeholder="Search by Zipcode"
+            value={zipCode}
+            onChange={(e) => setZipCode(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSimpleSearch();
+              }
+            }}
+            style={{
+              flex: 1,
+              borderRadius: '9999px 0 0 9999px',
+              border: '1px solid #030302',
+              boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
+              background: 'rgba(255, 255, 255, 0.6)',
+              backdropFilter: 'blur(2px)',
+            }}
+          />
+          <Button
+            size="3"
+            variant="solid"
+            onClick={handleSimpleSearch}
+            style={{
+              borderRadius: '0 9999px 9999px 0',
+              background: '#030302',
+              color: 'white',
+              boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
+              border: 'none',
+              padding: '12px 32px',
+            }}
+          >
+            Find Care
+          </Button>
+        </Flex>
         <Button
           size="3"
           variant="solid"
@@ -80,7 +74,6 @@ export function SearchSection() {
               textDecoration: 'none',
             }}
           >
-            <SliderIcon width={16} height={16} />
             Advanced Search
           </Link>
         </Button>

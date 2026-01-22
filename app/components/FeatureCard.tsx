@@ -1,12 +1,11 @@
 import { Flex, Text } from '@radix-ui/themes';
 
 interface FeatureCardProps {
-  icon: React.ReactNode;
   title: string;
   description: string;
 }
 
-export function FeatureCard({ icon, title, description }: FeatureCardProps) {
+export function FeatureCard({ title, description }: FeatureCardProps) {
   return (
     <Flex
       direction="column"
@@ -18,9 +17,6 @@ export function FeatureCard({ icon, title, description }: FeatureCardProps) {
         minHeight: '214px',
       }}
     >
-      <div style={{ width: '80px', height: '80px', flexShrink: 0 }}>
-        {icon}
-      </div>
       <Flex direction="column" gap="2" align="center" style={{ flex: 1, paddingBottom: '16px' }}>
         <Text
           size="4"

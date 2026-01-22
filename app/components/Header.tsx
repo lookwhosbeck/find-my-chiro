@@ -52,9 +52,9 @@ export function Header() {
         style={{
           backdropFilter: 'blur(2px)',
           background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.8) 100%)',
-          borderRadius: '26px',
+          borderRadius: '40px',
           boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
-          padding: '8px 16px 8px 8px',
+          padding: '8px 32px 8px 32px',
         }}
       >
         <Flex

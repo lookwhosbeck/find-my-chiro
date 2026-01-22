@@ -9,25 +9,8 @@ import { FeatureCard } from './components/FeatureCard';
 import { getChiropractors } from './lib/queries';
 
 // Icons for feature cards (simplified SVG icons)
-const EngineIcon = () => (
-  <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M40 20L50 30H45V45H35V30H30L40 20Z" stroke="#030302" strokeWidth="2" fill="none"/>
-    <circle cx="40" cy="55" r="5" stroke="#030302" strokeWidth="2" fill="none"/>
-  </svg>
-);
 
-const PersonSleddingIcon = () => (
-  <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M30 50L50 30M30 30L50 50" stroke="#030302" strokeWidth="2"/>
-    <circle cx="40" cy="40" r="8" stroke="#030302" strokeWidth="2" fill="none"/>
-  </svg>
-);
 
-const HandLoveIcon = () => (
-  <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M40 25C40 25 30 20 25 25C20 30 25 40 40 50C55 40 60 30 55 25C50 20 40 25 40 25Z" stroke="#030302" strokeWidth="2" fill="none"/>
-  </svg>
-);
 
 export default async function Home() {
   // Fetch chiropractors from database
@@ -40,7 +23,7 @@ export default async function Home() {
       <Box
         className="hero-gradient"
         style={{
-          minHeight: '600px',
+          minHeight: '720px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -52,7 +35,7 @@ export default async function Home() {
         }}
       >
         <Container>
-          <Flex direction="column" align="center" gap="5" style={{ maxWidth: '666px', margin: '0 auto' }}>
+          <Flex direction="column" align="center" gap="5" style={{ maxWidth: '666px', margin: '0 auto', gap: '64px' }}>
             <Heading
               size="9"
               align="center"
@@ -81,19 +64,13 @@ export default async function Home() {
           direction="column"
           gap="0"
           style={{
-            padding: '96px 24px',
+            padding: '0px 24px',
           }}
           className="main-content"
         >
-          {/* Testimonial 1 */}
-          <Testimonial
-            quote="Craft is the one tool you need for everything — effortless organization, smooth navigation, and a workspace that adapts to your needs."
-            author="Deanna"
-            avatarInitial="D"
-          />
 
           {/* Features Section */}
-          <Flex direction="column" gap="6" style={{ padding: '60px 0' }}>
+          <Flex direction="column" gap="0" style={{ padding: '0px 0' }}>
             <Heading
               size="8"
               align="center"
@@ -115,17 +92,14 @@ export default async function Home() {
               style={{ maxWidth: '1160px', margin: '0 auto' }}
             >
               <FeatureCard
-                icon={<EngineIcon />}
                 title="The Matching Engine"
                 description="We don't just list you; we match you based on Modalities (Gonstead, TRT) and Philosophies (Vitalistic, Evidence-Based)."
               />
               <FeatureCard
-                icon={<PersonSleddingIcon />}
                 title="Reduce Friction"
                 description="Patients filter by Insurance/Cash right away, so you only get calls from people who know your business model."
               />
               <FeatureCard
-                icon={<HandLoveIcon />}
                 title="Show Your Culture"
                 description="Showcase your clinic vibe, not just your address."
               />
@@ -175,7 +149,7 @@ export default async function Home() {
                 ))}
               </Flex>
             ) : (
-              <Flex direction="column" align="center" gap="3" py="6">
+              <Flex direction="column" align="center" gap="3" py="6" style={{ gap: '240px', alignItems: 'center' }}>
                 <Text size="3" color="gray" align="center">
                   No chiropractors found. Be the first to join!
                 </Text>
