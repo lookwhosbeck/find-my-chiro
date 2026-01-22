@@ -111,7 +111,7 @@ export default async function Home() {
       </Container>
 
       {/* Chiropractors Carousel Section - Full Width */}
-      <Flex direction="column" gap="6" style={{ padding: '60px 0', width: '100%' }}>
+      <Flex direction="column" gap="6" style={{ paddingTop: '60px', paddingBottom: '120px', width: '100%' }}>
         <Container>
           <Heading
             size="8"

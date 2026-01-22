@@ -13,6 +13,7 @@ export interface Chiropractor {
   clinicName?: string;
   city?: string;
   state?: string;
+  zipCode?: string;
   acceptingPatients?: boolean;
   avatarUrl?: string;
   matchScore?: number;
@@ -136,6 +137,8 @@ function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropractor[] {
       // Add additional fields for matching
       focusAreas: focusAreas,
       businessModel: paymentModels.length > 0 ? paymentModels[0].toLowerCase() : undefined,
+      // Include zip code for location filtering
+      zipCode: item.organizations?.zip_code || undefined,
     };
   });
 }
@@ -214,26 +217,33 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
       return [];
     }
 
-    // Build a complex query that includes chiropractor relationships
+    // Build a complex query that includes chiropractor relationships and location data
     let query = supabase
       .from('chiropractors')
       .select(`
         *,
         profiles!inner(first_name, last_name, email),
+        organizations!inner(city, state, zip_code),
         chiropractor_modalities(modality_id, modalities!inner(name)),
         chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
         chiropractor_payment_models(payment_model_id, payment_models!inner(name))
       `)
       .eq('accepting_new_patients', true);
 
-    // Note: Location filtering removed in simplified schema
-    // ZIP code filtering would need to be implemented differently
+    // Apply location-based filtering if zip code is provided
+    if (filters.zipCode && filters.zipCode.trim()) {
+      // For now, do exact zip code matching. In a production app, you'd:
+      // 1. Geocode the zip code to get lat/lng coordinates
+      // 2. Calculate distance from chiropractor locations
+      // 3. Filter by search radius
+      query = query.eq('organizations.zip_code', filters.zipCode.trim());
 
-    // Note: In a real implementation, you'd use geocoding to convert ZIP codes to lat/lng
-    // and perform radius-based filtering. For now, we're doing basic ZIP code matching.
+      // If no exact zip code matches, we could fall back to city/state matching
+      // But for now, we'll keep it simple with exact zip code matching
+    }
 
-    // Get initial results
-    const { data, error } = await query.limit(limit * 2); // Get more for scoring
+    // Get initial results (limit higher for scoring and potential location filtering)
+    const { data, error } = await query.limit(limit * 3); // Get more for scoring and location filtering
 
     if (error) {
       console.error('Error searching chiropractors:', error);
@@ -241,6 +251,16 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
     }
 
     let chiropractors = mapChiropractorDataFromNormalizedSchema(data || []);
+
+    // Apply additional location filtering and distance calculation if needed
+    if (filters.zipCode && filters.zipCode.trim()) {
+      // If we have search radius, we could implement distance calculation here
+      // For now, we're just using exact zip code matching from the database query
+      // In the future, this could be enhanced with:
+      // - Geocoding API integration
+      // - Distance calculation using haversine formula
+      // - Radius-based filtering
+    }
 
     // Apply matching algorithm scoring
     chiropractors = scoreChiropractors(chiropractors, filters);
@@ -265,27 +285,40 @@ function scoreChiropractors(chiropractors: Chiropractor[], filters: PatientSearc
     const maxScore = 100;
 
     // Base score for all chiropractors (to avoid 0% when no filters are set)
-    score = 20;
+    score = 10;
 
-    // Modality matching (40 points)
+    // Location matching (20 points) - If user specified a zip code, prioritize exact matches
+    if (filters.zipCode && filters.zipCode.trim()) {
+      if (chiro.zipCode === filters.zipCode.trim()) {
+        score += 20; // Exact zip code match gets full location points
+      } else if (chiro.city === filters.city || chiro.state === filters.state) {
+        score += 10; // City/state match gets partial points
+      }
+      // If no location match, still give base score but no location bonus
+    } else {
+      // If no location filter, everyone gets some location points
+      score += 10;
+    }
+
+    // Modality matching (30 points)
     if (filters.preferredModalities && filters.preferredModalities.length > 0 && chiro.modalities) {
       const matchingModalities = filters.preferredModalities.filter(mod =>
         chiro.modalities!.some(chiroMod => chiroMod.toLowerCase().includes(mod.toLowerCase()))
       );
-      score += (matchingModalities.length / filters.preferredModalities.length) * 40;
+      score += (matchingModalities.length / filters.preferredModalities.length) * 30;
     }
 
-    // Focus area matching (30 points)
+    // Focus area matching (20 points)
     if (filters.focusAreas && filters.focusAreas.length > 0 && chiro.focusAreas) {
       const matchingFocusAreas = filters.focusAreas.filter(area =>
         chiro.focusAreas!.some(chiroArea => chiroArea.toLowerCase().includes(area.toLowerCase()))
       );
-      score += (matchingFocusAreas.length / filters.focusAreas.length) * 30;
+      score += (matchingFocusAreas.length / filters.focusAreas.length) * 20;
     }
 
-    // Philosophy matching (15 points) - Note: This needs to be updated to work with junction tables
+    // Philosophy matching (10 points) - Note: This needs to be updated to work with junction tables
     // For now, we'll skip philosophy matching in the algorithm
-    // score += 15; // Placeholder
+    // score += 10; // Placeholder
 
     // Business model matching (20 points)
     if (filters.preferredBusinessModel && chiro.businessModel) {

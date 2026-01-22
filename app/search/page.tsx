@@ -83,6 +83,13 @@ function SearchPageContent() {
   };
 
   const handleZipSearch = () => {
+    // Validate zip code format (5 digits or 5+4)
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    if (filters.zipCode && !zipRegex.test(filters.zipCode.trim())) {
+      // For now, we'll just log the error and still perform search
+      // In a real app, you'd show a user-friendly error message
+      console.warn('Invalid zip code format. Please enter a 5-digit zip code.');
+    }
     // In a real app, you'd geocode the zip code to get city/state
     // For now, we'll just trigger a search
     performSearch();
@@ -93,14 +100,19 @@ function SearchPageContent() {
     let score = 0;
     const maxScore = 100;
 
-    // Location (10 points if ZIP is provided)
+    // Base score for all searches
+    score = 10;
+
+    // Location (20 points if ZIP is provided)
     if (filters.zipCode && filters.zipCode.trim()) {
-      score += 10;
+      score += 20;
+    } else {
+      score += 10; // Base location score even without zip
     }
 
-    // Modalities (20 points if any selected)
+    // Modalities (30 points if any selected)
     if (filters.preferredModalities && filters.preferredModalities.length > 0) {
-      score += 20;
+      score += 30;
     }
 
     // Focus areas (20 points if any selected)
@@ -108,23 +120,23 @@ function SearchPageContent() {
       score += 20;
     }
 
-    // Philosophies (15 points if any selected)
+    // Philosophies (10 points if any selected)
     if (filters.preferredPhilosophies && filters.preferredPhilosophies.length > 0) {
-      score += 15;
+      score += 10;
     }
 
-    // Business model (15 points if specified)
-    if (filters.preferredBusinessModel && filters.preferredBusinessModel !== 'any') {
-      score += 15;
+    // Business model (20 points if specified)
+    if (filters.preferredBusinessModel && filters.preferredBusinessModel !== '') {
+      score += 20;
     }
 
     // Insurance (10 points if specified)
-    if (filters.insuranceType && filters.insuranceType !== 'any') {
+    if (filters.insuranceType && filters.insuranceType !== '') {
       score += 10;
     }
 
     // Budget range (10 points if specified)
-    if (filters.budgetRange && filters.budgetRange !== 'any') {
+    if (filters.budgetRange && filters.budgetRange !== '') {
       score += 10;
     }
 
