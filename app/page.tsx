@@ -4,7 +4,6 @@ import { Footer } from './components/Footer';
 import { Container } from './components/Container';
 import { ChiropractorCard } from './components/ChiropractorCard';
 import { SearchSection } from './components/SearchSection';
-import { Testimonial } from './components/Testimonial';
 import { FeatureCard } from './components/FeatureCard';
 import { getChiropractors } from './lib/queries';
 
@@ -13,8 +12,8 @@ import { getChiropractors } from './lib/queries';
 
 
 export default async function Home() {
-  // Fetch chiropractors from database
-  const chiropractors = await getChiropractors(5);
+  // Fetch 10 most recently added chiropractors from database
+  const chiropractors = await getChiropractors(10);
   return (
     <Flex direction="column" style={{ minHeight: '100vh', background: '#fcf9f7' }}>
       <Header />
@@ -64,13 +63,16 @@ export default async function Home() {
           direction="column"
           gap="0"
           style={{
-            padding: '0px 24px',
+            paddingTop: '96px',
+            paddingBottom: '40px',
+            paddingLeft: '24px',
+            paddingRight: '24px',
           }}
           className="main-content"
         >
 
           {/* Features Section */}
-          <Flex direction="column" gap="0" style={{ padding: '0px 0' }}>
+          <Flex direction="column" gap="0" style={{ paddingTop: '96px', paddingBottom: '40px', paddingLeft: '0px', paddingRight: '0px' }}>
             <Heading
               size="8"
               align="center"
@@ -105,68 +107,77 @@ export default async function Home() {
               />
             </Flex>
           </Flex>
-
-          {/* Testimonial 2 */}
-          <Testimonial
-            quote="I can make my notes not only functional but visually pleasing — which really motivates me to stay organized."
-            author="Amity Sensei"
-            avatarInitial="A"
-            reverse
-          />
-
-          {/* Chiropractors Section */}
-          <Flex direction="column" gap="6" style={{ padding: '60px 0' }}>
-            <Heading
-              size="8"
-              align="center"
-              style={{
-                fontFamily: "'Untitled Serif', Georgia, serif",
-                fontSize: '54px',
-                lineHeight: '59.4px',
-                letterSpacing: '-1.08px',
-                color: '#030302',
-                fontWeight: 'normal',
-                marginBottom: '60px',
-              }}
-            >
-              Join top chiropractors like...
-            </Heading>
-            
-            {chiropractors.length > 0 ? (
-              <Flex
-                gap="4"
-                wrap="wrap"
-                justify="center"
-                style={{
-                  maxWidth: '1160px',
-                  margin: '0 auto',
-                }}
-              >
-                {chiropractors.map((chiropractor) => (
-                  <Box key={chiropractor.id} style={{ width: '240px' }}>
-                    <ChiropractorCard chiropractor={chiropractor} />
-                  </Box>
-                ))}
-              </Flex>
-            ) : (
-              <Flex direction="column" align="center" gap="3" py="6" style={{ gap: '240px', alignItems: 'center' }}>
-                <Text size="3" color="gray" align="center">
-                  No chiropractors found. Be the first to join!
-                </Text>
-              </Flex>
-            )}
-          </Flex>
-
-          {/* Testimonial 3 */}
-          <Testimonial
-            quote="Craft is way more functional than Apple or Google Notes while being much easier to use than Notion."
-            author="Leo"
-            avatarInitial="L"
-          />
         </Flex>
       </Container>
+
+      {/* Chiropractors Carousel Section - Full Width */}
+      <Flex direction="column" gap="6" style={{ padding: '60px 0', width: '100%' }}>
+        <Container>
+          <Heading
+            size="8"
+            align="center"
+            style={{
+              fontFamily: "'Untitled Serif', Georgia, serif",
+              fontSize: '54px',
+              lineHeight: '59.4px',
+              letterSpacing: '-1.08px',
+              color: '#030302',
+              fontWeight: 'normal',
+              marginBottom: '60px',
+            }}
+          >
+            Join top chiropractors like...
+          </Heading>
+        </Container>
+        
+        {chiropractors.length > 0 ? (
+          <Box
+            style={{
+              width: '100%',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              paddingBottom: '20px',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(3, 3, 2, 0.2) transparent',
+              msOverflowStyle: '-ms-autohiding-scrollbar',
+            }}
+          >
+            <Flex
+              gap="4"
+              style={{
+                paddingLeft: '24px',
+                paddingRight: '24px',
+                paddingBottom: '4px',
+                width: 'max-content',
+                minWidth: '100%',
+              }}
+            >
+              {chiropractors.map((chiropractor) => (
+                <Box 
+                  key={chiropractor.id} 
+                  style={{ 
+                    width: '240px',
+                    flexShrink: 0,
+                  }}
+                >
+                  <ChiropractorCard chiropractor={chiropractor} />
+                </Box>
+              ))}
+            </Flex>
+          </Box>
+        ) : (
+          <Container>
+            <Flex direction="column" align="center" gap="3" py="6" style={{ gap: '240px', alignItems: 'center' }}>
+              <Text size="3" color="gray" align="center">
+                No chiropractors found. Be the first to join!
+              </Text>
+            </Flex>
+          </Container>
+        )}
       </Flex>
       <Footer />
+      </Flex>
     </Flex>
   );
 }
