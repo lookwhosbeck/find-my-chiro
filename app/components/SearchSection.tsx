@@ -80,7 +80,7 @@ export function SearchSection() {
               textDecoration: 'none',
             }}
           >
-            <SliderIcon width="16" height="16" />
+            <SliderIcon width={16} height={16} />
             Advanced Search
           </Link>
         </Button>
