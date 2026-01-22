@@ -191,6 +191,7 @@ export default async function Home() {
           />
         </Flex>
       </Container>
+      </Flex>
       <Footer />
     </Flex>
   );
