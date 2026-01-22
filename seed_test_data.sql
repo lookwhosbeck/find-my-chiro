@@ -1,18 +1,22 @@
 -- Seed data for testing the chiropractic matching algorithm
 -- This matches your EXACT database schema
 --
--- To run multiple times safely, truncate first:
+-- SAFE TO RUN MULTIPLE TIMES: All INSERT statements use ON CONFLICT DO NOTHING
+-- to gracefully handle existing data without errors.
+--
+-- If you want to start fresh, truncate first:
 -- TRUNCATE TABLE chiropractor_philosophies, chiropractor_payment_models,
 --                chiropractor_focus_areas, chiropractor_modalities,
 --                patient_preferred_philosophies, patient_preferred_payment_models,
 --                patient_preferred_modalities, patient_preferred_focus_areas,
---                patients, chiropractors, profiles, auth.users CASCADE;
+--                patient_preferred_insurances, patients, chiropractors, 
+--                profiles, auth.users CASCADE;
 
 -- ========================================
 -- REFERENCE DATA (Lookup Tables)
 -- ========================================
 
--- Insert modalities (techniques)
+-- Insert modalities (techniques) - Skip if already exists
 INSERT INTO modalities (name) VALUES
 ('Gonstead'),
 ('Diversified'),
@@ -25,9 +29,10 @@ INSERT INTO modalities (name) VALUES
 ('Applied Kinesiology'),
 ('Logan Basic'),
 ('Palmer Package'),
-('Upper Cervical');
+('Upper Cervical')
+ON CONFLICT (name) DO NOTHING;
 
--- Insert focus areas (specialties)
+-- Insert focus areas (specialties) - Skip if already exists
 INSERT INTO focus_areas (name) VALUES
 ('Pediatrics'),
 ('Sports'),
@@ -40,15 +45,17 @@ INSERT INTO focus_areas (name) VALUES
 ('Rehabilitation'),
 ('Nutrition'),
 ('Stress Management'),
-('Posture Correction');
+('Posture Correction')
+ON CONFLICT (name) DO NOTHING;
 
--- Insert payment models
+-- Insert payment models - Skip if already exists
 INSERT INTO payment_models (name) VALUES
 ('Cash'),
 ('Insurance'),
-('Hybrid');
+('Hybrid')
+ON CONFLICT (name) DO NOTHING;
 
--- Insert philosophies
+-- Insert philosophies - Skip if already exists
 INSERT INTO philosophies (name) VALUES
 ('Evidence-Based'),
 ('Holistic'),
@@ -59,26 +66,29 @@ INSERT INTO philosophies (name) VALUES
 ('Holistic Wellness'),
 ('Structural Correction'),
 ('Functional Medicine'),
-('Integrative');
+('Integrative')
+ON CONFLICT (name) DO NOTHING;
 
--- Insert insurances
+-- Insert insurances - Skip if already exists
 INSERT INTO insurances (name) VALUES
 ('Blue Cross Blue Shield'),
 ('Aetna'),
 ('Cigna'),
 ('UnitedHealthcare'),
 ('Medicare'),
-('Medicaid');
+('Medicaid')
+ON CONFLICT (name) DO NOTHING;
 
--- Insert languages
+-- Insert languages - Skip if already exists
 INSERT INTO languages (name) VALUES
 ('English'),
 ('Spanish'),
 ('Mandarin'),
 ('French'),
-('Hindi');
+('Hindi')
+ON CONFLICT (name) DO NOTHING;
 
--- Insert chiropractic colleges
+-- Insert chiropractic colleges - Skip if already exists
 INSERT INTO chiropractic_colleges (name, state) VALUES
 ('Palmer College of Chiropractic', 'IA'),
 ('Cleveland Chiropractic College', 'CA'),
@@ -87,28 +97,33 @@ INSERT INTO chiropractic_colleges (name, state) VALUES
 ('Northwestern Health Sciences University', 'MN'),
 ('Texas Chiropractic College', 'TX'),
 ('Logan University', 'MO'),
-('Southern California University of Health Sciences', 'CA');
+('Southern California University of Health Sciences', 'CA')
+ON CONFLICT (name) DO NOTHING;
 
 -- ========================================
 -- ORGANIZATIONS (Clinics)
 -- ========================================
 
--- Insert organizations (matching your schema)
-INSERT INTO organizations (name, website, phone, city, state, zip_code, address_line_1) VALUES
-('Downtown Chiropractic Center', 'https://downtownchiro.com', '212-555-0101', 'New York', 'NY', '10001', '123 Main St'),
-('Suburban Wellness Clinic', 'https://suburbanwellness.com', '718-555-0202', 'Brooklyn', 'NY', '11201', '456 Oak Ave'),
-('Sports Medicine Specialists', 'https://sportsmedny.com', '347-555-0303', 'Queens', 'NY', '11301', '789 Pine St'),
-('Family Health Chiropractic', 'https://familyhealthchiro.com', '718-555-0404', 'Bronx', 'NY', '10401', '321 Elm St'),
-('Holistic Healing Center', 'https://holistichealing.com', '718-555-0505', 'Staten Island', 'NY', '10301', '654 Maple Ave'),
-('Precision Spine Care', 'https://precisionspine.com', '212-555-0606', 'Manhattan', 'NY', '10002', '987 Cedar St'),
-('Wellness First Chiropractic', 'https://wellnessfirst.com', '718-555-0707', 'Long Island City', 'NY', '11101', '147 Birch St'),
-('Advanced Chiropractic Solutions', 'https://advancedchiro.com', '718-555-0808', 'Brooklyn', 'NY', '11202', '258 Spruce Ave');
+-- Insert organizations (matching your schema) - Skip if already exists (by name)
+-- Note: Organizations table doesn't have unique constraint on name, so we'll check manually
+INSERT INTO organizations (name, website, phone, city, state, zip_code, address_line_1)
+SELECT * FROM (VALUES
+  ('Downtown Chiropractic Center', 'https://downtownchiro.com', '212-555-0101', 'New York', 'NY', '10001', '123 Main St'),
+  ('Suburban Wellness Clinic', 'https://suburbanwellness.com', '718-555-0202', 'Brooklyn', 'NY', '11201', '456 Oak Ave'),
+  ('Sports Medicine Specialists', 'https://sportsmedny.com', '347-555-0303', 'Queens', 'NY', '11301', '789 Pine St'),
+  ('Family Health Chiropractic', 'https://familyhealthchiro.com', '718-555-0404', 'Bronx', 'NY', '10401', '321 Elm St'),
+  ('Holistic Healing Center', 'https://holistichealing.com', '718-555-0505', 'Staten Island', 'NY', '10301', '654 Maple Ave'),
+  ('Precision Spine Care', 'https://precisionspine.com', '212-555-0606', 'Manhattan', 'NY', '10002', '987 Cedar St'),
+  ('Wellness First Chiropractic', 'https://wellnessfirst.com', '718-555-0707', 'Long Island City', 'NY', '11101', '147 Birch St'),
+  ('Advanced Chiropractic Solutions', 'https://advancedchiro.com', '718-555-0808', 'Brooklyn', 'NY', '11202', '258 Spruce Ave')
+) AS v(name, website, phone, city, state, zip_code, address_line_1)
+WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE organizations.name = v.name);
 
 -- ========================================
 -- CHIROPRACTOR PROFILES
 -- ========================================
 
--- Create chiropractor user profiles
+-- Create chiropractor user profiles - Skip if already exists
 INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at) VALUES
 ('550e8400-e29b-41d4-a716-446655440001', 'dr.sarah.johnson@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
 ('550e8400-e29b-41d4-a716-446655440002', 'dr.michael.chen@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
@@ -117,9 +132,10 @@ INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, creat
 ('550e8400-e29b-41d4-a716-446655440005', 'dr.lisa.patel@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
 ('550e8400-e29b-41d4-a716-446655440006', 'dr.mark.thompson@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
 ('550e8400-e29b-41d4-a716-446655440007', 'dr.jennifer.brown@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440008', 'dr.robert.davis@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW());
+('550e8400-e29b-41d4-a716-446655440008', 'dr.robert.davis@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
--- Insert basic profiles for chiropractors
+-- Insert basic profiles for chiropractors - Skip if already exists
 INSERT INTO profiles (id, first_name, last_name, email, role, created_at, updated_at) VALUES
 ('550e8400-e29b-41d4-a716-446655440001', 'Sarah', 'Johnson', 'dr.sarah.johnson@example.com', 'chiropractor', NOW(), NOW()),
 ('550e8400-e29b-41d4-a716-446655440002', 'Michael', 'Chen', 'dr.michael.chen@example.com', 'chiropractor', NOW(), NOW()),
@@ -128,9 +144,10 @@ INSERT INTO profiles (id, first_name, last_name, email, role, created_at, update
 ('550e8400-e29b-41d4-a716-446655440005', 'Lisa', 'Patel', 'dr.lisa.patel@example.com', 'chiropractor', NOW(), NOW()),
 ('550e8400-e29b-41d4-a716-446655440006', 'Mark', 'Thompson', 'dr.mark.thompson@example.com', 'chiropractor', NOW(), NOW()),
 ('550e8400-e29b-41d4-a716-446655440007', 'Jennifer', 'Brown', 'dr.jennifer.brown@example.com', 'chiropractor', NOW(), NOW()),
-('550e8400-e29b-41d4-a716-446655440008', 'Robert', 'Davis', 'dr.robert.davis@example.com', 'chiropractor', NOW(), NOW());
+('550e8400-e29b-41d4-a716-446655440008', 'Robert', 'Davis', 'dr.robert.davis@example.com', 'chiropractor', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
--- Insert detailed chiropractor profiles (matching your schema)
+-- Insert detailed chiropractor profiles (matching your schema) - Skip if already exists
 INSERT INTO chiropractors (id, bio, years_in_practice, chiropractic_college, graduation_year, license_number, organization_id, accepting_new_patients, updated_at, website_url, instagram_handle, college_id) VALUES
 ('550e8400-e29b-41d4-a716-446655440001', 'Dr. Sarah Johnson is a dedicated chiropractor with over 10 years of experience specializing in family wellness and pediatric care. She uses evidence-based techniques to help patients achieve optimal health.', 12, 'Palmer College of Chiropractic', 2012, 'DC-12345-NY', (SELECT id FROM organizations WHERE name = 'Downtown Chiropractic Center'), true, NOW(), 'https://downtownchiro.com/dr-sarah', '@drsarahchiro', (SELECT id FROM chiropractic_colleges WHERE name = 'Palmer College of Chiropractic')),
 
@@ -146,9 +163,10 @@ INSERT INTO chiropractors (id, bio, years_in_practice, chiropractic_college, gra
 
 ('550e8400-e29b-41d4-a716-446655440007', 'Dr. Jennifer Brown focuses on geriatric care and senior wellness. She helps older adults maintain mobility and independence through chiropractic care.', 13, 'Logan University', 2011, 'DC-78901-NY', (SELECT id FROM organizations WHERE name = 'Wellness First Chiropractic'), true, NOW(), 'https://wellnessfirst.com/dr-jennifer', '@drjenniferbrown', (SELECT id FROM chiropractic_colleges WHERE name = 'Logan University')),
 
-('550e8400-e29b-41d4-a716-446655440008', 'Dr. Robert Davis is a sports medicine specialist working with athletes of all levels. He combines chiropractic care with rehabilitation exercises for optimal recovery.', 11, 'Southern California University of Health Sciences', 2013, 'DC-89012-NY', (SELECT id FROM organizations WHERE name = 'Advanced Chiropractic Solutions'), true, NOW(), 'https://advancedchiro.com/dr-robert', '@drrobertdavis', (SELECT id FROM chiropractic_colleges WHERE name = 'Southern California University of Health Sciences'));
+('550e8400-e29b-41d4-a716-446655440008', 'Dr. Robert Davis is a sports medicine specialist working with athletes of all levels. He combines chiropractic care with rehabilitation exercises for optimal recovery.', 11, 'Southern California University of Health Sciences', 2013, 'DC-89012-NY', (SELECT id FROM organizations WHERE name = 'Advanced Chiropractic Solutions'), true, NOW(), 'https://advancedchiro.com/dr-robert', '@drrobertdavis', (SELECT id FROM chiropractic_colleges WHERE name = 'Southern California University of Health Sciences'))
+ON CONFLICT (id) DO NOTHING;
 
--- Assign modalities to chiropractors
+-- Assign modalities to chiropractors - Skip if already exists
 INSERT INTO chiropractor_modalities (chiropractor_id, modality_id) VALUES
 -- Dr. Sarah Johnson - Evidence-based family practice
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440001'), (SELECT id FROM modalities WHERE name = 'Gonstead')),
@@ -188,9 +206,10 @@ INSERT INTO chiropractor_modalities (chiropractor_id, modality_id) VALUES
 -- Dr. Robert Davis - Sports medicine
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM modalities WHERE name = 'Diversified')),
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM modalities WHERE name = 'Thompson')),
-((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM modalities WHERE name = 'Applied Kinesiology'));
+((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM modalities WHERE name = 'Applied Kinesiology'))
+ON CONFLICT (chiropractor_id, modality_id) DO NOTHING;
 
--- Assign focus areas to chiropractors
+-- Assign focus areas to chiropractors - Skip if already exists
 INSERT INTO chiropractor_focus_areas (chiropractor_id, focus_area_id) VALUES
 -- Dr. Sarah Johnson - Family/Pediatrics
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440001'), (SELECT id FROM focus_areas WHERE name = 'Pediatrics')),
@@ -230,9 +249,10 @@ INSERT INTO chiropractor_focus_areas (chiropractor_id, focus_area_id) VALUES
 -- Dr. Robert Davis - Sports
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM focus_areas WHERE name = 'Sports')),
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM focus_areas WHERE name = 'Orthopedic')),
-((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM focus_areas WHERE name = 'Rehabilitation'));
+((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM focus_areas WHERE name = 'Rehabilitation'))
+ON CONFLICT (chiropractor_id, focus_area_id) DO NOTHING;
 
--- Assign payment models to chiropractors
+-- Assign payment models to chiropractors - Skip if already exists
 INSERT INTO chiropractor_payment_models (chiropractor_id, payment_model_id) VALUES
 -- Most chiropractors accept multiple payment types
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440001'), (SELECT id FROM payment_models WHERE name = 'Cash')),
@@ -248,9 +268,10 @@ INSERT INTO chiropractor_payment_models (chiropractor_id, payment_model_id) VALU
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440006'), (SELECT id FROM payment_models WHERE name = 'Insurance')),
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440007'), (SELECT id FROM payment_models WHERE name = 'Cash')),
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440007'), (SELECT id FROM payment_models WHERE name = 'Insurance')),
-((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM payment_models WHERE name = 'Hybrid'));
+((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM payment_models WHERE name = 'Hybrid'))
+ON CONFLICT (chiropractor_id, payment_model_id) DO NOTHING;
 
--- Assign philosophies to chiropractors
+-- Assign philosophies to chiropractors - Skip if already exists
 INSERT INTO chiropractor_philosophies (chiropractor_id, philosophy_id) VALUES
 -- Dr. Sarah Johnson - Evidence-Based
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440001'), (SELECT id FROM philosophies WHERE name = 'Evidence-Based')),
@@ -282,13 +303,14 @@ INSERT INTO chiropractor_philosophies (chiropractor_id, philosophy_id) VALUES
 
 -- Dr. Robert Davis - Sports Medicine
 ((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM philosophies WHERE name = 'Sports Medicine')),
-((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM philosophies WHERE name = 'Evidence-Based'));
+((SELECT id FROM chiropractors WHERE id = '550e8400-e29b-41d4-a716-446655440008'), (SELECT id FROM philosophies WHERE name = 'Evidence-Based'))
+ON CONFLICT (chiropractor_id, philosophy_id) DO NOTHING;
 
 -- ========================================
 -- PATIENT PROFILES
 -- ========================================
 
--- Create patient user profiles
+-- Create patient user profiles - Skip if already exists
 INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at) VALUES
 ('660e8400-e29b-41d4-a716-446655440011', 'john.doe@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
 ('660e8400-e29b-41d4-a716-446655440012', 'jane.smith@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
@@ -297,9 +319,10 @@ INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, creat
 ('660e8400-e29b-41d4-a716-446655440015', 'alex.brown@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
 ('660e8400-e29b-41d4-a716-446655440016', 'emma.davis@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
 ('660e8400-e29b-41d4-a716-446655440017', 'chris.miller@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW()),
-('660e8400-e29b-41d4-a716-446655440018', 'lisa.garcia@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW());
+('660e8400-e29b-41d4-a716-446655440018', 'lisa.garcia@example.com', '$2a$10$dummy.hash.for.testing', NOW(), NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
--- Insert basic profiles for patients
+-- Insert basic profiles for patients - Skip if already exists
 INSERT INTO profiles (id, first_name, last_name, email, role, created_at, updated_at) VALUES
 ('660e8400-e29b-41d4-a716-446655440011', 'John', 'Doe', 'john.doe@example.com', 'patient', NOW(), NOW()),
 ('660e8400-e29b-41d4-a716-446655440012', 'Jane', 'Smith', 'jane.smith@example.com', 'patient', NOW(), NOW()),
@@ -308,9 +331,10 @@ INSERT INTO profiles (id, first_name, last_name, email, role, created_at, update
 ('660e8400-e29b-41d4-a716-446655440015', 'Alex', 'Brown', 'alex.brown@example.com', 'patient', NOW(), NOW()),
 ('660e8400-e29b-41d4-a716-446655440016', 'Emma', 'Davis', 'emma.davis@example.com', 'patient', NOW(), NOW()),
 ('660e8400-e29b-41d4-a716-446655440017', 'Chris', 'Miller', 'chris.miller@example.com', 'patient', NOW(), NOW()),
-('660e8400-e29b-41d4-a716-446655440018', 'Lisa', 'Garcia', 'lisa.garcia@example.com', 'patient', NOW(), NOW());
+('660e8400-e29b-41d4-a716-446655440018', 'Lisa', 'Garcia', 'lisa.garcia@example.com', 'patient', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
--- Insert detailed patient profiles (matching your schema - no arrays, use junction tables)
+-- Insert detailed patient profiles (matching your schema - no arrays, use junction tables) - Skip if already exists
 INSERT INTO patients (id, phone, date_of_birth, emergency_contact, emergency_phone, city, state, preferred_zip_code, search_radius, preferred_days, preferred_times, updated_at) VALUES
 ('660e8400-e29b-41d4-a716-446655440011', '555-0101', '1985-03-15', 'Jane Doe', '555-0102', 'Manhattan', 'NY', '10001', 15, ARRAY['Monday', 'Wednesday', 'Friday'], ARRAY['Morning', 'Afternoon'], NOW()),
 
@@ -326,7 +350,8 @@ INSERT INTO patients (id, phone, date_of_birth, emergency_contact, emergency_pho
 
 ('660e8400-e29b-41d4-a716-446655440017', '555-0701', '1988-12-05', 'Rachel Miller', '555-0702', 'Long Island City', 'NY', '11101', 18, ARRAY['Tuesday', 'Thursday', 'Saturday'], ARRAY['Afternoon'], NOW()),
 
-('660e8400-e29b-41d4-a716-446655440018', '555-0801', '1992-06-25', 'Carlos Garcia', '555-0802', 'Manhattan', 'NY', '10002', 22, ARRAY['Monday', 'Wednesday', 'Friday'], ARRAY['Evening'], NOW());
+('660e8400-e29b-41d4-a716-446655440018', '555-0801', '1992-06-25', 'Carlos Garcia', '555-0802', 'Manhattan', 'NY', '10002', 22, ARRAY['Monday', 'Wednesday', 'Friday'], ARRAY['Evening'], NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- ========================================
 -- VERIFICATION QUERIES

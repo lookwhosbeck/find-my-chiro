@@ -23,7 +23,7 @@ export default function RootLayout({
             radius: Border radius for buttons/cards ("small" | "medium" | "large" | "full")
         */}
         <Theme 
-          accentColor="mint" 
+          accentColor="blue" 
           grayColor="sand" 
           radius="full" 
           scaling="100%"

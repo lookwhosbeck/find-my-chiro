@@ -40,46 +40,43 @@ export function Header() {
   return (
     <header
       style={{
-        borderBottom: '1px solid var(--gray-4)',
-        background: 'var(--gray-1)',
-        position: 'relative',
+        position: 'absolute',
+        top: '32px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '748px',
+        zIndex: 1000,
       }}
     >
-      <Container>
+      <Box
+        style={{
+          backdropFilter: 'blur(2px)',
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.8) 100%)',
+          borderRadius: '26px',
+          boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
+          padding: '8px 16px 8px 8px',
+        }}
+      >
         <Flex
           align="center"
           justify="between"
-          py="4"
+          style={{ height: '52px' }}
         >
           {/* Logo */}
-          <Flex align="center" gap="2">
-            <Box
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Text
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: 'var(--accent-9)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '18px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#030302',
+                letterSpacing: '-0.32px',
+                fontFamily: "'Untitled Sans', sans-serif",
               }}
             >
-            </Box>
-            <Link href="/" style={{ textDecoration: 'none' }}>
-              <span
-                style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  color: 'var(--gray-12)',
-                }}
-              >
-                Find My Chiro
-              </span>
-            </Link>
-          </Flex>
+              Find My Chiro
+            </Text>
+          </Link>
 
           {/* Desktop Navigation */}
           <Flex
@@ -87,13 +84,36 @@ export function Header() {
             gap="4"
             className={styles.desktopNav}
           >
-            <Link href="/" style={{ textDecoration: 'none', color: 'var(--gray-11)' }}>
-              <Text size="3">Find Care</Text>
+            <Link href="/" style={{ textDecoration: 'none' }}>
+              <Text
+                size="3"
+                style={{
+                  color: '#030302',
+                  fontSize: '16px',
+                  letterSpacing: '-0.32px',
+                  fontFamily: "'Untitled Sans', sans-serif",
+                }}
+              >
+                Find Care
+              </Text>
             </Link>
-            <Link href="/about" style={{ textDecoration: 'none', color: 'var(--gray-11)' }}>
-              <Text size="3">About</Text>
+            <Link href="/about" style={{ textDecoration: 'none' }}>
+              <Text
+                size="3"
+                style={{
+                  color: '#030302',
+                  fontSize: '16px',
+                  letterSpacing: '-0.32px',
+                  fontFamily: "'Untitled Sans', sans-serif",
+                }}
+              >
+                About
+              </Text>
             </Link>
+          </Flex>
 
+          {/* User Actions */}
+          <Flex align="center" gap="3">
             {user ? (
               // Logged in user
               <Flex align="center" gap="2">
@@ -106,12 +126,32 @@ export function Header() {
               </Flex>
             ) : (
               // Not logged in
-              <Flex align="center" gap="2">
-                <Button size="2" variant="ghost" asChild>
+              <Flex align="center" gap="3">
+                <Link
+                  href="/signin"
+                  style={{
+                    textDecoration: 'none',
+                    color: '#030302',
+                    fontSize: '16px',
+                    letterSpacing: '-0.32px',
+                    fontFamily: "'Untitled Sans', sans-serif",
+                  }}
+                >
+                  Log in
+                </Link>
+                <Button
+                  size="2"
+                  variant="solid"
+                  asChild
+                  style={{
+                    background: '#030302',
+                    color: 'white',
+                    borderRadius: '9999px',
+                    padding: '6px 14px',
+                    boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)',
+                  }}
+                >
                   <Link href="/signup">Join Network</Link>
-                </Button>
-                <Button size="2" variant="outline" asChild>
-                  <Link href="/signin">Sign In</Link>
                 </Button>
               </Flex>
             )}
