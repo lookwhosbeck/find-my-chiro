@@ -147,7 +147,7 @@ function SearchPageContent() {
     <Flex direction="column" style={{ minHeight: '100vh' }}>
       <Header />
 
-      <Box py="6" style={{ flex: 1 }}>
+      <Box py="6" style={{ flex: 1, paddingTop: '140px' }}>
         <Container>
           <Flex direction="column" gap="6">
             {/* Header */}
