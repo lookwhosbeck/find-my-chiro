@@ -40,37 +40,40 @@ export function Header() {
     <header
       style={{
         position: 'absolute',
-        top: '32px',
+        top: 'var(--space-6)',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: '748px',
         zIndex: 1000,
+        borderRadius: '999px',
+        overflow: 'hidden',
       }}
     >
       <Box
+        className="header-container"
         style={{
-          backdropFilter: 'blur(2px)',
+          backdropFilter: 'var(--blur-md)',
           background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.8) 100%)',
-          borderRadius: '40px',
-          boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
-          padding: '8px 32px 8px 32px',
+          boxShadow: 'var(--shadow-md)',
+          padding: 'var(--space-2) 8px var(--space-2) var(--space-6)',
+          borderRadius: '999px',
         }}
       >
         <Flex
           align="center"
           justify="between"
-          style={{ height: '52px' }}
+          style={{ height: 'var(--touch-target-min)', minHeight: 'var(--touch-target-min)' }}
         >
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <Text
               style={{
-                fontSize: '16px',
+                fontSize: 'var(--text-base)',
                 fontWeight: '600',
-                color: '#030302',
-                letterSpacing: '-0.32px',
-                fontFamily: "'Untitled Sans', sans-serif",
+                color: 'var(--color-text-primary)',
+                letterSpacing: 'var(--tracking-normal)',
+                fontFamily: 'var(--font-body)',
               }}
             >
               Find My Chiro
@@ -87,10 +90,10 @@ export function Header() {
               <Text
                 size="3"
                 style={{
-                  color: '#030302',
-                  fontSize: '16px',
-                  letterSpacing: '-0.32px',
-                  fontFamily: "'Untitled Sans', sans-serif",
+                  color: 'var(--color-text-primary)',
+                  fontSize: 'var(--text-base)',
+                  letterSpacing: 'var(--tracking-normal)',
+                  fontFamily: 'var(--font-body)',
                 }}
               >
                 Find Care
@@ -100,10 +103,10 @@ export function Header() {
               <Text
                 size="3"
                 style={{
-                  color: '#030302',
-                  fontSize: '16px',
-                  letterSpacing: '-0.32px',
-                  fontFamily: "'Untitled Sans', sans-serif",
+                  color: 'var(--color-text-primary)',
+                  fontSize: 'var(--text-base)',
+                  letterSpacing: 'var(--tracking-normal)',
+                  fontFamily: 'var(--font-body)',
                 }}
               >
                 About
@@ -130,10 +133,10 @@ export function Header() {
                   href="/signin"
                   style={{
                     textDecoration: 'none',
-                    color: '#030302',
-                    fontSize: '16px',
-                    letterSpacing: '-0.32px',
-                    fontFamily: "'Untitled Sans', sans-serif",
+                    color: 'var(--color-text-primary)',
+                    fontSize: 'var(--text-base)',
+                    letterSpacing: 'var(--tracking-normal)',
+                    fontFamily: 'var(--font-body)',
                   }}
                 >
                   Log in
@@ -142,12 +145,14 @@ export function Header() {
                   size="2"
                   variant="solid"
                   asChild
+                  className="join-network-button"
                   style={{
-                    background: '#030302',
-                    color: 'white',
-                    borderRadius: '9999px',
-                    padding: '6px 14px',
-                    boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)',
+                    background: 'var(--color-text-primary)',
+                    color: 'var(--color-surface)',
+                    padding: 'var(--space-2) var(--space-4)',
+                    boxShadow: 'var(--shadow-sm)',
+                    minHeight: 'var(--touch-target-min)',
+                    minWidth: 'var(--touch-target-min)',
                   }}
                 >
                   <Link href="/signup">Join Network</Link>

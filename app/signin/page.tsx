@@ -67,7 +67,7 @@ export default function SignInPage() {
 
   if (loading) {
     return (
-      <Container>
+      <Container className="page-with-header">
         <Flex justify="center" align="center" style={{ minHeight: '50vh' }}>
           <Text>Loading...</Text>
         </Flex>
@@ -76,7 +76,7 @@ export default function SignInPage() {
   }
 
   return (
-    <Container>
+    <Container className="page-with-header">
       <Flex direction="column" gap="6" py="9">
         <Flex justify="center">
           <Heading size="6">Sign In to Your Account</Heading>
@@ -108,7 +108,7 @@ export default function SignInPage() {
               </Box>
 
               {error && (
-                <Box style={{ background: 'var(--red-3)', padding: '12px', borderRadius: '6px', border: '1px solid var(--red-6)' }}>
+                <Box style={{ background: 'var(--red-3)', padding: 'var(--space-3)', border: '1px solid var(--red-6)' }}>
                   <Text size="2" color="red">{error}</Text>
                 </Box>
               )}

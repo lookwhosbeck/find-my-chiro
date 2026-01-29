@@ -185,7 +185,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <Flex direction="column" style={{ minHeight: '100vh' }}>
+    <Flex direction="column" style={{ minHeight: '100vh' }} className="page-with-header">
       <Header />
       
       <Box py="9" style={{ flex: 1 }}>

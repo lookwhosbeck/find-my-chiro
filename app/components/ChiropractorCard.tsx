@@ -21,10 +21,10 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
 
   return (
     <Box
+      className="chiropractor-card"
       style={{
-        borderRadius: '24px',
-        backgroundColor: '#fcf9f7',
-        boxShadow: '0px 50px 40px 0px rgba(0,0,0,0.01), 0px 50px 40px 0px rgba(0,0,0,0.02), 0px 20px 40px 0px rgba(0,0,0,0.05), 0px 3px 10px 0px rgba(0,0,0,0.08)',
+        backgroundColor: 'var(--color-background)',
+        boxShadow: 'var(--shadow-lg)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -33,10 +33,10 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
     >
       {/* Top Section - Profile Image with Background */}
       <Box
+        className="chiropractor-card-header"
         style={{
           height: '300px',
           position: 'relative',
-          borderRadius: '24px 24px 0 0',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
@@ -46,11 +46,11 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
       >
         {/* Background Gradient Overlay - matching hero gradient style */}
         <Box
+          className="chiropractor-card-gradient"
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(180deg, #9ed4ef 0%, #e0f0f5 50%, rgba(253, 233, 155, 0.6) 100%)',
-            borderRadius: '24px 24px 0 0',
+            background: 'linear-gradient(180deg, var(--color-bg-gradient-start) 0%, var(--color-bg-gradient-end) 50%, rgba(253, 233, 155, 0.6) 100%)',
             opacity: 0.7,
           }}
         />
@@ -61,7 +61,6 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
             position: 'absolute',
             inset: '5% 0 0 0',
             background: 'linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 100%)',
-            borderRadius: '24px 24px 0 0',
             opacity: 0.3,
             pointerEvents: 'none',
           }}
@@ -79,7 +78,7 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
                 width: '140px',
                 height: '140px',
                 border: '4px solid rgba(255, 255, 255, 0.9)',
-                boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)',
+                boxShadow: 'var(--shadow-md)',
               }}
             />
           ) : (
@@ -91,8 +90,8 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
                 width: '140px',
                 height: '140px',
                 border: '4px solid rgba(255, 255, 255, 0.9)',
-                backgroundColor: '#fde99b',
-                boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)',
+                backgroundColor: 'var(--color-yellow-accent)',
+                boxShadow: 'var(--shadow-md)',
               }}
             />
           )}
@@ -104,22 +103,22 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
         direction="column"
         gap="6"
         style={{
-          padding: '24px 20px',
+          padding: 'var(--space-5) var(--space-4)',
           alignItems: 'center',
           textAlign: 'center',
-          backgroundColor: '#fcf9f7',
+          backgroundColor: 'var(--color-background)',
         }}
       >
         {/* Name and Title */}
         <Flex direction="column" gap="0" align="center">
           <Text
             style={{
-              fontFamily: "'Untitled Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-              fontSize: '16px',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-base)',
               fontWeight: 500,
-              lineHeight: '22.4px',
-              letterSpacing: '-0.32px',
-              color: '#030302',
+              lineHeight: 'var(--leading-normal)',
+              letterSpacing: 'var(--tracking-normal)',
+              color: 'var(--color-text-primary)',
               textTransform: 'uppercase',
               marginBottom: '0',
             }}
@@ -129,14 +128,14 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
           {chiropractor.clinicName && (
             <Text
               style={{
-                fontFamily: "'Untitled Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                fontSize: '16px',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-base)',
                 fontWeight: 500,
-                lineHeight: '22.4px',
-                letterSpacing: '-0.32px',
-                color: '#030302',
+                lineHeight: 'var(--leading-normal)',
+                letterSpacing: 'var(--tracking-normal)',
+                color: 'var(--color-text-primary)',
                 textTransform: 'uppercase',
-                marginTop: '2px',
+                marginTop: 'var(--space-1)',
               }}
             >
               {chiropractor.clinicName.toUpperCase()}
@@ -148,12 +147,12 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
         {description && (
           <Text
             style={{
-              fontFamily: "'Untitled Serif', Georgia, serif",
-              fontSize: '24px',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-xl)',
               fontStyle: 'italic',
-              lineHeight: '28.8px',
-              letterSpacing: '-0.72px',
-              color: '#030302',
+              lineHeight: 'var(--leading-snug)',
+              letterSpacing: 'var(--tracking-tight)',
+              color: 'var(--color-text-primary)',
               marginTop: '0',
             }}
           >
@@ -165,14 +164,14 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
         {(chiropractor.matchScore !== undefined || 
           (chiropractor.modality && !descriptionParts.includes(chiropractor.modality)) ||
           (chiropractor.philosophy && !descriptionParts.includes(chiropractor.philosophy))) && (
-          <Flex direction="column" gap="2" style={{ width: '100%', marginTop: '4px' }}>
+          <Flex direction="column" gap="2" style={{ width: '100%', marginTop: 'var(--space-1)' }}>
             {chiropractor.matchScore !== undefined && (
               <Text
                 size="2"
                 style={{
-                  fontFamily: "'Untitled Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  fontFamily: 'var(--font-body)',
                   fontWeight: 500,
-                  color: '#030302',
+                  color: 'var(--color-text-primary)',
                 }}
               >
                 Match: {Math.round(chiropractor.matchScore)}%

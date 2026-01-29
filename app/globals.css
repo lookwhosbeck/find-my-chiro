@@ -10,47 +10,167 @@ body {
   overflow-x: hidden;
 }
 
-body {
-  color: #030302;
-  background: #fcf9f7;
-  font-family: 'Untitled Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
+/* ========================================
+   Apple-Inspired Design System Tokens
+   ======================================== */
 
-/* Custom Fonts - Using system fonts as fallback since Untitled fonts may not be available */
 :root {
-  /* Design Colors */
-  --color-primary: #030302;
-  --color-bg-light: #fcf9f7;
+  /* Typography - SF Pro system stack for body, Untitled Serif for display */
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --font-display: "Untitled Serif", Georgia, serif;
+  
+  /* Type scale based on Apple's SF Pro sizing */
+  --text-xs: 11px;     /* Caption, fine print */
+  --text-sm: 13px;     /* Secondary text */
+  --text-base: 17px;   /* Body text (Apple's standard) */
+  --text-lg: 20px;     /* Emphasized body */
+  --text-xl: 24px;     /* Subheading */
+  --text-2xl: 28px;    /* Heading */
+  --text-3xl: 34px;    /* Large heading */
+  --text-4xl: 48px;    /* Display */
+  --text-5xl: 64px;    /* Hero */
+  
+  /* Line heights */
+  --leading-tight: 1.2;
+  --leading-snug: 1.375;
+  --leading-normal: 1.47;   /* Apple's standard body line height */
+  --leading-relaxed: 1.625;
+  
+  /* Letter spacing */
+  --tracking-tight: -0.022em;   /* Apple's standard for large text */
+  --tracking-normal: -0.01em;
+  --tracking-wide: 0.01em;
+  
+  /* Spacing scale (8pt grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+  
+  /* Semantic colors - Apple's refined palette */
+  --color-text-primary: #1d1d1f;      /* Apple's near-black */
+  --color-text-secondary: #86868b;    /* Apple's gray */
+  --color-text-tertiary: #aeaeb2;     /* Lighter gray */
+  --color-background: #fbfbfd;        /* Apple's off-white */
+  --color-surface: #ffffff;           /* Pure white surfaces */
+  --color-border: rgba(0, 0, 0, 0.08); /* Subtle borders */
+  --color-accent: #0071e3;            /* Apple blue */
+  --color-accent-hover: #0077ed;
+  
+  /* Legacy brand colors (keep for gradients) */
   --color-bg-gradient-start: #9ed4ef;
   --color-bg-gradient-end: #e0f0f5;
   --color-yellow-accent: #fde99b;
   
-  /* Container responsive padding */
-  --container-padding-mobile: var(--space-4);  /* 16px */
-  --container-padding-tablet: var(--space-5);  /* 24px */
-  --container-padding-desktop: var(--space-6); /* 32px */
+  /* Shadows - Apple's subtle depth */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.1);
   
-  /* Container max-width */
+  /* Blur effects */
+  --blur-sm: blur(8px);
+  --blur-md: blur(20px);
+  --blur-lg: blur(40px);
+  
+  /* Border radius */
+  --radius-xs: 6px;     /* Buttons, inputs */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+  
+  /* Container settings */
+  --container-padding-mobile: var(--space-4);
+  --container-padding-tablet: var(--space-5);
+  --container-padding-desktop: var(--space-6);
   --container-max-width: 1360px;
   
-  /* Grid columns */
+  /* Grid settings */
   --grid-columns: 12;
+  --grid-gap-sm: var(--space-3);
+  --grid-gap-md: var(--space-4);
+  --grid-gap-lg: var(--space-5);
   
-  /* Grid gap spacing */
-  --grid-gap-sm: var(--space-3);  /* 12px */
-  --grid-gap-md: var(--space-4);  /* 16px */
-  --grid-gap-lg: var(--space-5);  /* 24px */
+  /* Touch targets (Apple HIG minimum) */
+  --touch-target-min: 44px;
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+
+body {
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Untitled Serif', Georgia, serif;
-  color: #030302;
+  font-family: var(--font-display);
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 400;
+}
+
+h1 {
+  font-size: var(--text-5xl);
+}
+
+h2 {
+  font-size: var(--text-4xl);
+}
+
+h3 {
+  font-size: var(--text-3xl);
+}
+
+h4 {
+  font-size: var(--text-2xl);
+}
+
+h5 {
+  font-size: var(--text-xl);
+}
+
+h6 {
+  font-size: var(--text-lg);
+}
+
+p {
+  margin: 0;
+}
+
+/* Links */
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
 }
 
 /* Hero gradient background */
 .hero-gradient {
-  background: linear-gradient(180deg, #9ed4ef 0%, #e0f0f5 100%);
+  background: linear-gradient(180deg, var(--color-bg-gradient-start) 0%, var(--color-bg-gradient-end) 100%);
   position: relative;
 }
 
@@ -63,8 +183,13 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
 }
 
-/* Horizontal scrolling carousel scrollbar styling */
+.hero-section {
+  border-radius: var(--radius-xl) !important;
+}
+
+/* Scrollbar styling (minimal, Apple-style) */
 ::-webkit-scrollbar {
+  width: 8px;
   height: 8px;
 }
 
@@ -73,10 +198,200 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(3, 3, 2, 0.2);
-  border-radius: 4px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(3, 3, 2, 0.3);
+  background: var(--color-text-tertiary);
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.surface {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.glass {
+  backdrop-filter: var(--blur-md);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* ========================================
+   Radix UI Overrides - Apple Consistency
+   ======================================== */
+
+/* Force all buttons to use 6px corners */
+button,
+.rt-Button,
+.rt-BaseButton,
+.rt-reset.rt-Button,
+[class*="Button"] {
+  border-radius: var(--radius-xs) !important;
+}
+
+/* Force all text inputs to use 6px corners */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+.rt-TextFieldInput,
+.rt-TextFieldRoot,
+.rt-TextFieldSlot,
+input.rt-reset,
+[class*="TextField"],
+textarea,
+.rt-TextArea,
+.rt-TextAreaRoot {
+  border-radius: var(--radius-xs) !important;
+}
+
+/* Target Radix Select components */
+.rt-SelectTrigger,
+.rt-Select button,
+[class*="Select"] button {
+  border-radius: var(--radius-xs) !important;
+}
+
+/* Checkboxes and Radio buttons */
+.rt-Checkbox,
+.rt-RadioGroup input,
+[type="checkbox"],
+[type="radio"] {
+  border-radius: var(--radius-xs) !important;
+}
+
+/* Badges and Pills */
+.rt-Badge {
+  border-radius: var(--radius-xs) !important;
+}
+
+/* Cards should have consistent rounded corners */
+.rt-Card {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* Ensure nested elements with borders/backgrounds clip properly */
+.rt-Card > * {
+  position: relative;
+}
+
+/* Nested boxes with borders should have proper border-radius */
+.rt-Card [style*="border"]:not(button):not(input) {
+  border-radius: var(--radius-md) !important;
+}
+
+/* Alert boxes within cards */
+.rt-Card .rt-Callout,
+.rt-Card [class*="alert"],
+.rt-Card [style*="--red-"],
+.rt-Card [style*="--green-"],
+.rt-Card [style*="--yellow-"] {
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+}
+
+/* Tabs within cards need proper spacing and border handling */
+.rt-Card .rt-TabsList {
+  margin-bottom: var(--space-4);
+}
+
+/* Nested cards should have slightly smaller radius */
+.rt-Card .rt-Card {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Form elements within cards should have clean borders */
+.rt-Card input,
+.rt-Card .rt-TextFieldRoot,
+.rt-Card .rt-SelectTrigger {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+/* Card hover state - subtle Apple-style interaction */
+.rt-Card:hover {
+  box-shadow: var(--shadow-md) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Override any inline styles that might conflict */
+[style*="border-radius"] button,
+[style*="borderRadius"] button {
+  border-radius: var(--radius-xs) !important;
+}
+
+/* Special cases for search bar with split corners */
+.search-input-left,
+.search-input-left input {
+  border-radius: var(--radius-xs) 0 0 var(--radius-xs) !important;
+}
+
+button.search-button-right,
+.search-button-right.rt-Button {
+  border-radius: 0 6px 6px 0 !important;
+}
+
+/* Header container - keep fully rounded for navigation bar */
+.header-container {
+  border-radius: var(--radius-full) !important;
+}
+
+/* Header navigation buttons should be fully rounded */
+header button,
+header .rt-Button,
+.header-container button,
+.header-container .rt-Button {
+  border-radius: var(--radius-full) !important;
+}
+
+/* Join Network button - specific rounded style */
+.join-network-button,
+.join-network-button.rt-Button,
+header .join-network-button,
+.header-container .join-network-button {
+  border-radius: 154px !important;
+}
+
+/* Footer container */
+.footer-container {
+  border-radius: var(--radius-xl) !important;
+}
+
+/* Chiropractor card */
+.chiropractor-card {
+  border-radius: var(--radius-xl) !important;
+}
+
+.chiropractor-card-header,
+.chiropractor-card-gradient {
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+}
+
+/* ========================================
+   Layout Utilities
+   ======================================== */
+
+/* Spacing for pages with absolute-positioned header */
+.page-with-header {
+  padding-top: calc(var(--space-6) + 68px); /* 32px top position + 68px header height */
 }

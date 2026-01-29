@@ -13,19 +13,19 @@ export function FeatureCard({ title, description }: FeatureCardProps) {
       align="center"
       style={{
         flex: 1,
-        padding: '8px',
+        padding: 'var(--space-2)',
         minHeight: '214px',
       }}
     >
-      <Flex direction="column" gap="2" align="center" style={{ flex: 1, paddingBottom: '16px' }}>
+      <Flex direction="column" gap="2" align="center" style={{ flex: 1, paddingBottom: 'var(--space-4)' }}>
         <Text
           size="4"
           weight="medium"
           style={{
-            fontSize: '18px',
-            lineHeight: '25.2px',
-            letterSpacing: '-0.36px',
-            color: '#030302',
+            fontSize: 'var(--text-lg)',
+            lineHeight: 'var(--leading-normal)',
+            letterSpacing: 'var(--tracking-normal)',
+            color: 'var(--color-text-primary)',
             textAlign: 'center',
           }}
         >
@@ -34,10 +34,10 @@ export function FeatureCard({ title, description }: FeatureCardProps) {
         <Text
           size="3"
           style={{
-            fontSize: '16px',
-            lineHeight: '22.4px',
-            letterSpacing: '-0.32px',
-            color: '#030302',
+            fontSize: 'var(--text-base)',
+            lineHeight: 'var(--leading-normal)',
+            letterSpacing: 'var(--tracking-normal)',
+            color: 'var(--color-text-primary)',
             textAlign: 'center',
           }}
         >

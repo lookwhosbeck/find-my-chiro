@@ -17,15 +17,16 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {/* Global Design System Settings 
-            appearance: "light" | "dark" | "inherit"
-            accentColor: The main brand color (e.g., "crimson", "indigo", "teal")
-            grayColor: The shade of gray (e.g., "slate", "sand", "mauve")
-            radius: Border radius for buttons/cards ("small" | "medium" | "large" | "full")
+            Configured to align with Apple-inspired design tokens
+            - accentColor: "blue" matches Apple's primary blue
+            - grayColor: "gray" provides neutral foundation
+            - radius: "large" for generous, Apple-style rounded corners
+            - scaling: "100%" maintains standard sizing
         */}
         <Theme 
           accentColor="blue" 
-          grayColor="sand" 
-          radius="full" 
+          grayColor="gray" 
+          radius="large" 
           scaling="100%"
         >
           {children}

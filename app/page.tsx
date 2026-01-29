@@ -15,36 +15,35 @@ export default async function Home() {
   // Fetch 10 most recently added chiropractors from database
   const chiropractors = await getChiropractors(10);
   return (
-    <Flex direction="column" style={{ minHeight: '100vh', background: '#fcf9f7' }}>
+    <Flex direction="column" style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
       <Header />
       <Flex direction="column" gap="0">
       {/* Hero Section with Gradient */}
       <Box
-        className="hero-gradient"
+        className="hero-gradient hero-section"
         style={{
           minHeight: '720px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '164px 16px 96px',
+          padding: '164px var(--space-4) var(--space-9)',
           position: 'relative',
-          borderRadius: '24px',
-          margin: '16px',
-          boxShadow: '0px 50px 40px 0px rgba(0,0,0,0.01), 0px 50px 40px 0px rgba(0,0,0,0.02), 0px 20px 40px 0px rgba(0,0,0,0.05), 0px 3px 10px 0px rgba(0,0,0,0.08)',
+          margin: 'var(--space-4)',
+          boxShadow: 'var(--shadow-float)',
         }}
       >
         <Container>
-          <Flex direction="column" align="center" gap="5" style={{ maxWidth: '666px', margin: '0 auto', gap: '64px' }}>
+          <Flex direction="column" align="center" gap="5" style={{ maxWidth: '666px', margin: '0 auto', gap: 'var(--space-8)' }}>
             <Heading
               size="9"
               align="center"
               style={{
-                fontFamily: "'Untitled Serif', Georgia, serif",
-                fontSize: '66px',
-                lineHeight: '66px',
-                letterSpacing: '-1.98px',
-                color: '#030302',
-                fontWeight: 'normal',
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-5xl)',
+                lineHeight: 'var(--leading-tight)',
+                letterSpacing: 'var(--tracking-tight)',
+                color: 'var(--color-text-primary)',
+                fontWeight: '400',
                 maxWidth: '800px',
               }}
             >
@@ -63,27 +62,27 @@ export default async function Home() {
           direction="column"
           gap="0"
           style={{
-            paddingTop: '96px',
-            paddingBottom: '40px',
-            paddingLeft: '24px',
-            paddingRight: '24px',
+            paddingTop: 'var(--space-9)',
+            paddingBottom: 'var(--space-7)',
+            paddingLeft: 'var(--space-5)',
+            paddingRight: 'var(--space-5)',
           }}
           className="main-content"
         >
 
           {/* Features Section */}
-          <Flex direction="column" gap="0" style={{ paddingTop: '96px', paddingBottom: '40px', paddingLeft: '0px', paddingRight: '0px' }}>
+          <Flex direction="column" gap="0" style={{ paddingTop: 'var(--space-9)', paddingBottom: 'var(--space-7)', paddingLeft: '0', paddingRight: '0' }}>
             <Heading
               size="8"
               align="center"
               style={{
-                fontFamily: "'Untitled Serif', Georgia, serif",
-                fontSize: '46px',
-                lineHeight: '56.12px',
-                letterSpacing: '-1.38px',
-                color: '#030302',
-                fontWeight: 'normal',
-                marginBottom: '60px',
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-4xl)',
+                lineHeight: 'var(--leading-snug)',
+                letterSpacing: 'var(--tracking-tight)',
+                color: 'var(--color-text-primary)',
+                fontWeight: '400',
+                marginBottom: 'var(--space-8)',
               }}
             >
               Why join <span style={{ fontStyle: 'italic' }}>another</span> network?
@@ -111,19 +110,19 @@ export default async function Home() {
       </Container>
 
       {/* Chiropractors Carousel Section - Full Width */}
-      <Flex direction="column" gap="6" style={{ paddingTop: '60px', paddingBottom: '120px', width: '100%' }}>
+      <Flex direction="column" gap="6" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-10)', width: '100%' }}>
         <Container>
           <Heading
             size="8"
             align="center"
             style={{
-              fontFamily: "'Untitled Serif', Georgia, serif",
-              fontSize: '54px',
-              lineHeight: '59.4px',
-              letterSpacing: '-1.08px',
-              color: '#030302',
-              fontWeight: 'normal',
-              marginBottom: '60px',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-4xl)',
+              lineHeight: 'var(--leading-snug)',
+              letterSpacing: 'var(--tracking-tight)',
+              color: 'var(--color-text-primary)',
+              fontWeight: '400',
+              marginBottom: 'var(--space-8)',
             }}
           >
             Join top chiropractors like...
@@ -134,8 +133,8 @@ export default async function Home() {
           <AutoScrollingCarousel chiropractors={chiropractors} />
         ) : (
           <Container>
-            <Flex direction="column" align="center" gap="3" py="6" style={{ gap: '240px', alignItems: 'center' }}>
-              <Text size="3" color="gray" align="center">
+            <Flex direction="column" align="center" gap="3" py="6" style={{ gap: 'var(--space-10)', alignItems: 'center' }}>
+              <Text size="3" style={{ color: 'var(--color-text-secondary)' }} align="center">
                 No chiropractors found. Be the first to join!
               </Text>
             </Flex>

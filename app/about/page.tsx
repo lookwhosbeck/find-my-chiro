@@ -6,12 +6,12 @@ import { Footer } from '@/app/components/Footer';
 
 export default function AboutPage() {
   return (
-    <Flex direction="column" style={{ minHeight: '100vh' }}>
+    <Flex direction="column" style={{ minHeight: '100vh' }} className="page-with-header">
       <Header />
 
       <Flex direction="column" gap="9">
         {/* Hero Section */}
-        <Section size="3" style={{ background: 'var(--gray-2)', paddingTop: '96px' }}>
+        <Section size="3" style={{ background: 'var(--gray-2)' }}>
           <Container>
             <Flex direction="column" align="center" gap="6" py="9">
               <Badge size="2" color="blue">Patient-First Healthcare</Badge>

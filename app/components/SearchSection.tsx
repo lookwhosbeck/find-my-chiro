@@ -29,26 +29,29 @@ export function SearchSection() {
                 handleSimpleSearch();
               }
             }}
+            className="search-input-left"
             style={{
               flex: 1,
-              borderRadius: '9999px 0 0 9999px',
-              border: '1px solid #030302',
-              boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
+              border: '1px solid var(--color-text-primary)',
+              boxShadow: 'var(--shadow-card)',
               background: 'rgba(255, 255, 255, 0.6)',
-              backdropFilter: 'blur(2px)',
+              backdropFilter: 'var(--blur-sm)',
+              minHeight: 'var(--touch-target-min)',
             }}
           />
           <Button
             size="3"
             variant="solid"
             onClick={handleSimpleSearch}
+            className="search-button-right"
             style={{
-              borderRadius: '0 9999px 9999px 0',
-              background: '#030302',
-              color: 'white',
-              boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
+              background: 'var(--color-text-primary)',
+              color: 'var(--color-surface)',
+              boxShadow: 'var(--shadow-card)',
               border: 'none',
-              padding: '12px 32px',
+              padding: 'var(--space-3) var(--space-6)',
+              minHeight: 'var(--touch-target-min)',
+              borderRadius: '0px 6px 6px 0px',
             }}
           >
             Find Care
@@ -62,23 +65,23 @@ export function SearchSection() {
           <Link
             href="/search"
             style={{
-              borderRadius: '9999px',
-              background: '#030302',
-              color: 'white',
-              boxShadow: '0px 12px 12px 2px rgba(0,0,0,0.1), 0px 2px 4px -1px rgba(0,0,0,0.06)',
+              background: 'var(--color-text-primary)',
+              color: 'var(--color-surface)',
+              boxShadow: 'var(--shadow-card)',
               border: 'none',
-              padding: '12px 32px',
+              padding: 'var(--space-3) var(--space-6)',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: 'var(--space-2)',
               textDecoration: 'none',
+              minHeight: 'var(--touch-target-min)',
             }}
           >
             Advanced Search
           </Link>
         </Button>
       </Flex>
-      <Text size="3" align="center" style={{ maxWidth: '640px', color: '#030302' }}>
+      <Text size="3" align="center" style={{ maxWidth: '640px', color: 'var(--color-text-primary)' }}>
         Use the advanced search to go beyond zip code and find a care provider who aligns with you on on a personal level that will help you reach your movement goals.
       </Text>
       <Flex gap="5" align="center">
@@ -87,10 +90,10 @@ export function SearchSection() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            color: '#030302',
+            gap: 'var(--space-2)',
+            color: 'var(--color-text-primary)',
             textDecoration: 'none',
-            fontSize: '16px',
+            fontSize: 'var(--text-base)',
           }}
         >
           Patient Signup
@@ -103,10 +106,10 @@ export function SearchSection() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            color: '#030302',
+            gap: 'var(--space-2)',
+            color: 'var(--color-text-primary)',
             textDecoration: 'none',
-            fontSize: '16px',
+            fontSize: 'var(--text-base)',
           }}
         >
           Chiropractor Signup

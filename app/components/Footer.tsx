@@ -4,11 +4,11 @@ import Link from 'next/link';
 export function Footer() {
   return (
     <footer
+      className="footer-container"
       style={{
-        background: '#030302',
-        borderRadius: '24px',
-        margin: '16px',
-        padding: '24px',
+        background: 'var(--color-text-primary)',
+        margin: 'var(--space-4)',
+        padding: 'var(--space-5)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -20,7 +20,7 @@ export function Footer() {
           style={{
             maxWidth: '1160px',
             margin: '0 auto',
-            padding: '24px 0',
+            padding: 'var(--space-5) 0',
           }}
         >
           {/* Footer Links */}
@@ -36,24 +36,24 @@ export function Footer() {
                 size="2"
                 weight="medium"
                 style={{
-                  fontSize: '14px',
-                  letterSpacing: '0.14px',
+                  fontSize: 'var(--text-sm)',
+                  letterSpacing: 'var(--tracking-wide)',
                   textTransform: 'uppercase',
-                  color: 'white',
-                  marginBottom: '8px',
+                  color: 'var(--color-surface)',
+                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Product
               </Text>
-              <div style={{ height: '0.5px', background: 'rgba(255, 255, 255, 0.2)', marginBottom: '8px' }} />
+              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
               <Flex direction="column" gap="1">
                 <Link href="/features" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     Features
                   </Text>
                 </Link>
                 <Link href="/pricing" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     Pricing
                   </Text>
                 </Link>
@@ -66,24 +66,24 @@ export function Footer() {
                 size="2"
                 weight="medium"
                 style={{
-                  fontSize: '14px',
-                  letterSpacing: '0.14px',
+                  fontSize: 'var(--text-sm)',
+                  letterSpacing: 'var(--tracking-wide)',
                   textTransform: 'uppercase',
-                  color: 'white',
-                  marginBottom: '8px',
+                  color: 'var(--color-surface)',
+                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Community
               </Text>
-              <div style={{ height: '0.5px', background: 'rgba(255, 255, 255, 0.2)', marginBottom: '8px' }} />
+              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
               <Flex direction="column" gap="1">
                 <Link href="/about" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     About
                   </Text>
                 </Link>
                 <Link href="/blog" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     Blog
                   </Text>
                 </Link>
@@ -96,24 +96,24 @@ export function Footer() {
                 size="2"
                 weight="medium"
                 style={{
-                  fontSize: '14px',
-                  letterSpacing: '0.14px',
+                  fontSize: 'var(--text-sm)',
+                  letterSpacing: 'var(--tracking-wide)',
                   textTransform: 'uppercase',
-                  color: 'white',
-                  marginBottom: '8px',
+                  color: 'var(--color-surface)',
+                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Support
               </Text>
-              <div style={{ height: '0.5px', background: 'rgba(255, 255, 255, 0.2)', marginBottom: '8px' }} />
+              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
               <Flex direction="column" gap="1">
                 <Link href="/help" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     Help Center
                   </Text>
                 </Link>
                 <Link href="/contact" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     Contact Support
                   </Text>
                 </Link>
@@ -126,24 +126,24 @@ export function Footer() {
                 size="2"
                 weight="medium"
                 style={{
-                  fontSize: '14px',
-                  letterSpacing: '0.14px',
+                  fontSize: 'var(--text-sm)',
+                  letterSpacing: 'var(--tracking-wide)',
                   textTransform: 'uppercase',
-                  color: 'white',
-                  marginBottom: '8px',
+                  color: 'var(--color-surface)',
+                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Company
               </Text>
-              <div style={{ height: '0.5px', background: 'rgba(255, 255, 255, 0.2)', marginBottom: '8px' }} />
+              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
               <Flex direction="column" gap="1">
                 <Link href="/legal" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     Legal
                   </Text>
                 </Link>
                 <Link href="/privacy" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'white', fontSize: '14px' }}>
+                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
                     Privacy Policy
                   </Text>
                 </Link>
@@ -152,21 +152,21 @@ export function Footer() {
           </Flex>
 
           {/* Bottom Bar */}
-          <div style={{ height: '0.5px', background: 'rgba(255, 255, 255, 0.2)', marginTop: '16px' }} />
+          <div style={{ height: '0.5px', background: 'var(--color-border)', marginTop: 'var(--space-4)' }} />
           <Flex
             direction={{ initial: 'column', md: 'row' }}
             align="center"
             justify="between"
             gap="4"
-            style={{ marginTop: '16px' }}
+            style={{ marginTop: 'var(--space-4)' }}
           >
             <Text
               size="2"
               style={{
-                color: 'white',
+                color: 'var(--color-surface)',
                 opacity: 0.8,
-                fontSize: '16px',
-                letterSpacing: '-0.32px',
+                fontSize: 'var(--text-base)',
+                letterSpacing: 'var(--tracking-normal)',
               }}
             >
               © 2026 Find My Chiro Directory. All rights reserved.

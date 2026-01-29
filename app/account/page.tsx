@@ -386,7 +386,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <Container>
+      <Container className="page-with-header">
         <Flex justify="center" align="center" style={{ minHeight: '50vh' }}>
           <Text>Loading...</Text>
         </Flex>
@@ -398,7 +398,7 @@ export default function AccountPage() {
   // This component should only render for authenticated users
 
   return (
-    <Container>
+    <Container className="page-with-header">
       <Flex direction="column" gap="6" py="9">
         {/* Header */}
         <Flex justify="between" align="center">
