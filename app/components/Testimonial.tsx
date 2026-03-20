@@ -76,8 +76,8 @@ export function Testimonial({ quote, author, avatarInitial, avatarUrl, reverse =
             src={avatarUrl}
             fallback={avatarInitial || author[0]}
             style={{
-              width: '56px',
-              height: '56px',
+              width: '72px',
+              height: '72px',
               background: '#fde99b',
               border: '4px solid rgba(3, 3, 2, 0.09)',
             }}
