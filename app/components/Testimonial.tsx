@@ -55,6 +55,7 @@ export function Testimonial({ quote, author, avatarInitial, avatarUrl, reverse =
       <Flex
         direction="column"
         gap="3"
+        justify-content="space-between"
         align="start"
         style={{ minWidth: 'fit-content' }}
       >
