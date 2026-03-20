@@ -17,6 +17,8 @@ export interface Chiropractor {
   acceptingPatients?: boolean;
   avatarUrl?: string;
   matchScore?: number;
+  /** Miles from search ZIP when radius search ran (server-computed). */
+  distanceMiles?: number;
 }
 
 export interface PatientSearchFilters {
@@ -110,7 +112,7 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
 /**
  * Map database data to Chiropractor interface from normalized schema
  */
-function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropractor[] {
+export function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropractor[] {
   return data.map((item) => {
     // Extract modalities from joined data
     const modalities: string[] = item.chiropractor_modalities?.map((cm: any) => cm.modalities?.name).filter(Boolean) || [];
@@ -205,7 +207,8 @@ export interface ChiropracticCollege {
 }
 
 /**
- * Search chiropractors based on patient preferences and matching algorithm
+ * Search chiropractors based on patient preferences and matching algorithm.
+ * Runs on the server (ZIP centroids + radius) via API route — no geocoding API key required.
  */
 export async function searchChiropractors(filters: PatientSearchFilters, limit: number = 20): Promise<Chiropractor[]> {
   try {
@@ -217,139 +220,36 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
       return [];
     }
 
-    // Build a complex query that includes chiropractor relationships and location data
-    let query = supabase
-      .from('chiropractors')
-      .select(`
-        *,
-        profiles!inner(first_name, last_name, email),
-        organizations!inner(city, state, zip_code),
-        chiropractor_modalities(modality_id, modalities!inner(name)),
-        chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
-        chiropractor_payment_models(payment_model_id, payment_models!inner(name))
-      `)
-      .eq('accepting_new_patients', true);
+    const searchUrl = (() => {
+      if (typeof window !== 'undefined') {
+        return '/api/search-chiropractors';
+      }
+      const explicit = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+      if (explicit) {
+        return `${explicit.replace(/\/$/, '')}/api/search-chiropractors`;
+      }
+      if (process.env.VERCEL_URL) {
+        return `https://${process.env.VERCEL_URL}/api/search-chiropractors`;
+      }
+      return 'http://localhost:3000/api/search-chiropractors';
+    })();
 
-    // Apply location-based filtering if zip code is provided
-    if (filters.zipCode && filters.zipCode.trim()) {
-      // For now, do exact zip code matching. In a production app, you'd:
-      // 1. Geocode the zip code to get lat/lng coordinates
-      // 2. Calculate distance from chiropractor locations
-      // 3. Filter by search radius
-      query = query.eq('organizations.zip_code', filters.zipCode.trim());
+    const res = await fetch(searchUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filters, limit }),
+    });
 
-      // If no exact zip code matches, we could fall back to city/state matching
-      // But for now, we'll keep it simple with exact zip code matching
-    }
-
-    // Get initial results (limit higher for scoring and potential location filtering)
-    const { data, error } = await query.limit(limit * 3); // Get more for scoring and location filtering
-
-    if (error) {
-      console.error('Error searching chiropractors:', error);
+    if (!res.ok) {
+      console.error('Search request failed:', res.status);
       return [];
     }
 
-    let chiropractors = mapChiropractorDataFromNormalizedSchema(data || []);
-
-    // Apply additional location filtering and distance calculation if needed
-    if (filters.zipCode && filters.zipCode.trim()) {
-      // If we have search radius, we could implement distance calculation here
-      // For now, we're just using exact zip code matching from the database query
-      // In the future, this could be enhanced with:
-      // - Geocoding API integration
-      // - Distance calculation using haversine formula
-      // - Radius-based filtering
-    }
-
-    // Apply matching algorithm scoring
-    chiropractors = scoreChiropractors(chiropractors, filters);
-
-    // Sort by score (highest to lowest) and return top results
-    return chiropractors
-      .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
-      .slice(0, limit);
-
+    return (await res.json()) as Chiropractor[];
   } catch (error) {
     console.error('Error searching chiropractors:', error);
     return [];
   }
-}
-
-/**
- * Score chiropractors based on patient preferences (matching algorithm)
- */
-function scoreChiropractors(chiropractors: Chiropractor[], filters: PatientSearchFilters): Chiropractor[] {
-  return chiropractors.map(chiro => {
-    let score = 0;
-    const maxScore = 100;
-
-    // Base score for all chiropractors (to avoid 0% when no filters are set)
-    score = 10;
-
-    // Location matching (20 points) - If user specified a zip code, prioritize exact matches
-    if (filters.zipCode && filters.zipCode.trim()) {
-      if (chiro.zipCode === filters.zipCode.trim()) {
-        score += 20; // Exact zip code match gets full location points
-      } else if (chiro.city === filters.city || chiro.state === filters.state) {
-        score += 10; // City/state match gets partial points
-      }
-      // If no location match, still give base score but no location bonus
-    } else {
-      // If no location filter, everyone gets some location points
-      score += 10;
-    }
-
-    // Modality matching (30 points)
-    if (filters.preferredModalities && filters.preferredModalities.length > 0 && chiro.modalities) {
-      const matchingModalities = filters.preferredModalities.filter(mod =>
-        chiro.modalities!.some(chiroMod => chiroMod.toLowerCase().includes(mod.toLowerCase()))
-      );
-      score += (matchingModalities.length / filters.preferredModalities.length) * 30;
-    }
-
-    // Focus area matching (20 points)
-    if (filters.focusAreas && filters.focusAreas.length > 0 && chiro.focusAreas) {
-      const matchingFocusAreas = filters.focusAreas.filter(area =>
-        chiro.focusAreas!.some(chiroArea => chiroArea.toLowerCase().includes(area.toLowerCase()))
-      );
-      score += (matchingFocusAreas.length / filters.focusAreas.length) * 20;
-    }
-
-    // Philosophy matching (10 points) - Note: This needs to be updated to work with junction tables
-    // For now, we'll skip philosophy matching in the algorithm
-    // score += 10; // Placeholder
-
-    // Business model matching (20 points)
-    if (filters.preferredBusinessModel && chiro.businessModel) {
-      const patientPref = filters.preferredBusinessModel.toLowerCase();
-      const chiroModel = chiro.businessModel.toLowerCase();
-
-      // Exact match gets full points
-      if (patientPref === chiroModel) {
-        score += 20;
-      }
-      // Partial match (e.g., patient wants "hybrid" but chiropractor has "cash" - still some compatibility)
-      else if ((patientPref === 'hybrid' && (chiroModel === 'cash' || chiroModel === 'insurance')) ||
-               ((patientPref === 'cash' || patientPref === 'insurance') && chiroModel === 'hybrid')) {
-        score += 10;
-      }
-    }
-
-    // Insurance matching (10 points)
-    if (filters.insuranceType && filters.insuranceType !== 'none') {
-      // This would need insurance data from chiropractors table
-      // For now, give benefit of doubt if they accept insurance in general
-      if (chiro.businessModel && (chiro.businessModel.toLowerCase() === 'insurance' || chiro.businessModel.toLowerCase() === 'hybrid')) {
-        score += 10;
-      }
-    }
-
-    return {
-      ...chiro,
-      matchScore: Math.min(score, maxScore)
-    };
-  });
 }
 
 /**

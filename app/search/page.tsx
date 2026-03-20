@@ -371,24 +371,7 @@ function SearchPageContent() {
                     ) : chiropractors.length > 0 ? (
                       <Grid columns={{ initial: '1', md: '2', lg: showFilters ? '2' : '3' }} gap="4">
                         {chiropractors.map((chiropractor) => (
-                          <Card key={chiropractor.id}>
-                            <Flex direction="column" gap="3">
-                              <ChiropractorCard chiropractor={chiropractor} />
-                              {chiropractor.matchScore !== undefined && chiropractor.matchScore > 0 && (
-                                <Flex justify="end">
-                                  <Badge
-                                    color={
-                                      chiropractor.matchScore >= 70 ? 'green' :
-                                      chiropractor.matchScore >= 40 ? 'yellow' : 'red'
-                                    }
-                                    size="1"
-                                  >
-                                    {Math.round(chiropractor.matchScore)}% match
-                                  </Badge>
-                                </Flex>
-                              )}
-                            </Flex>
-                          </Card>
+                          <ChiropractorCard key={chiropractor.id} chiropractor={chiropractor} />
                         ))}
                       </Grid>
                     ) : (
