@@ -1,0 +1,70 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.viewport {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.trackLeft,
+.trackRight {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  will-change: transform;
+}
+
+.trackLeft {
+  animation: marqueeLeft 55s linear infinite;
+}
+
+.trackRight {
+  animation: marqueeRight 55s linear infinite;
+}
+
+.trackLeft:hover,
+.trackRight:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marqueeLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marqueeRight {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.cardSlot {
+  width: 278px;
+  min-width: 240px;
+  flex-shrink: 0;
+}
+
+.cardSlot :global(.chiropractor-card) {
+  min-height: 248px;
+  box-shadow: var(--shadow-chiropractor-profile);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trackLeft,
+  .trackRight {
+    animation: none;
+    transform: none;
+  }
+}

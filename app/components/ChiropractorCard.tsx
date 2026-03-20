@@ -23,6 +23,8 @@ function LocationPinIcon({ style }: { style?: CSSProperties }) {
 
 interface ChiropractorCardProps {
   chiropractor: Chiropractor;
+  /** Homepage / marketing carousel: show a static match % when no search match exists */
+  marketingMatchPercent?: number;
 }
 
 function buildSpecialtyLine(chiropractor: Chiropractor): string {
@@ -44,7 +46,7 @@ function buildSpecialtyLine(chiropractor: Chiropractor): string {
   return '';
 }
 
-export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
+export function ChiropractorCard({ chiropractor, marketingMatchPercent }: ChiropractorCardProps) {
   const initials = `${chiropractor.firstName?.[0] || ''}${chiropractor.lastName?.[0] || ''}`.toUpperCase();
   const displayName = `Dr. ${chiropractor.firstName} ${chiropractor.lastName}`.trim();
   const specialtyLine = buildSpecialtyLine(chiropractor);
@@ -53,8 +55,12 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
     chiropractor.distanceMiles != null && Number.isFinite(chiropractor.distanceMiles)
       ? ` · ${chiropractor.distanceMiles.toFixed(1)} mi`
       : '';
-  const showMatch =
-    chiropractor.matchScore !== undefined && chiropractor.matchScore > 0;
+  const matchPercent =
+    marketingMatchPercent ??
+    (chiropractor.matchScore !== undefined && chiropractor.matchScore > 0
+      ? Math.round(chiropractor.matchScore)
+      : null);
+  const showMatch = matchPercent != null;
 
   return (
     <Box
@@ -128,7 +134,7 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {Math.round(chiropractor.matchScore!)}% Match
+                {matchPercent}% Match
               </Text>
             </Box>
           )}

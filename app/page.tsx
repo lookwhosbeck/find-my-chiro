@@ -1,148 +1,89 @@
-import { Flex, Text, Heading, Box } from '@radix-ui/themes';
+import Link from 'next/link';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import { Container } from './components/Container';
-import { SearchSection } from './components/SearchSection';
+import { ProximitySearchBar } from './components/ProximitySearchBar';
 import { FeatureCard } from './components/FeatureCard';
-import { AutoScrollingCarousel } from './components/AutoScrollingCarousel';
+import { FeatureIconMatching, FeatureIconFriction, FeatureIconCulture } from './components/FeatureIcons';
+import { DualMarqueeCarousels } from './components/DualMarqueeCarousels';
 import { getChiropractors } from './lib/queries';
+import styles from './page.module.css';
 
-// Icons for feature cards (simplified SVG icons)
-
-
+function ArrowUpRight() {
+  return (
+    <svg width={12} height={12} viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path
+        d="M1 11L11 1M11 1H1M11 1V11"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export default async function Home() {
-  // Fetch 10 most recently added chiropractors from database
-  const chiropractors = await getChiropractors(10);
+  const chiropractors = await getChiropractors(14);
+
   return (
-    <Flex direction="column" style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
-      <Header />
-      <Flex direction="column" gap="0">
-      {/* Hero Section with Gradient */}
-      <Box
-        className="hero-gradient hero-section"
-        style={{
-          minHeight: '720px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '164px var(--space-4) var(--space-9)',
-          position: 'relative',
-          margin: 'var(--space-4)',
-          boxShadow: 'var(--shadow-float)',
-        }}
-      >
-        <Container>
-          <Flex direction="column" align="center" gap="5" style={{ maxWidth: '666px', margin: '0 auto', gap: 'var(--space-8)' }}>
-            <Heading
-              size="9"
-              align="center"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--text-5xl)',
-                lineHeight: 'var(--leading-tight)',
-                letterSpacing: 'var(--tracking-tight)',
-                color: 'var(--color-text-primary)',
-                fontWeight: '400',
-                maxWidth: '800px',
-              }}
-            >
-              Find a Chiropractor Who Aligns with You.
-            </Heading>
-            
-            {/* Search Section */}
-            <SearchSection />
-          </Flex>
-        </Container>
-      </Box>
+    <div className={styles.page}>
+      <div className={styles.heroOuter}>
+        <div className={styles.heroPanel}>
+          <Header embedded />
+          <div className={styles.heroContent}>
+            <h1 className={styles.heroTitle}>
+              Find a chiropractor who
+              <br />
+              aligns with you.
+            </h1>
+            <ProximitySearchBar variant="onDark" />
+            <div className={styles.signupRow}>
+              <Link href="/signup-patient" className={styles.signupLink}>
+                Patient Signup
+                <ArrowUpRight />
+              </Link>
+              <Link href="/signup" className={styles.signupLink}>
+                Chiropractor Signup
+                <ArrowUpRight />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Main Content Container */}
-      <Container>
-        <Flex
-          direction="column"
-          gap="0"
-          style={{
-            paddingTop: 'var(--space-9)',
-            paddingBottom: 'var(--space-7)',
-            paddingLeft: 'var(--space-5)',
-            paddingRight: 'var(--space-5)',
-          }}
-          className="main-content"
-        >
+      <section className={styles.featuresSection}>
+        <h2 className={styles.featuresTitle}>
+          Why join <span className={styles.featuresTitleItalic}>another</span> network?
+        </h2>
+        <div className={styles.featuresGrid}>
+          <FeatureCard
+            icon={<FeatureIconMatching />}
+            title="The Matching Engine"
+            description="We don't just list you; we match you based on Modalities (Gonstead, TRT) and Philosophies (Vitalistic, Evidence-Based)."
+          />
+          <FeatureCard
+            icon={<FeatureIconFriction />}
+            title="Reduce Friction"
+            description="Patients filter by Insurance/Cash right away, so you only get calls from people who know your business model."
+          />
+          <FeatureCard
+            icon={<FeatureIconCulture />}
+            title="Show Your Culture"
+            description="Showcase your clinic vibe, not just your address, because good patient fit isn’t only about proximity."
+          />
+        </div>
+      </section>
 
-          {/* Features Section */}
-          <Flex direction="column" gap="0" style={{ paddingTop: 'var(--space-9)', paddingBottom: 'var(--space-7)', paddingLeft: '0', paddingRight: '0' }}>
-            <Heading
-              size="8"
-              align="center"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--text-4xl)',
-                lineHeight: 'var(--leading-snug)',
-                letterSpacing: 'var(--tracking-tight)',
-                color: 'var(--color-text-primary)',
-                fontWeight: '400',
-                marginBottom: 'var(--space-8)',
-              }}
-            >
-              Why join <span style={{ fontStyle: 'italic' }}>another</span> network?
-            </Heading>
-            <Flex
-              direction={{ initial: 'column', md: 'row' }}
-              gap="8"
-              style={{ maxWidth: '1160px', margin: '0 auto' }}
-            >
-              <FeatureCard
-                title="The Matching Engine"
-                description="We don't just list you; we match you based on Modalities (Gonstead, TRT) and Philosophies (Vitalistic, Evidence-Based)."
-              />
-              <FeatureCard
-                title="Reduce Friction"
-                description="Patients filter by Insurance/Cash right away, so you only get calls from people who know your business model."
-              />
-              <FeatureCard
-                title="Show Your Culture"
-                description="Showcase your clinic vibe, not just your address."
-              />
-            </Flex>
-          </Flex>
-        </Flex>
-      </Container>
-
-      {/* Chiropractors Carousel Section - Full Width */}
-      <Flex direction="column" gap="6" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-10)', width: '100%' }}>
-        <Container>
-          <Heading
-            size="8"
-            align="center"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--text-4xl)',
-              lineHeight: 'var(--leading-snug)',
-              letterSpacing: 'var(--tracking-tight)',
-              color: 'var(--color-text-primary)',
-              fontWeight: '400',
-              marginBottom: 'var(--space-8)',
-            }}
-          >
-            Join top chiropractors like...
-          </Heading>
-        </Container>
-        
+      <section className={styles.carouselSection}>
+        <h2 className={styles.carouselTitle}>Join top chiropractors like...</h2>
         {chiropractors.length > 0 ? (
-          <AutoScrollingCarousel chiropractors={chiropractors} />
+          <DualMarqueeCarousels chiropractors={chiropractors} />
         ) : (
-          <Container>
-            <Flex direction="column" align="center" gap="3" py="6" style={{ gap: 'var(--space-10)', alignItems: 'center' }}>
-              <Text size="3" style={{ color: 'var(--color-text-secondary)' }} align="center">
-                No chiropractors found. Be the first to join!
-              </Text>
-            </Flex>
-          </Container>
+          <p className={styles.carouselEmpty}>No chiropractors found. Be the first to join!</p>
         )}
-      </Flex>
+      </section>
+
       <Footer />
-      </Flex>
-    </Flex>
+    </div>
   );
 }

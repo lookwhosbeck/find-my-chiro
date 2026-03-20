@@ -1,49 +1,53 @@
+import type { ReactNode } from 'react';
 import { Flex, Text } from '@radix-ui/themes';
 
 interface FeatureCardProps {
   title: string;
   description: string;
+  icon?: ReactNode;
 }
 
-export function FeatureCard({ title, description }: FeatureCardProps) {
+export function FeatureCard({ title, description, icon }: FeatureCardProps) {
   return (
     <Flex
       direction="column"
-      gap="8"
+      gap="3"
       align="center"
       style={{
-        flex: 1,
+        flex: '0 1 262px',
+        maxWidth: 262,
         padding: 'var(--space-2)',
-        minHeight: '214px',
       }}
     >
-      <Flex direction="column" gap="2" align="center" style={{ flex: 1, paddingBottom: 'var(--space-4)' }}>
-        <Text
-          size="4"
-          weight="medium"
-          style={{
-            fontSize: 'var(--text-lg)',
-            lineHeight: 'var(--leading-normal)',
-            letterSpacing: 'var(--tracking-normal)',
-            color: 'var(--color-text-primary)',
-            textAlign: 'center',
-          }}
-        >
-          {title}
-        </Text>
-        <Text
-          size="3"
-          style={{
-            fontSize: 'var(--text-base)',
-            lineHeight: 'var(--leading-normal)',
-            letterSpacing: 'var(--tracking-normal)',
-            color: 'var(--color-text-primary)',
-            textAlign: 'center',
-          }}
-        >
-          {description}
-        </Text>
-      </Flex>
+      {icon ? <Flex justify="center">{icon}</Flex> : null}
+      <Text
+        as="p"
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          lineHeight: '20px',
+          color: '#030302',
+          textAlign: 'center',
+          margin: 0,
+          fontFamily: 'var(--font-body)',
+        }}
+      >
+        {title}
+      </Text>
+      <Text
+        as="p"
+        style={{
+          fontSize: 13,
+          fontWeight: 400,
+          lineHeight: '20px',
+          color: '#030302',
+          textAlign: 'center',
+          margin: 0,
+          fontFamily: 'var(--font-body)',
+        }}
+      >
+        {description}
+      </Text>
     </Flex>
   );
 }

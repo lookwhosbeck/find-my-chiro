@@ -74,17 +74,18 @@ export function Header({ embedded = false }: HeaderProps) {
       <Box
         className="header-container"
         style={{
-          backdropFilter: 'var(--blur-md)',
-          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.8) 100%)',
-          boxShadow: 'var(--shadow-md)',
-          padding: 'var(--space-2) 8px var(--space-2) var(--space-6)',
-          borderRadius: '999px',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+          background: '#ffffff',
+          boxShadow: '0 2px 12px 2px rgba(0, 0, 0, 0.1)',
+          padding: '8px 8px 8px 16px',
+          borderRadius: '26px',
         }}
       >
         <Flex
           align="center"
           justify="between"
-          style={{ height: 'var(--touch-target-min)', minHeight: 'var(--touch-target-min)' }}
+          style={{ height: '52px', minHeight: '52px' }}
         >
           {/* Logo */}
           <Link
@@ -101,14 +102,15 @@ export function Header({ embedded = false }: HeaderProps) {
             gap="4"
             className={styles.desktopNav}
           >
-            <Link href="/" style={{ textDecoration: 'none' }}>
+            <Link href="/search" style={{ textDecoration: 'none' }}>
               <Text
                 size="3"
                 style={{
-                  color: 'var(--color-text-primary)',
-                  fontSize: 'var(--text-base)',
-                  letterSpacing: 'var(--tracking-normal)',
+                  color: 'var(--color-hero-ink)',
+                  fontSize: '16px',
+                  letterSpacing: '-0.32px',
                   fontFamily: 'var(--font-body)',
+                  lineHeight: '22.4px',
                 }}
               >
                 Find Care
@@ -118,10 +120,11 @@ export function Header({ embedded = false }: HeaderProps) {
               <Text
                 size="3"
                 style={{
-                  color: 'var(--color-text-primary)',
-                  fontSize: 'var(--text-base)',
-                  letterSpacing: 'var(--tracking-normal)',
+                  color: 'var(--color-hero-ink)',
+                  fontSize: '16px',
+                  letterSpacing: '-0.32px',
                   fontFamily: 'var(--font-body)',
+                  lineHeight: '22.4px',
                 }}
               >
                 About
@@ -148,10 +151,11 @@ export function Header({ embedded = false }: HeaderProps) {
                   href="/signin"
                   style={{
                     textDecoration: 'none',
-                    color: 'var(--color-text-primary)',
-                    fontSize: 'var(--text-base)',
-                    letterSpacing: 'var(--tracking-normal)',
+                    color: 'var(--color-hero-ink)',
+                    fontSize: '16px',
+                    letterSpacing: '-0.32px',
                     fontFamily: 'var(--font-body)',
+                    lineHeight: '22.4px',
                   }}
                 >
                   Log in
@@ -162,12 +166,15 @@ export function Header({ embedded = false }: HeaderProps) {
                   asChild
                   className="join-network-button"
                   style={{
-                    background: 'var(--color-text-primary)',
-                    color: 'var(--color-surface)',
-                    padding: 'var(--space-2) var(--space-4)',
-                    boxShadow: 'var(--shadow-sm)',
-                    minHeight: 'var(--touch-target-min)',
-                    minWidth: 'var(--touch-target-min)',
+                    background: 'var(--color-hero-ink)',
+                    color: '#ffffff',
+                    padding: '6px 14px',
+                    borderRadius: '999px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1)',
+                    minHeight: 'auto',
+                    fontSize: '16px',
+                    fontWeight: 500,
+                    lineHeight: '24px',
                   }}
                 >
                   <Link href="/signup">Join Network</Link>
@@ -214,7 +221,7 @@ export function Header({ embedded = false }: HeaderProps) {
           <Box className={styles.mobileMenu}>
             <Flex direction="column" gap="3">
               <Link
-                href="/"
+                href="/search"
                 onClick={() => setMobileMenuOpen(false)}
                 style={{ textDecoration: 'none', color: 'var(--gray-11)', padding: '8px 0' }}
               >

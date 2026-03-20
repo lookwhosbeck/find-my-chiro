@@ -1,0 +1,183 @@
+/* Proximity search — Figma node 40:5621 (rebuilt: native controls, single pill, no Radix) */
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.bar {
+  --bar-h: 48px;
+  --bar-r: 24px;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 540px;
+  /* Fixed height so white segment and button stay one continuous pill (no vertical mismatch) */
+  height: var(--bar-h);
+  border-radius: var(--bar-r);
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.07),
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.onLight.bar {
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(3, 3, 2, 0.12);
+}
+
+/* White segment — Figma 40:5623: h 48, p 16, rounded left cap */
+.white {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  align-self: stretch;
+  padding: 0 16px;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+/* Icon in 38px-tall hit area, horizontal padding 12px — Figma 40:5625 */
+.iconPad {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 12px 0 0;
+  margin-left: -4px;
+}
+
+.searchIcon {
+  display: block;
+  color: #646464;
+}
+
+.zipInput {
+  flex: 1 1 auto;
+  min-width: 72px;
+  height: 38px;
+  margin: 0;
+  padding: 0 8px 0 0;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #202020;
+  outline: none;
+}
+
+.zipInput::placeholder {
+  color: #646464;
+}
+
+/* Combobox chip — Figma 40:5629: h 32, px 12, gap 12, r 6, bg white 85% */
+.radius {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  margin-left: 4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
+}
+
+.radiusSelect {
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #202020;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  min-width: 4.5rem;
+}
+
+.radiusSelect:focus-visible {
+  box-shadow: 0 0 0 2px #0072de;
+}
+
+.chevron {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  opacity: 0.9;
+  background: center / contain no-repeat;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 9 9' fill='none'%3E%3Cpath d='M1.5 2.5L4.5 5.5L7.5 2.5' stroke='%23202020' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Find Care — Figma 40:5634–5637: pl 24 pr 32, blue fill; no vertical padding (fills bar height) */
+.submit {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 0;
+  margin: 0;
+  padding: 0 32px 0 24px;
+  border: none;
+  border-radius: 0 var(--bar-r) var(--bar-r) 0;
+  box-sizing: border-box;
+  background: #0072de;
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.submit:hover {
+  background: #0066c7;
+}
+
+.submit:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -4px;
+}
+
+@media (max-width: 480px) {
+  .white {
+    padding: 0 12px;
+  }
+
+  .iconPad {
+    padding-right: 8px;
+  }
+
+  .submit {
+    padding: 0 20px 0 16px;
+    font-size: 15px;
+  }
+}

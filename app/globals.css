@@ -387,6 +387,11 @@ button.search-button-right,
   border-radius: 0 6px 6px 0 !important;
 }
 
+/* ProximitySearchBar native <button> — global `button { border-radius: … !important }` otherwise wins */
+button.fmc-proximity-submit {
+  border-radius: 0 24px 24px 0 !important;
+}
+
 /* Header container - keep fully rounded for navigation bar */
 .header-container {
   border-radius: var(--radius-full) !important;
@@ -444,61 +449,6 @@ header .join-network-button,
   .search-page-hero {
     padding: var(--space-5) var(--space-4) var(--space-7);
   }
-}
-
-.search-pill-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  justify-content: center;
-  gap: 0;
-  width: 100%;
-  max-width: 560px;
-}
-
-.search-pill-input-shell {
-  display: flex;
-  align-items: center;
-  flex: 1 1 200px;
-  min-height: 48px;
-  min-width: 0;
-  padding: 0 var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-hero-ink);
-  border-right: none;
-  border-radius: 33554400px 0 0 33554400px;
-  box-sizing: border-box;
-}
-
-.search-pill-input-shell .rt-TextFieldRoot {
-  box-shadow: none !important;
-  border: none !important;
-  background: transparent !important;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.search-pill-input-shell .rt-TextFieldInput {
-  background: transparent !important;
-}
-
-.search-pill-radius-select .rt-SelectTrigger {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: none !important;
-  box-shadow: none !important;
-  min-height: 32px;
-  font-size: 14px;
-}
-
-.search-find-care-pill {
-  border-radius: 0 33554400px 33554400px 0 !important;
-  min-height: 48px !important;
-  padding-left: var(--space-6) !important;
-  padding-right: var(--space-6) !important;
-  background: var(--color-hero-ink) !important;
-  color: var(--color-surface) !important;
-  border: 1px solid var(--color-hero-ink) !important;
-  align-self: stretch;
 }
 
 .search-refine-card {

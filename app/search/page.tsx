@@ -3,13 +3,13 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Flex, Text, Button, Heading, Card, Box, Tabs, Checkbox, Select, TextField } from '@radix-ui/themes';
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { Flex, Text, Button, Heading, Card, Box, Tabs, Checkbox, Select } from '@radix-ui/themes';
 import Link from 'next/link';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Container } from '../components/Container';
 import { ChiropractorCard } from '../components/ChiropractorCard';
+import { ProximitySearchBar } from '../components/ProximitySearchBar';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 
 function ArrowUpRightIcon() {
@@ -259,9 +259,20 @@ function SearchPageContent() {
 
   useEffect(() => {
     const zip = searchParams.get('zip');
-    if (zip != null && zip !== '') {
-      setFilters((prev) => (prev.zipCode === zip ? prev : { ...prev, zipCode: zip }));
-    }
+    const radiusParam = searchParams.get('radius');
+    setFilters((prev) => {
+      let next = prev;
+      if (zip != null && zip !== '' && prev.zipCode !== zip) {
+        next = { ...next, zipCode: zip };
+      }
+      if (radiusParam != null && radiusParam !== '') {
+        const n = parseInt(radiusParam, 10);
+        if (!Number.isNaN(n) && next.searchRadius !== n) {
+          next = { ...next, searchRadius: n };
+        }
+      }
+      return next;
+    });
   }, [searchParams]);
 
   const resultsMatchAverage = useMemo(() => {
@@ -377,50 +388,15 @@ function SearchPageContent() {
                   </Heading>
 
                   <Flex align="stretch" justify="center" wrap="wrap" style={{ width: '100%' }}>
-                    <div className="search-pill-bar">
-                      <div className="search-pill-input-shell">
-                        <TextField.Root
-                          size="3"
-                          placeholder="Enter zipcode"
-                          value={filters.zipCode}
-                          onChange={(e) => setFilters((prev) => ({ ...prev, zipCode: e.target.value }))}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleZipSearch();
-                          }}
-                          className="search-pill-field"
-                          style={{ flex: 1, minWidth: 0 }}
-                        >
-                          <TextField.Slot>
-                            <MagnifyingGlassIcon width={15} height={15} color="var(--color-text-secondary)" />
-                          </TextField.Slot>
-                        </TextField.Root>
-                        <Box className="search-pill-radius-select" style={{ flexShrink: 0 }}>
-                          <Select.Root
-                            value={filters.searchRadius.toString()}
-                            onValueChange={(value) =>
-                              setFilters((prev) => ({ ...prev, searchRadius: parseInt(value, 10) }))
-                            }
-                          >
-                            <Select.Trigger style={{ minWidth: '88px' }} />
-                            <Select.Content>
-                              <Select.Item value="5">5 miles</Select.Item>
-                              <Select.Item value="10">10 miles</Select.Item>
-                              <Select.Item value="15">15 miles</Select.Item>
-                              <Select.Item value="25">25 miles</Select.Item>
-                              <Select.Item value="50">50 miles</Select.Item>
-                              <Select.Item value="100">100 miles</Select.Item>
-                            </Select.Content>
-                          </Select.Root>
-                        </Box>
-                      </div>
-                      <Button
-                        size="3"
-                        className="search-find-care-pill"
-                        onClick={handleZipSearch}
-                      >
-                        Find Care
-                      </Button>
-                    </div>
+                    <ProximitySearchBar
+                      variant="onLight"
+                      navigate={false}
+                      zipCode={filters.zipCode}
+                      searchRadius={filters.searchRadius}
+                      onZipChange={(z) => setFilters((prev) => ({ ...prev, zipCode: z }))}
+                      onRadiusChange={(r) => setFilters((prev) => ({ ...prev, searchRadius: r }))}
+                      onSubmit={handleZipSearch}
+                    />
                   </Flex>
 
                   <Flex gap="6" align="center" wrap="wrap" justify="center">
