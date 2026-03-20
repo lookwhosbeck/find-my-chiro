@@ -20,6 +20,17 @@ import {
 } from './constants';
 import styles from './page.module.css';
 
+function supabaseErrorMessage(err: unknown): string {
+  if (err && typeof err === 'object') {
+    const o = err as { message?: string; details?: string; hint?: string; code?: string };
+    const parts = [o.message, o.details, o.hint].filter(Boolean);
+    if (parts.length) return parts.join(' — ');
+    if (o.code) return o.code;
+  }
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
 type NavKey = 'profile' | 'practice' | 'specialties' | 'preferences' | 'referrals' | 'messages';
 
 function accountPageTitle(nav: NavKey): string {
@@ -293,7 +304,7 @@ export default function AccountPage() {
             organizations ( id, name, address_line_1, city, state, zip_code, phone )`,
           )
           .eq('id', authUser.id)
-          .single();
+          .maybeSingle();
 
         if (!chiroError && chiroData) {
           type OrgRow = {
@@ -482,7 +493,7 @@ export default function AccountPage() {
       setProfileEditing(false);
     } catch (e) {
       console.error(e);
-      alert('Could not update profile.');
+      alert(`Could not update profile. ${supabaseErrorMessage(e)}`);
     } finally {
       setSaving(false);
     }
@@ -509,34 +520,54 @@ export default function AccountPage() {
       } else {
         const { data: inserted, error: insErr } = await supabase
           .from('organizations')
-          .insert({ ...orgBase, website: null })
+          .insert(orgBase)
           .select('id')
           .single();
         if (insErr) throw insErr;
+        if (!inserted?.id) throw new Error('Organization was created but no id was returned (check RLS SELECT on organizations).');
         oid = inserted.id;
         setOrganizationId(oid);
       }
 
-      const updateData = {
-        id: user.id,
+      const gyRaw = chiropractorForm.graduation_year.trim();
+      let graduation_year: number | null = null;
+      if (gyRaw) {
+        const y = parseInt(gyRaw, 10);
+        if (!Number.isNaN(y) && y >= 1900 && y <= 2100) graduation_year = y;
+      }
+
+      const chiroPayload = {
         organization_id: oid,
-        bio: chiropractorForm.bio,
-        chiropractic_college: chiropractorForm.chiropractic_college,
-        graduation_year: chiropractorForm.graduation_year ? parseInt(chiropractorForm.graduation_year, 10) : null,
-        license_number: chiropractorForm.license_number,
+        bio: chiropractorForm.bio.trim() || null,
+        chiropractic_college: chiropractorForm.chiropractic_college.trim() || null,
+        graduation_year,
+        license_number: chiropractorForm.license_number.trim() || null,
         accepting_new_patients: chiropractorForm.accepting_new_patients,
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from('chiropractors').upsert(updateData, { onConflict: 'id' });
-      if (error) throw error;
+      const { data: existingChiro, error: existingErr } = await supabase
+        .from('chiropractors')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (existingErr) throw existingErr;
 
-      setChiropractorProfile((prev) => (prev ? { ...prev, ...updateData } : (updateData as ChiropractorProfile)));
+      if (existingChiro) {
+        const { error: chiroErr } = await supabase.from('chiropractors').update(chiroPayload).eq('id', user.id);
+        if (chiroErr) throw chiroErr;
+      } else {
+        const { error: chiroErr } = await supabase.from('chiropractors').insert({ id: user.id, ...chiroPayload });
+        if (chiroErr) throw chiroErr;
+      }
+
+      const merged = { id: user.id, ...chiroPayload } as ChiropractorProfile;
+      setChiropractorProfile((prev) => (prev ? { ...prev, ...merged } : merged));
       practiceSnapshotRef.current = null;
       setPracticeEditing(false);
     } catch (e) {
       console.error(e);
-      alert('Could not update practice profile.');
+      alert(`Could not update practice profile. ${supabaseErrorMessage(e)}`);
     } finally {
       setSaving(false);
     }
@@ -586,7 +617,7 @@ export default function AccountPage() {
       setChiropractorProfile((prev) => (prev ? { ...prev, budget_range: budgetPayload.budget_range ?? undefined } : prev));
     } catch (e) {
       console.error(e);
-      alert('Could not update specialties. Your database may use different table names or permissions.');
+      alert(`Could not update specialties. ${supabaseErrorMessage(e)}`);
     } finally {
       setSaving(false);
     }
@@ -624,7 +655,7 @@ export default function AccountPage() {
       setPreferencesEditing(false);
     } catch (e) {
       console.error(e);
-      alert('Could not update preferences.');
+      alert(`Could not update preferences. ${supabaseErrorMessage(e)}`);
     } finally {
       setSaving(false);
     }
