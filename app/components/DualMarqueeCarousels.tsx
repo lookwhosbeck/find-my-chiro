@@ -26,38 +26,37 @@ export function DualMarqueeCarousels({ chiropractors }: DualMarqueeCarouselsProp
   if (chiropractors.length === 0) return null;
 
   const [rowTop, rowBottom] = splitHalves(chiropractors);
-  const topLoop = rowTop.length > 0 ? [...rowTop, ...rowTop] : [];
-  const bottomLoop = rowBottom.length > 0 ? [...rowBottom, ...rowBottom] : [];
+
+  const renderMarqueeCards = (row: typeof chiropractors, prefix: 't' | 'b', copy: 0 | 1) =>
+    row.map((c, i) => (
+      <div key={`${c.id}-${prefix}-c${copy}-${i}`} className={styles.cardSlot}>
+        <ChiropractorCard
+          chiropractor={c}
+          marketingMatchPercent={marketingPercentFromId(c.id)}
+          variant="marquee"
+        />
+      </div>
+    ));
 
   return (
     <div className={styles.wrap}>
-      {topLoop.length > 0 ? (
+      {rowTop.length > 0 ? (
         <div className={styles.viewport}>
           <div className={styles.trackLeft}>
-            {topLoop.map((c, i) => (
-              <div key={`${c.id}-t-${i}`} className={styles.cardSlot}>
-                <ChiropractorCard
-                  chiropractor={c}
-                  marketingMatchPercent={marketingPercentFromId(c.id)}
-                  variant="marquee"
-                />
-              </div>
-            ))}
+            <div className={styles.trackSet}>{renderMarqueeCards(rowTop, 't', 0)}</div>
+            <div className={styles.trackSet} aria-hidden>
+              {renderMarqueeCards(rowTop, 't', 1)}
+            </div>
           </div>
         </div>
       ) : null}
-      {bottomLoop.length > 0 ? (
+      {rowBottom.length > 0 ? (
         <div className={styles.viewport}>
           <div className={styles.trackRight}>
-            {bottomLoop.map((c, i) => (
-              <div key={`${c.id}-b-${i}`} className={styles.cardSlot}>
-                <ChiropractorCard
-                  chiropractor={c}
-                  marketingMatchPercent={marketingPercentFromId(c.id)}
-                  variant="marquee"
-                />
-              </div>
-            ))}
+            <div className={styles.trackSet}>{renderMarqueeCards(rowBottom, 'b', 0)}</div>
+            <div className={styles.trackSet} aria-hidden>
+              {renderMarqueeCards(rowBottom, 'b', 1)}
+            </div>
           </div>
         </div>
       ) : null}

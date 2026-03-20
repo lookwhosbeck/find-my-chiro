@@ -7,19 +7,29 @@
 
 .viewport {
   width: 100%;
-  overflow: visible;
+  overflow-x: clip;
+  overflow-y: visible;
   position: relative;
   /* Large card shadow extends past the box; padding keeps blur + corners inside the clip */
   padding-block: 40px;
   margin-block: -40px;
 }
 
+/* Outer track: two copies flush (no gap between copies) so translateX(-50%) == exactly one cycle */
 .trackLeft,
 .trackRight {
   display: flex;
-  gap: 12px;
+  flex-direction: row;
+  gap: 0;
   width: max-content;
   will-change: transform;
+}
+
+.trackSet {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  gap: 12px;
 }
 
 .trackLeft {
