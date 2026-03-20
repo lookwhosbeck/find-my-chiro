@@ -22,10 +22,11 @@ export async function searchChiropractorsWithClient(
       `
         *,
         profiles!inner(first_name, last_name, email),
-        organizations!inner(city, state, zip_code),
+        organizations!inner(name, city, state, zip_code),
         chiropractor_modalities(modality_id, modalities!inner(name)),
         chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
-        chiropractor_payment_models(payment_model_id, payment_models!inner(name))
+        chiropractor_payment_models(payment_model_id, payment_models!inner(name)),
+        chiropractor_philosophies(philosophy_id, philosophies!inner(name))
       `
     )
     .eq('accepting_new_patients', true);

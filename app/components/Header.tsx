@@ -7,7 +7,12 @@ import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import styles from './Header.module.css';
 
-export function Header() {
+type HeaderProps = {
+  /** When true, header sits in normal flow (e.g. inside the search hero) instead of floating absolutely. */
+  embedded?: boolean;
+};
+
+export function Header({ embedded = false }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
@@ -36,15 +41,30 @@ export function Header() {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  return (
-    <header
-      style={{
-        position: 'absolute',
+  const positionStyles = embedded
+    ? {
+        position: 'relative' as const,
+        top: undefined,
+        left: undefined,
+        transform: undefined,
+        width: '100%',
+        maxWidth: '748px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+      }
+    : {
+        position: 'absolute' as const,
         top: 'var(--space-6)',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: '748px',
+      };
+
+  return (
+    <header
+      style={{
+        ...positionStyles,
         zIndex: 1000,
         borderRadius: '999px',
         overflow: 'hidden',

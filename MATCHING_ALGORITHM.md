@@ -2,39 +2,33 @@
 
 ## Overview
 
-The matching algorithm scores chiropractors based on patient preferences to help patients find the most suitable healthcare providers. The algorithm considers multiple factors with weighted scoring to provide personalized recommendations.
+The matching algorithm scores **each chiropractor individually** against the patient’s **active** search filters. Only preferences the patient actually sets are included in the score. The percentage is `achieved ÷ possible × 100`, so adding more filters can lower the score if the provider does not match those new dimensions (this is intentional).
+
+Implementation: `app/lib/patient-match.ts` (`scoreChiropractors`).
 
 ## Current Implementation
 
-### Scoring Factors
+### Scoring factors (weights when that filter is active)
 
-The algorithm evaluates chiropractors across several dimensions:
+| Dimension | Weight (when patient sets it) | How it’s computed |
+|-----------|------------------------------|-------------------|
+| Location (ZIP search) | 22 | Exact ZIP match → full points; same city+state as filters → ~65%; otherwise in-radius baseline → ~45% |
+| Modalities | 28 | `(matching preferred techniques / count preferred) × 28` (substring match, case-insensitive) |
+| Focus areas | 22 | Same ratio pattern vs chiropractor focus areas |
+| Philosophies | 15 | Same ratio vs `chiropractor_philosophies` from DB (fuzzy substring match) |
+| Business model | 8 | Exact match → full; hybrid ↔ cash/insurance → partial |
+| Insurance carrier | 5 | Full points if practice is insurance or hybrid (carrier-level junction not queried yet) |
 
-1. **Modalities/Techniques (40% weight)**
-   - Compares patient's preferred chiropractic techniques against chiropractor's offered modalities
-   - Available modalities: Gonstead, Diversified, Activator, TRT, SOT, Thompson, Webster, Cox
-   - Score = (matching modalities / total preferred modalities) × 40
+`possible` is the sum of weights for only the dimensions the patient specified. If `possible === 0`, match score is `0` (badge hidden on cards).
 
-2. **Focus Areas/Specialties (30% weight)**
-   - Matches patient needs with chiropractor specialties
-   - Available focus areas: Pediatrics, Sports, Auto Injury, Wellness, Prenatal, Geriatric
-   - Currently uses placeholder scoring - needs database enhancement
+### UI note
 
-3. **Business Model Compatibility (20% weight)**
-   - Ensures alignment between patient payment preferences and chiropractor's business model
-   - Options: Cash-Based, Insurance-Based, Hybrid
-   - Currently uses placeholder scoring - needs database enhancement
+The search page **does not** show a “percent” for how many filter fields you filled in. Summary badges use the **average** of per-provider `matchScore` values in the current result list.
 
-4. **Insurance Compatibility (10% weight)**
-   - Matches patient's insurance with chiropractor's accepted insurance types
-   - Available options: BCBS, Aetna, Cigna, UnitedHealthcare, Medicare, Medicaid
-   - Currently uses placeholder scoring - needs database enhancement
-
-### Scoring Formula
+### Scoring formula
 
 ```
-Total Score = (Modality Score) + (Focus Area Score) + (Business Model Score) + (Insurance Score)
-Maximum Score = 100 points
+matchScore = round( (sum of achieved partial scores) / (sum of active dimension weights) × 100 ), capped at 100
 ```
 
 ### Search and Filtering

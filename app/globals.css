@@ -80,6 +80,13 @@ body {
   --color-chiro-card-text: #030302;
   --color-match-badge-bg: #dbf1dc;
   --color-match-badge-text: #0b6d0f;
+  /* Search page — Figma (node 28:908) */
+  --color-hero-ink: #030302;
+  --color-tab-active-underline: #0190ff;
+  --color-match-potential-bg: rgba(221, 0, 0, 0.08);
+  --color-match-potential-text: #ce2c31;
+  --shadow-search-hero: 0 50px 40px rgba(0, 0, 0, 0.01), 0 50px 40px rgba(0, 0, 0, 0.02),
+    0 20px 40px rgba(0, 0, 0, 0.05), 0 3px 10px rgba(0, 0, 0, 0.08);
   
   /* Blur effects */
   --blur-sm: blur(8px);
@@ -396,4 +403,152 @@ header .join-network-button,
 /* Spacing for pages with absolute-positioned header */
 .page-with-header {
   padding-top: calc(var(--space-6) + 68px); /* 32px top position + 68px header height */
+}
+
+/* ========================================
+   Search page (Figma — findmychiro search)
+   ======================================== */
+
+.search-page-hero {
+  background: linear-gradient(180deg, var(--color-bg-gradient-start) 0%, var(--color-bg-gradient-end) 100%);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-search-hero);
+  padding: var(--space-6) var(--space-6) var(--space-8);
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .search-page-hero {
+    padding: var(--space-5) var(--space-4) var(--space-7);
+  }
+}
+
+.search-pill-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  max-width: 560px;
+}
+
+.search-pill-input-shell {
+  display: flex;
+  align-items: center;
+  flex: 1 1 200px;
+  min-height: 48px;
+  min-width: 0;
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hero-ink);
+  border-right: none;
+  border-radius: 33554400px 0 0 33554400px;
+  box-sizing: border-box;
+}
+
+.search-pill-input-shell .rt-TextFieldRoot {
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.search-pill-input-shell .rt-TextFieldInput {
+  background: transparent !important;
+}
+
+.search-pill-radius-select .rt-SelectTrigger {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: none !important;
+  box-shadow: none !important;
+  min-height: 32px;
+  font-size: 14px;
+}
+
+.search-find-care-pill {
+  border-radius: 0 33554400px 33554400px 0 !important;
+  min-height: 48px !important;
+  padding-left: var(--space-6) !important;
+  padding-right: var(--space-6) !important;
+  background: var(--color-hero-ink) !important;
+  color: var(--color-surface) !important;
+  border: 1px solid var(--color-hero-ink) !important;
+  align-self: stretch;
+}
+
+.search-refine-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-chiropractor-profile);
+  padding: var(--space-5);
+  border: none !important;
+}
+
+.search-refine-card.rt-Card {
+  border: none !important;
+}
+
+.search-refine-tabs .rt-TabsList {
+  width: 100%;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.search-refine-tabs .rt-TabsTrigger {
+  flex-shrink: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(0, 0, 0, 0.61) !important;
+  font-size: 14px;
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-xs);
+}
+
+.search-refine-tabs .rt-TabsTrigger[data-state='active'] {
+  color: #202020 !important;
+  box-shadow: inset 0 -2px 0 0 var(--color-tab-active-underline) !important;
+}
+
+.search-results-heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.match-potential-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--color-match-potential-bg);
+  color: var(--color-match-potential-text);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: var(--leading-snug);
+  white-space: nowrap;
+}
+
+.search-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-5);
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .search-results-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

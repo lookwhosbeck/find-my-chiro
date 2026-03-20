@@ -6,10 +6,14 @@ export interface Chiropractor {
   lastName: string;
   bio?: string;
   philosophy?: string;
+  /** Declared practice philosophies from DB (preferred for matching). */
+  philosophies?: string[];
   modality?: string;
   modalities?: string[];
   focusAreas?: string[];
   businessModel?: string;
+  /** All payment models from DB (lowercase), when available — used for matching. */
+  paymentModels?: string[];
   clinicName?: string;
   city?: string;
   state?: string;
@@ -122,13 +126,18 @@ export function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropract
 
     // Extract payment models from joined data
     const paymentModels: string[] = item.chiropractor_payment_models?.map((cpm: any) => cpm.payment_models?.name).filter(Boolean) || [];
+    const paymentModelsLower = paymentModels.map((n) => n.toLowerCase());
+
+    const philosophies: string[] =
+      item.chiropractor_philosophies?.map((cp: any) => cp.philosophies?.name).filter(Boolean) || [];
 
     return {
       id: item.id?.toString() || '',
       firstName: item.profiles?.first_name || '',
       lastName: item.profiles?.last_name || '',
       bio: item.bio || '',
-      philosophy: getPhilosophyFromModalities(modalities),
+      philosophy: philosophies[0] || getPhilosophyFromModalities(modalities),
+      philosophies: philosophies.length > 0 ? philosophies : undefined,
       modality: getPrimaryModality(modalities),
       modalities: modalities,
       clinicName: item.organizations?.name || '',
@@ -138,7 +147,8 @@ export function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropract
       avatarUrl: item.profiles?.avatar_url || null,
       // Add additional fields for matching
       focusAreas: focusAreas,
-      businessModel: paymentModels.length > 0 ? paymentModels[0].toLowerCase() : undefined,
+      businessModel: paymentModelsLower[0],
+      paymentModels: paymentModelsLower.length > 0 ? paymentModelsLower : undefined,
       // Include zip code for location filtering
       zipCode: item.organizations?.zip_code || undefined,
     };
