@@ -481,29 +481,45 @@ export default function AccountPage() {
     year: 'numeric',
   });
 
+  const openAvatarPicker = () => {
+    if (uploadingAvatar) return;
+    document.getElementById('account-avatar-input')?.click();
+  };
+
   const renderProfilePanel = () => (
     <>
-      <div className={styles.headerRow}>
-        <div className={styles.headerLeft}>
+      <div className={styles.profileHeaderOverlap}>
+        <button
+          type="button"
+          className={styles.avatarButton}
+          onClick={openAvatarPicker}
+          disabled={uploadingAvatar}
+          aria-label="Change profile photo"
+          title="Change profile photo"
+        >
           {profile.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img className={styles.avatar} src={profile.avatar_url} alt="" width={100} height={100} />
           ) : (
-            <div className={`${styles.avatar} ${styles.avatarFallback}`}>{initials}</div>
+            <span className={styles.avatarFallback}>{initials}</span>
           )}
-          <div className={styles.welcomeBlock}>
-            <p className={styles.welcomeTitle}>Welcome, {displayName}</p>
-            <p className={styles.welcomeEmail}>{profileForm.email}</p>
-            <p className={styles.welcomeMeta}>Member since {memberSince}</p>
+        </button>
+        <div className={styles.profileHeaderTextCol}>
+          <div className={styles.profileHeaderTopRow}>
+            <div className={styles.welcomeBlock}>
+              <p className={styles.welcomeTitle}>Welcome, {displayName}</p>
+              <p className={styles.welcomeEmail}>{profileForm.email}</p>
+              <p className={styles.welcomeMeta}>Member since {memberSince}</p>
+            </div>
+            <button
+              type="button"
+              className={profileEditing ? `${styles.editBtn} ${styles.editBtnMuted}` : styles.editBtn}
+              onClick={() => setProfileEditing((e) => !e)}
+            >
+              {profileEditing ? 'Done' : 'Edit'}
+            </button>
           </div>
         </div>
-        <button
-          type="button"
-          className={profileEditing ? `${styles.editBtn} ${styles.editBtnMuted}` : styles.editBtn}
-          onClick={() => setProfileEditing((e) => !e)}
-        >
-          {profileEditing ? 'Done' : 'Edit'}
-        </button>
       </div>
 
       <input
@@ -512,16 +528,11 @@ export default function AccountPage() {
         accept="image/*"
         className={styles.hiddenFile}
         onChange={handleAvatarUpload}
-        disabled={uploadingAvatar || !profileEditing}
+        disabled={uploadingAvatar}
       />
       {profileEditing && (
         <div className={styles.avatarActions}>
-          <button
-            type="button"
-            className={styles.secondaryBtn}
-            onClick={() => document.getElementById('account-avatar-input')?.click()}
-            disabled={uploadingAvatar}
-          >
+          <button type="button" className={styles.secondaryBtn} onClick={openAvatarPicker} disabled={uploadingAvatar}>
             {uploadingAvatar ? 'Uploading…' : profile.avatar_url ? 'Change photo' : 'Upload photo'}
           </button>
           {profile.avatar_url && (
@@ -531,7 +542,7 @@ export default function AccountPage() {
           )}
         </div>
       )}
-      <p className={styles.mutedNote}>JPG, PNG or GIF. Max 5MB.</p>
+      <p className={styles.mutedNote}>Click your photo to upload. JPG, PNG or GIF. Max 5MB.</p>
 
       <div className={styles.fieldGrid}>
         <div className={styles.field}>

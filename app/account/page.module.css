@@ -153,20 +153,36 @@
 }
 
 .mainInner {
-  padding: 0 50px 48px;
+  padding: var(--space-5) 50px 48px;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  margin-top: -50px;
 }
 
 @media (max-width: 767px) {
   .mainInner {
-    padding: 0 var(--space-4) var(--space-6);
+    padding: var(--space-5) var(--space-4) var(--space-6);
   }
 }
 
-.headerRow {
+/* Avatar overlaps blue bar (center on seam at 100px); text stays entirely below bar */
+.profileHeaderOverlap {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  margin-top: calc(-50px - var(--space-5));
+  margin-bottom: var(--space-2);
+  position: relative;
+  z-index: 1;
+}
+
+.profileHeaderTextCol {
+  flex: 1;
+  min-width: 0;
+  padding-top: 50px;
+}
+
+.profileHeaderTopRow {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -174,28 +190,50 @@
   gap: var(--space-4);
 }
 
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  min-width: 0;
+.avatarButton {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  padding: 0;
+  border: 4px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  background: #e8e8e8;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.avatarButton:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.avatarButton:focus-visible {
+  outline: 2px solid #0072de;
+  outline-offset: 3px;
+}
+
+.avatarButton:disabled {
+  cursor: wait;
+  opacity: 0.85;
 }
 
 .avatar {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
-  border: 4px solid #ffffff;
-  box-shadow: var(--shadow-sm);
-  background: #e8e8e8;
+  display: block;
 }
 
 .avatarFallback {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
   font-size: 36px;
   font-weight: 600;
   color: #202020;
