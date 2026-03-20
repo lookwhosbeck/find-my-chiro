@@ -10,7 +10,7 @@ import { Container } from '@/app/components/Container';
 import { MatchRadarChart } from '@/app/components/MatchRadarChart';
 import type { Chiropractor } from '@/app/lib/queries';
 import { parseSearchFiltersFromParams, appendSearchFiltersToQuery } from '@/app/lib/search-filters-url';
-import { computeMatchAxes, matchPercentFromAxes } from '@/app/lib/patient-match';
+import { buildMatchRadarOverlay, computeMatchAxes, matchPercentFromAxes } from '@/app/lib/patient-match';
 import { matchScorePillColors } from '@/app/lib/match-score-pill-colors';
 import styles from './page.module.css';
 
@@ -93,13 +93,18 @@ function ChiropractorProfileContent() {
   }, [id]);
 
   const axes = useMemo(() => (chiro ? computeMatchAxes(chiro, filters) : []), [chiro, filters]);
-  const activeAxes = useMemo(() => axes.filter((a) => a.active && a.score != null), [axes]);
+  const overlayRows = useMemo(() => (chiro ? buildMatchRadarOverlay(chiro, filters) : []), [chiro, filters]);
   const radarPoints = useMemo(
-    () => activeAxes.map((a) => ({ label: a.label, score: a.score! })),
-    [activeAxes]
+    () =>
+      overlayRows.map((r) => ({
+        label: r.label,
+        userScore: r.userScore,
+        providerScore: r.providerScore,
+      })),
+    [overlayRows]
   );
   const matchPct = useMemo(() => matchPercentFromAxes(axes), [axes]);
-  const hasFilterContext = activeAxes.length > 0;
+  const hasFilterContext = overlayRows.length > 0;
   const searchBackHref = appendSearchFiltersToQuery('/search', filters);
 
   if (!id) {
@@ -169,7 +174,7 @@ function ChiropractorProfileContent() {
               ← Back to search
             </Link>
             <Flex direction="column" align="center" gap="4" className={styles.profileHeroMeta}>
-              <Flex align="center" gap="4" wrap="wrap" justify="center">
+              <Flex direction="column" align="center" gap="3">
                 <div className={styles.profileAvatar}>
                   {chiro.avatarUrl ? (
                     <img src={chiro.avatarUrl} alt={displayName} />
@@ -401,7 +406,7 @@ function ChiropractorProfileContent() {
 
               <Card className="search-refine-card">
                 <h2 className={styles.profileSectionTitle}>Match to your search</h2>
-                {activeAxes.length === 0 ? (
+                {overlayRows.length === 0 ? (
                   <p className={styles.matchEmpty}>
                     No search filters were passed in the link. Go back to{' '}
                     <Link href="/search">Find a chiropractor</Link>, set your ZIP and preferences, then open a profile
@@ -409,11 +414,56 @@ function ChiropractorProfileContent() {
                     Saved patient profiles will use the same chart automatically in a future update.
                   </p>
                 ) : (
-                  <Flex direction="column" gap="4" align="center">
+                  <Flex direction="column" gap="5" align="center" style={{ width: '100%' }}>
                     <MatchRadarChart points={radarPoints} />
-                    <Text size="2" style={{ color: 'rgba(0,0,0,0.55)', textAlign: 'center', maxWidth: 420 }}>
-                      Scores reflect only the preferences you used in search (ZIP radius, techniques, specialties,
-                      philosophy, payment, and insurance). Missing data from the clinic can lower a category.
+                    <Flex
+                      gap="5"
+                      justify="center"
+                      align="center"
+                      wrap="wrap"
+                      style={{ rowGap: '12px' }}
+                      aria-label="Chart legend"
+                    >
+                      <Flex gap="2" align="center">
+                        <span
+                          className="match-radar-legend-swatch match-radar-legend-swatch--user"
+                          aria-hidden
+                        />
+                        <Text size="2" style={{ color: 'rgba(0,0,0,0.55)' }}>
+                          Your search (target)
+                        </Text>
+                      </Flex>
+                      <Flex gap="2" align="center">
+                        <span
+                          className="match-radar-legend-swatch match-radar-legend-swatch--provider"
+                          aria-hidden
+                        />
+                        <Text size="2" style={{ color: 'rgba(0,0,0,0.55)' }}>
+                          This practice (fit)
+                        </Text>
+                      </Flex>
+                    </Flex>
+                    <div className={styles.radarOverlayDetails}>
+                      {overlayRows.map((row) => (
+                        <div key={row.id} className={styles.radarOverlayAxis}>
+                          <h3 className={styles.radarOverlayAxisTitle}>{row.label}</h3>
+                          <div className={styles.radarOverlayLines}>
+                            <p className={styles.radarOverlayLine}>
+                              <strong>Your search</strong>
+                              {row.you}
+                            </p>
+                            <p className={styles.radarOverlayLine}>
+                              <strong>This practice</strong>
+                              {row.practice}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <Text size="2" style={{ color: 'rgba(0,0,0,0.55)', textAlign: 'center', maxWidth: 480 }}>
+                      The dashed outline is your search on each axis (full scale). The blue shape is how closely this
+                      practice matches. Compare the lists below for specifics—missing clinic data can pull a spoke
+                      inward.
                     </Text>
                   </Flex>
                 )}

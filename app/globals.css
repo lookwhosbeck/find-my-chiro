@@ -738,3 +738,67 @@ header .join-network-button,
     text-align: left;
   }
 }
+
+/* Radar overlay: fallback bars — track = your target (100%), fill = practice fit */
+.match-radar-fallback-row:has(.match-radar-overlay-bars) {
+  grid-template-columns: minmax(100px, 1fr) minmax(140px, 2fr);
+}
+
+@media (max-width: 520px) {
+  .match-radar-fallback-row:has(.match-radar-overlay-bars) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.match-radar-overlay-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.match-radar-overlay-bar-track {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(134, 134, 139, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(60, 60, 67, 0.12);
+  overflow: hidden;
+}
+
+.match-radar-overlay-bar-provider {
+  height: 100%;
+  border-radius: 5px;
+  background: var(--color-tab-active-underline, #0190ff);
+  min-width: 0;
+  transition: width 0.35s ease;
+}
+
+.match-radar-overlay-bar-meta {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  font-family: var(--font-body);
+}
+
+.match-radar-overlay-bar-pct {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Legend swatches (profile match card) */
+.match-radar-legend-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.match-radar-legend-swatch--user {
+  background: rgba(134, 134, 139, 0.25);
+  border: 1px dashed rgba(60, 60, 67, 0.45);
+}
+
+.match-radar-legend-swatch--provider {
+  background: rgba(1, 144, 255, 0.28);
+  border: 1px solid var(--color-tab-active-underline, #0190ff);
+}

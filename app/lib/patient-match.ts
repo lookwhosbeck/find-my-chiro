@@ -207,6 +207,118 @@ function weightForAxis(id: MatchAxisId): number {
   }
 }
 
+const BUSINESS_DISPLAY: Record<string, string> = {
+  cash: 'Cash-based',
+  insurance: 'Insurance-based',
+  hybrid: 'Hybrid',
+};
+
+export type MatchRadarOverlayRow = {
+  id: MatchAxisId;
+  label: string;
+  /** Plain-language summary of what you searched for on this axis. */
+  you: string;
+  /** Plain-language summary of what this practice lists on this axis. */
+  practice: string;
+  /** Chart: outer ring — your search sets the full scale (100). */
+  userScore: number;
+  /** Chart: inner shape — how well the practice matches (0–100). */
+  providerScore: number;
+};
+
+function formatBusinessFilter(code: string): string {
+  const k = code.toLowerCase().trim();
+  return BUSINESS_DISPLAY[k] ?? code;
+}
+
+function formatPracticePayments(chiro: Chiropractor): string {
+  const raw = chiroPaymentModels(chiro);
+  if (!raw.length) return 'Not specified';
+  return raw.map((m) => BUSINESS_DISPLAY[m] ?? m).join(' · ');
+}
+
+function axisSummaries(
+  id: MatchAxisId,
+  chiro: Chiropractor,
+  filters: PatientSearchFilters
+): { you: string; practice: string } {
+  switch (id) {
+    case 'location': {
+      const z = filters.zipCode?.trim() || '';
+      const r = filters.searchRadius ?? 25;
+      const you = z ? `Near ZIP ${z} · within ${r} mi` : 'Location search';
+      const line = [chiro.addressLine1, [chiro.city, chiro.state, chiro.zipCode].filter(Boolean).join(', ')]
+        .map((s) => s?.trim())
+        .filter(Boolean)
+        .join(' · ');
+      const practice =
+        line ||
+        (chiro.city && chiro.state ? `${chiro.city}, ${chiro.state}` : '') ||
+        (chiro.zipCode ? `ZIP ${normalizeUsZip(chiro.zipCode) || chiro.zipCode}` : '') ||
+        'Address not on file';
+      return { you, practice };
+    }
+    case 'modalities': {
+      const prefs = filters.preferredModalities ?? [];
+      const you = prefs.length ? prefs.join(', ') : '—';
+      const m = chiro.modalities ?? [];
+      const practice = m.length ? m.join(', ') : 'None on file';
+      return { you, practice };
+    }
+    case 'focus': {
+      const prefs = filters.focusAreas ?? [];
+      const you = prefs.length ? prefs.join(', ') : '—';
+      const m = chiro.focusAreas ?? [];
+      const practice = m.length ? m.join(', ') : 'None on file';
+      return { you, practice };
+    }
+    case 'philosophy': {
+      const prefs = filters.preferredPhilosophies ?? [];
+      const you = prefs.length ? prefs.join(', ') : '—';
+      const m = chiroPhilosophyList(chiro);
+      const practice = m.length ? m.join(', ') : 'None on file';
+      return { you, practice };
+    }
+    case 'business': {
+      const biz = filters.preferredBusinessModel?.trim() || '';
+      const you = biz ? formatBusinessFilter(biz) : '—';
+      return { you, practice: formatPracticePayments(chiro) };
+    }
+    case 'insurance': {
+      const ins = filters.insuranceType?.trim() || '';
+      const you = ins || '—';
+      const models = chiroPaymentModels(chiro);
+      const practice = models.some((m) => m === 'insurance' || m === 'hybrid')
+        ? 'Lists insurance or hybrid billing'
+        : 'Lists cash-only (no insurance / hybrid)';
+      return { you, practice };
+    }
+    default:
+      return { you: '—', practice: '—' };
+  }
+}
+
+/**
+ * Rows for overlay radar + side-by-side copy: your search vs this practice (active axes only).
+ */
+export function buildMatchRadarOverlay(chiro: Chiropractor, filters: PatientSearchFilters): MatchRadarOverlayRow[] {
+  const axes = computeMatchAxes(chiro, filters);
+  const out: MatchRadarOverlayRow[] = [];
+  for (const ax of axes) {
+    if (!ax.active || ax.score == null) continue;
+    const { you, practice } = axisSummaries(ax.id, chiro, filters);
+    out.push({
+      id: ax.id,
+      label: ax.label,
+      you,
+      practice,
+      userScore: 100,
+      providerScore: ax.score,
+    });
+  }
+  return out;
+}
+
 /**
  * Score each chiropractor as overlap between this provider and the patient's active filters.
  * Only preferences the patient actually set are included; score is achieved ÷ possible × 100.
