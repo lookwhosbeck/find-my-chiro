@@ -39,6 +39,7 @@ export function DualMarqueeCarousels({ chiropractors }: DualMarqueeCarouselsProp
                 <ChiropractorCard
                   chiropractor={c}
                   marketingMatchPercent={marketingPercentFromId(c.id)}
+                  variant="marquee"
                 />
               </div>
             ))}
@@ -53,6 +54,7 @@ export function DualMarqueeCarousels({ chiropractors }: DualMarqueeCarouselsProp
                 <ChiropractorCard
                   chiropractor={c}
                   marketingMatchPercent={marketingPercentFromId(c.id)}
+                  variant="marquee"
                 />
               </div>
             ))}

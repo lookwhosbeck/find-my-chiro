@@ -9,6 +9,9 @@
   width: 100%;
   overflow: hidden;
   position: relative;
+  /* Large card shadow extends past the box; padding keeps blur + corners inside the clip */
+  padding-block: 40px;
+  margin-block: -40px;
 }
 
 .trackLeft,
@@ -51,14 +54,25 @@
 }
 
 .cardSlot {
-  width: 278px;
-  min-width: 240px;
+  width: 260px;
+  height: 260px;
   flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
 }
 
 .cardSlot :global(.chiropractor-card) {
-  min-height: 248px;
+  min-height: 0 !important;
+  height: 100%;
   box-shadow: var(--shadow-chiropractor-profile);
+}
+
+@media (max-width: 640px) {
+  .cardSlot {
+    width: 220px;
+    height: 220px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

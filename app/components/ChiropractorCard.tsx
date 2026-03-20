@@ -25,6 +25,8 @@ interface ChiropractorCardProps {
   chiropractor: Chiropractor;
   /** Homepage / marketing carousel: show a static match % when no search match exists */
   marketingMatchPercent?: number;
+  /** Compact square layout for homepage marquee */
+  variant?: 'default' | 'marquee';
 }
 
 function buildSpecialtyLine(chiropractor: Chiropractor): string {
@@ -46,7 +48,9 @@ function buildSpecialtyLine(chiropractor: Chiropractor): string {
   return '';
 }
 
-export function ChiropractorCard({ chiropractor, marketingMatchPercent }: ChiropractorCardProps) {
+export function ChiropractorCard({ chiropractor, marketingMatchPercent, variant = 'default' }: ChiropractorCardProps) {
+  const isMarquee = variant === 'marquee';
+  const avatarSize = isMarquee ? 56 : 80;
   const initials = `${chiropractor.firstName?.[0] || ''}${chiropractor.lastName?.[0] || ''}`.toUpperCase();
   const displayName = `Dr. ${chiropractor.firstName} ${chiropractor.lastName}`.trim();
   const specialtyLine = buildSpecialtyLine(chiropractor);
@@ -62,9 +66,19 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
       : null);
   const showMatch = matchPercent != null;
 
+  const specialtyClampStyle = isMarquee
+    ? ({
+        display: '-webkit-box',
+        WebkitBoxOrient: 'vertical' as const,
+        WebkitLineClamp: 2,
+        overflow: 'hidden',
+      } satisfies CSSProperties)
+    : undefined;
+
   return (
     <Box
       className="chiropractor-card"
+      data-variant={isMarquee ? 'marquee' : undefined}
       style={{
         backgroundColor: 'var(--color-surface)',
         display: 'flex',
@@ -72,17 +86,17 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
         height: '100%',
         minHeight: 0,
         overflow: 'hidden',
-        padding: 'var(--profile-card-padding)',
+        padding: isMarquee ? 14 : 'var(--profile-card-padding)',
         width: '100%',
       }}
     >
-      <Flex direction="column" gap="4" style={{ flex: '1 1 auto', minHeight: 0 }}>
-        <Flex align="start" justify="between" style={{ width: '100%', minHeight: 80 }}>
+      <Flex direction="column" gap={isMarquee ? '2' : '4'} style={{ flex: '1 1 auto', minHeight: 0 }}>
+        <Flex align="start" justify="between" style={{ width: '100%', minHeight: avatarSize }}>
           <Box
             style={{
-              width: 80,
-              height: 80,
-              borderRadius: 12,
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: isMarquee ? 10 : 12,
               overflow: 'hidden',
               flexShrink: 0,
               backgroundColor: 'var(--color-yellow-accent)',
@@ -105,7 +119,7 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
                   style={{
                     color: 'var(--color-chiro-card-text)',
                     fontFamily: 'var(--font-body)',
-                    fontSize: 28,
+                    fontSize: isMarquee ? 18 : 28,
                     lineHeight: 1,
                   }}
                 >
@@ -119,7 +133,7 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
               style={{
                 backgroundColor: 'var(--color-match-badge-bg)',
                 borderRadius: 5,
-                padding: 4,
+                padding: isMarquee ? 3 : 4,
                 flexShrink: 0,
               }}
             >
@@ -127,10 +141,10 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
                 style={{
                   color: 'var(--color-match-badge-text)',
                   fontFamily: 'var(--font-body)',
-                  fontSize: 12,
+                  fontSize: isMarquee ? 11 : 12,
                   fontWeight: 400,
                   letterSpacing: '-0.36px',
-                  lineHeight: '24px',
+                  lineHeight: isMarquee ? '18px' : '24px',
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -140,18 +154,25 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
           )}
         </Flex>
 
-        <Flex direction="column" gap="1" align="start" style={{ width: '100%' }}>
+        <Flex direction="column" gap="1" align="start" style={{ width: '100%', minWidth: 0 }}>
           <Text
             as="p"
             style={{
               color: 'var(--color-chiro-card-text)',
               fontFamily: 'var(--font-body)',
-              fontSize: 16,
+              fontSize: isMarquee ? 14 : 16,
               fontWeight: 500,
               letterSpacing: '0.16px',
-              lineHeight: '24px',
+              lineHeight: isMarquee ? '20px' : '24px',
               margin: 0,
               width: '100%',
+              ...(isMarquee
+                ? {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }
+                : {}),
             }}
           >
             {displayName}
@@ -162,12 +183,13 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
               style={{
                 color: 'var(--color-chiro-card-text)',
                 fontFamily: 'var(--font-body)',
-                fontSize: 16,
+                fontSize: isMarquee ? 13 : 16,
                 fontWeight: 400,
                 letterSpacing: '-0.32px',
-                lineHeight: '22.4px',
+                lineHeight: isMarquee ? '18px' : '22.4px',
                 margin: 0,
                 width: '100%',
+                ...specialtyClampStyle,
               }}
             >
               {specialtyLine}
@@ -181,23 +203,33 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent }: Chirop
           align="center"
           style={{
             flexShrink: 0,
-            gap: 10,
-            paddingTop: 'var(--space-4)',
+            gap: isMarquee ? 6 : 10,
+            paddingTop: isMarquee ? 8 : 'var(--space-4)',
+            minWidth: 0,
           }}
         >
           <LocationPinIcon
-            style={{ flexShrink: 0, color: 'var(--color-text-secondary)' }}
+            style={{
+              flexShrink: 0,
+              color: 'var(--color-text-secondary)',
+              width: isMarquee ? 10 : 12,
+              height: isMarquee ? 13 : 16,
+            }}
           />
           <Text
             as="p"
             style={{
               color: 'var(--color-chiro-card-text)',
               fontFamily: 'var(--font-body)',
-              fontSize: 14,
+              fontSize: isMarquee ? 12 : 14,
               fontWeight: 400,
               letterSpacing: '-0.32px',
-              lineHeight: '22.4px',
+              lineHeight: isMarquee ? '16px' : '22.4px',
               margin: 0,
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {locationLine}
