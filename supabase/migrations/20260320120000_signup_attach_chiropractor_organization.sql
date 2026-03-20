@@ -1,8 +1,4 @@
--- Same SQL as: supabase/migrations/20260320120000_signup_attach_chiropractor_organization.sql
--- Apply either by pasting this file in Dashboard → SQL Editor, or from the repo root:
---   supabase link --project-ref <your-project-ref>
---   supabase db push
-
+-- Signup: create organizations row + set chiropractors.organization_id (bypasses RLS issues on INSERT RETURNING).
 CREATE OR REPLACE FUNCTION public.signup_attach_chiropractor_organization(
   p_clinic_name text,
   p_address_line_1 text,

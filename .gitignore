@@ -33,8 +33,8 @@ yarn-error.log*
 
 # Supabase
 supabase-project/
-supabase/
 supabase/.temp
+supabase/.branches
 *.sql.backup
 reset_cloud_db.sql
 data_export*.sql

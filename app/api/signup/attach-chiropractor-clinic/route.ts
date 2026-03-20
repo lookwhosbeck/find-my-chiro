@@ -64,7 +64,6 @@ export async function POST(req: NextRequest) {
     city: str('city') || null,
     state: str('state') || null,
     zip_code: str('zip') || null,
-    updated_at: new Date().toISOString(),
   };
 
   const { data: inserted, error: insErr } = await admin

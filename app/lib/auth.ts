@@ -83,7 +83,6 @@ async function attachClinicOrganizationFromSignup(
     city: data.city?.trim() || null,
     state: data.state?.trim() || null,
     zip_code: data.zip?.trim() || null,
-    updated_at: new Date().toISOString(),
   };
 
   const { data: insertedRows, error: orgErr } = await supabase
@@ -114,12 +113,62 @@ async function attachClinicOrganizationFromSignup(
   }
 }
 
+async function tryAttachClinicViaApi(accessToken: string, data: SignUpData): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  try {
+    const res = await fetch('/api/signup/attach-chiropractor-clinic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        clinicName: data.clinicName,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        zip: data.zip,
+      }),
+    });
+    if (!res.ok) return false;
+    const json = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+    return json?.ok === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Email-confirm-off: session can lag one tick behind signUp; RPC needs a JWT with auth.uid(). */
+async function resolveAccessTokenAfterSignup(
+  supabase: SupabaseClient,
+  signupSessionToken: string | null | undefined,
+  maxAttempts = 25,
+  delayMs = 120,
+): Promise<string | null> {
+  const first = signupSessionToken?.trim();
+  if (first) return first;
+  for (let i = 0; i < maxAttempts; i++) {
+    const { data } = await supabase.auth.getSession();
+    const t = data.session?.access_token?.trim();
+    if (t) return t;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return null;
+}
+
 async function ensureSignupClinicLinked(
   supabase: SupabaseClient,
   userId: string,
   data: SignUpData,
+  signupAccessToken: string | null | undefined,
 ): Promise<void> {
   if (!hasSignupClinicLocationData(data)) return;
+
+  const accessToken = await resolveAccessTokenAfterSignup(supabase, signupAccessToken ?? null);
+
+  if (accessToken && (await tryAttachClinicViaApi(accessToken, data))) {
+    return;
+  }
 
   const { data: rpcOrgId, error: rpcErr } = await supabase.rpc('signup_attach_chiropractor_organization', {
     p_clinic_name: data.clinicName ?? '',
@@ -129,7 +178,13 @@ async function ensureSignupClinicLinked(
     p_zip_code: data.zip ?? '',
   });
 
-  if (!rpcErr && rpcOrgId) {
+  const rpcOk =
+    !rpcErr &&
+    rpcOrgId != null &&
+    String(rpcOrgId).length > 0 &&
+    String(rpcOrgId).toLowerCase() !== 'null';
+
+  if (rpcOk) {
     return;
   }
 
@@ -147,33 +202,8 @@ async function ensureSignupClinicLinked(
 
   if (chiroRow?.organization_id) return;
 
-  if (typeof window === 'undefined') return;
-
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData.session?.access_token;
-  if (!token) return;
-
-  try {
-    const res = await fetch('/api/signup/attach-chiropractor-clinic', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        clinicName: data.clinicName,
-        address: data.address,
-        city: data.city,
-        state: data.state,
-        zip: data.zip,
-      }),
-    });
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      console.error('Clinic attach API failed:', res.status, errJson);
-    }
-  } catch (e) {
-    console.error('Clinic attach API request error:', e);
+  if (accessToken) {
+    await tryAttachClinicViaApi(accessToken, data);
   }
 }
 
@@ -385,7 +415,8 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
       console.error('Could not save signup specialties (modalities, focus areas, payment, insurance):', junctionError);
     }
 
-    await ensureSignupClinicLinked(supabase, userId, data);
+    const signupToken = authData.session?.access_token;
+    await ensureSignupClinicLinked(supabase, userId, data, signupToken);
 
     return { success: true, userId };
   } catch (error: any) {
