@@ -83,7 +83,6 @@ async function attachClinicOrganizationFromSignup(
     city: data.city?.trim() || null,
     state: data.state?.trim() || null,
     zip_code: data.zip?.trim() || null,
-    website: data.website?.trim() || null,
     updated_at: new Date().toISOString(),
   };
 
@@ -112,6 +111,69 @@ async function attachClinicOrganizationFromSignup(
 
   if (linkErr) {
     console.error('Could not link clinic organization to chiropractor:', linkErr);
+  }
+}
+
+async function ensureSignupClinicLinked(
+  supabase: SupabaseClient,
+  userId: string,
+  data: SignUpData,
+): Promise<void> {
+  if (!hasSignupClinicLocationData(data)) return;
+
+  const { data: rpcOrgId, error: rpcErr } = await supabase.rpc('signup_attach_chiropractor_organization', {
+    p_clinic_name: data.clinicName ?? '',
+    p_address_line_1: data.address ?? '',
+    p_city: data.city ?? '',
+    p_state: data.state ?? '',
+    p_zip_code: data.zip ?? '',
+  });
+
+  if (!rpcErr && rpcOrgId) {
+    return;
+  }
+
+  if (rpcErr) {
+    console.warn('signup_attach_chiropractor_organization RPC skipped or failed:', rpcErr.message);
+  }
+
+  await attachClinicOrganizationFromSignup(supabase, userId, data);
+
+  const { data: chiroRow } = await supabase
+    .from('chiropractors')
+    .select('organization_id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (chiroRow?.organization_id) return;
+
+  if (typeof window === 'undefined') return;
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) return;
+
+  try {
+    const res = await fetch('/api/signup/attach-chiropractor-clinic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        clinicName: data.clinicName,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        zip: data.zip,
+      }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      console.error('Clinic attach API failed:', res.status, errJson);
+    }
+  } catch (e) {
+    console.error('Clinic attach API request error:', e);
   }
 }
 
@@ -323,7 +385,7 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
       console.error('Could not save signup specialties (modalities, focus areas, payment, insurance):', junctionError);
     }
 
-    await attachClinicOrganizationFromSignup(supabase, userId, data);
+    await ensureSignupClinicLinked(supabase, userId, data);
 
     return { success: true, userId };
   } catch (error: any) {
