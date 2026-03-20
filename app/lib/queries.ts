@@ -18,6 +18,14 @@ export interface Chiropractor {
   city?: string;
   state?: string;
   zipCode?: string;
+  /** Practice / organization contact and address (public profile). */
+  addressLine1?: string;
+  practicePhone?: string;
+  practiceWebsite?: string;
+  chiropracticCollege?: string;
+  graduationYear?: number;
+  licenseNumber?: string;
+  budgetRange?: string | null;
   acceptingPatients?: boolean;
   avatarUrl?: string;
   matchScore?: number;
@@ -81,6 +89,7 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
       .select(`
         *,
         profiles!inner(id, first_name, last_name, avatar_url),
+        organizations(name, city, state, zip_code, phone, website, address_line_1),
         chiropractor_modalities(modalities(name)),
         chiropractor_focus_areas(focus_areas(name)),
         chiropractor_payment_models(payment_models(name)),
@@ -143,13 +152,18 @@ export function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropract
       clinicName: item.organizations?.name || '',
       city: item.organizations?.city || '',
       state: item.organizations?.state || '',
+      addressLine1: item.organizations?.address_line_1 || undefined,
+      practicePhone: item.organizations?.phone || undefined,
+      practiceWebsite: item.organizations?.website || undefined,
+      chiropracticCollege: item.chiropractic_college || undefined,
+      graduationYear: typeof item.graduation_year === 'number' ? item.graduation_year : undefined,
+      licenseNumber: item.license_number || undefined,
+      budgetRange: item.budget_range ?? undefined,
       acceptingPatients: item.accepting_new_patients ?? true,
       avatarUrl: item.profiles?.avatar_url || null,
-      // Add additional fields for matching
       focusAreas: focusAreas,
       businessModel: paymentModelsLower[0],
       paymentModels: paymentModelsLower.length > 0 ? paymentModelsLower : undefined,
-      // Include zip code for location filtering
       zipCode: item.organizations?.zip_code || undefined,
     };
   });

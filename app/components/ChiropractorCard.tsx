@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
 import { Box, Flex, Text } from '@radix-ui/themes';
+import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { Chiropractor } from '../lib/queries';
 
 function LocationPinIcon({ style }: { style?: CSSProperties }) {
@@ -23,6 +25,8 @@ function LocationPinIcon({ style }: { style?: CSSProperties }) {
 
 interface ChiropractorCardProps {
   chiropractor: Chiropractor;
+  /** Link target (e.g. include search query params for match chart on profile). Defaults to `/chiropractor/[id]`. */
+  profileHref?: string;
   /** Homepage / marketing carousel: show a static match % when no search match exists */
   marketingMatchPercent?: number;
   /** Compact square layout for homepage marquee */
@@ -48,7 +52,12 @@ function buildSpecialtyLine(chiropractor: Chiropractor): string {
   return '';
 }
 
-export function ChiropractorCard({ chiropractor, marketingMatchPercent, variant = 'default' }: ChiropractorCardProps) {
+export function ChiropractorCard({
+  chiropractor,
+  profileHref,
+  marketingMatchPercent,
+  variant = 'default',
+}: ChiropractorCardProps) {
   const isMarquee = variant === 'marquee';
   const avatarSize = isMarquee ? 72 : 80;
   const initials = `${chiropractor.firstName?.[0] || ''}${chiropractor.lastName?.[0] || ''}`.toUpperCase();
@@ -65,6 +74,7 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent, variant 
       ? Math.round(chiropractor.matchScore)
       : null);
   const showMatch = matchPercent != null;
+  const matchPillColors = showMatch ? matchScorePillColors(matchPercent) : null;
 
   const specialtyClampStyle = isMarquee
     ? ({
@@ -110,10 +120,10 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent, variant 
     </Box>
   );
 
-  const matchBadge = showMatch ? (
+  const matchBadge = showMatch && matchPillColors ? (
     <Box
       style={{
-        backgroundColor: 'var(--color-match-badge-bg)',
+        ...matchPillColors,
         borderRadius: 5,
         padding: isMarquee ? 3 : 4,
         flexShrink: 0,
@@ -121,7 +131,7 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent, variant 
     >
       <Text
         style={{
-          color: 'var(--color-match-badge-text)',
+          color: matchPillColors.color,
           fontFamily: 'var(--font-body)',
           fontSize: isMarquee ? 11 : 12,
           fontWeight: 400,
@@ -221,7 +231,9 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent, variant 
       </Flex>
     ) : null;
 
-  return (
+  const href = profileHref ?? `/chiropractor/${chiropractor.id}`;
+
+  const cardInner = (
     <Box
       className="chiropractor-card"
       data-variant={isMarquee ? 'marquee' : undefined}
@@ -265,5 +277,16 @@ export function ChiropractorCard({ chiropractor, marketingMatchPercent, variant 
         </>
       )}
     </Box>
+  );
+
+  return (
+    <Link
+      href={href}
+      className="chiropractor-card-link"
+      prefetch={false}
+      aria-label={`View profile: ${displayName}`}
+    >
+      {cardInner}
+    </Link>
   );
 }

@@ -21,8 +21,8 @@ export async function searchChiropractorsWithClient(
     .select(
       `
         *,
-        profiles!inner(first_name, last_name, email),
-        organizations!inner(name, city, state, zip_code),
+        profiles!inner(first_name, last_name, email, avatar_url),
+        organizations!inner(name, city, state, zip_code, phone, website, address_line_1),
         chiropractor_modalities(modality_id, modalities!inner(name)),
         chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
         chiropractor_payment_models(payment_model_id, payment_models!inner(name)),

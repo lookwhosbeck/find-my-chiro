@@ -11,6 +11,8 @@ import { Container } from '../components/Container';
 import { ChiropractorCard } from '../components/ChiropractorCard';
 import { ProximitySearchBar } from '../components/ProximitySearchBar';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
+import { matchScorePillColors } from '../lib/match-score-pill-colors';
+import { appendSearchFiltersToQuery } from '../lib/search-filters-url';
 
 function ArrowUpRightIcon() {
   return (
@@ -460,7 +462,10 @@ function SearchPageContent() {
                           Sorted by match score
                         </Text>
                         {resultsMatchAverage != null && (
-                          <span className="match-potential-pill">
+                          <span
+                            className="match-potential-pill"
+                            style={matchScorePillColors(resultsMatchAverage)}
+                          >
                             Your filters: {resultsMatchAverage}% match potential
                           </span>
                         )}
@@ -475,7 +480,11 @@ function SearchPageContent() {
                   ) : chiropractors.length > 0 ? (
                     <div className="search-results-grid">
                       {chiropractors.map((chiropractor) => (
-                        <ChiropractorCard key={chiropractor.id} chiropractor={chiropractor} />
+                        <ChiropractorCard
+                          key={chiropractor.id}
+                          chiropractor={chiropractor}
+                          profileHref={appendSearchFiltersToQuery(`/chiropractor/${chiropractor.id}`, filters)}
+                        />
                       ))}
                     </div>
                   ) : (

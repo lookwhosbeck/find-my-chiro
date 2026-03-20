@@ -87,13 +87,9 @@ html {
   --shadow-chiropractor-profile: 0 50px 40px rgba(0, 0, 0, 0.01), 0 50px 40px rgba(0, 0, 0, 0.02),
     0 20px 40px rgba(0, 0, 0, 0.05), 0 3px 10px rgba(0, 0, 0, 0.08);
   --color-chiro-card-text: #030302;
-  --color-match-badge-bg: #dbf1dc;
-  --color-match-badge-text: #0b6d0f;
   /* Search page — Figma (node 28:908) */
   --color-hero-ink: #030302;
   --color-tab-active-underline: #0190ff;
-  --color-match-potential-bg: rgba(221, 0, 0, 0.08);
-  --color-match-potential-text: #ce2c31;
   --shadow-search-hero: 0 50px 40px rgba(0, 0, 0, 0.01), 0 50px 40px rgba(0, 0, 0, 0.02),
     0 20px 40px rgba(0, 0, 0, 0.05), 0 3px 10px rgba(0, 0, 0, 0.08);
   /* Refine card — Figma 31:1764 / 31:1765 */
@@ -636,8 +632,6 @@ header .join-network-button,
   align-items: center;
   padding: 2px 6px;
   border-radius: var(--radius-xs);
-  background: var(--color-match-potential-bg);
-  color: var(--color-match-potential-text);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.03em;
@@ -655,5 +649,92 @@ header .join-network-button,
 @media (min-width: 1024px) {
   .search-results-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Chiropractor card → profile (full card clickable) */
+.chiropractor-card-link {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--profile-card-radius);
+}
+
+.chiropractor-card-link:hover .chiropractor-card {
+  box-shadow: var(--shadow-md) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+.chiropractor-card-link:focus-visible {
+  outline: 2px solid var(--color-tab-active-underline);
+  outline-offset: 3px;
+}
+
+/* Match radar (profile) */
+.match-radar-svg .match-radar-label {
+  font-size: 11px;
+  font-weight: 500;
+  fill: #3a3a3c;
+  font-family: var(--font-body);
+}
+
+.match-radar-fallback {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.match-radar-fallback-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) 4fr auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+@media (max-width: 520px) {
+  .match-radar-fallback-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+}
+
+.match-radar-fallback-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #202020;
+  font-family: var(--font-body);
+}
+
+.match-radar-fallback-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--refine-checkbox-unchecked);
+  overflow: hidden;
+}
+
+.match-radar-fallback-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--color-tab-active-underline);
+  min-width: 0;
+  transition: width 0.35s ease;
+}
+
+.match-radar-fallback-pct {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.55);
+  font-family: var(--font-body);
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .match-radar-fallback-pct {
+    text-align: left;
   }
 }

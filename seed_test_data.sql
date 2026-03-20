@@ -4,6 +4,8 @@
 -- SAFE TO RUN MULTIPLE TIMES: All INSERT statements use ON CONFLICT DO NOTHING
 -- to gracefully handle existing data without errors.
 --
+-- More chiropractors: after this file, run seed_100_chiropractors.sql (100 DCs + orgs + junction rows).
+--
 -- If you want to start fresh, truncate first:
 -- TRUNCATE TABLE chiropractor_philosophies, chiropractor_payment_models,
 --                chiropractor_focus_areas, chiropractor_modalities,
