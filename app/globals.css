@@ -139,9 +139,11 @@ html {
    Base Styles
    ======================================== */
 
+/* Avoid overflow-x: hidden on body — it forces overflow-y to auto (CSS overflow pairing),
+   creating a nested scroll root vs html so wheel scroll can fail while the scrollbar still works. */
 body {
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: visible;
   overflow-y: visible;
   overscroll-behavior: none;
   color: var(--color-text-primary);

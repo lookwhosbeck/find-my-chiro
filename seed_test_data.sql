@@ -335,7 +335,7 @@ INSERT INTO profiles (id, first_name, last_name, email, role, created_at, update
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert detailed patient profiles (matching your schema - no arrays, use junction tables) - Skip if already exists
-INSERT INTO patients (id, phone, date_of_birth, emergency_contact, emergency_phone, city, state, preferred_zip_code, search_radius, preferred_days, preferred_times, updated_at) VALUES
+INSERT INTO patients (id, phone, date_of_birth, emergency_contact, emergency_phone, city, state, preferred_zip_code, search_radius_miles, preferred_days, preferred_times, updated_at) VALUES
 ('660e8400-e29b-41d4-a716-446655440011', '555-0101', '1985-03-15', 'Jane Doe', '555-0102', 'Manhattan', 'NY', '10001', 15, ARRAY['Monday', 'Wednesday', 'Friday'], ARRAY['Morning', 'Afternoon'], NOW()),
 
 ('660e8400-e29b-41d4-a716-446655440012', '555-0201', '1990-07-22', 'Bob Smith', '555-0202', 'Brooklyn', 'NY', '11201', 20, ARRAY['Tuesday', 'Thursday'], ARRAY['Afternoon', 'Evening'], NOW()),

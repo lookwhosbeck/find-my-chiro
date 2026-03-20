@@ -77,8 +77,12 @@ interface PatientProfile {
   budget_range?: string;
   city?: string;
   state?: string;
+  /** Legacy / alternate column name in some DBs */
   zip_code?: string;
+  /** Written by patient signup (`signUpPatient`) */
+  preferred_zip_code?: string | null;
   search_radius?: number;
+  search_radius_miles?: number;
   preferred_days?: string[];
   preferred_times?: string[];
   updated_at: string;
@@ -369,22 +373,23 @@ export default function AccountPage() {
 
         if (!patientError && patientData) {
           setPatientProfile(patientData as PatientProfile);
+          const pRow = patientData as PatientProfile;
           setPatientForm({
-            phone: patientData.phone || '',
-            date_of_birth: patientData.date_of_birth?.slice(0, 10) || '',
-            emergency_contact: patientData.emergency_contact || '',
-            emergency_phone: patientData.emergency_phone || '',
-            preferred_modalities: patientData.preferred_modalities || [],
-            focus_areas: patientData.focus_areas || [],
-            preferred_business_model: patientData.preferred_business_model || '',
-            insurance_type: patientData.insurance_type || '',
-            budget_range: patientData.budget_range || '',
-            city: patientData.city || '',
-            state: patientData.state || '',
-            zip_code: patientData.zip_code || '',
-            search_radius: patientData.search_radius || 25,
-            preferred_days: patientData.preferred_days || [],
-            preferred_times: patientData.preferred_times || [],
+            phone: pRow.phone || '',
+            date_of_birth: pRow.date_of_birth?.slice(0, 10) || '',
+            emergency_contact: pRow.emergency_contact || '',
+            emergency_phone: pRow.emergency_phone || '',
+            preferred_modalities: pRow.preferred_modalities || [],
+            focus_areas: pRow.focus_areas || [],
+            preferred_business_model: pRow.preferred_business_model || '',
+            insurance_type: pRow.insurance_type || '',
+            budget_range: pRow.budget_range || '',
+            city: pRow.city || '',
+            state: pRow.state || '',
+            zip_code: pRow.zip_code || pRow.preferred_zip_code || '',
+            search_radius: pRow.search_radius ?? pRow.search_radius_miles ?? 25,
+            preferred_days: pRow.preferred_days || [],
+            preferred_times: pRow.preferred_times || [],
           });
         }
       }
@@ -444,25 +449,32 @@ export default function AccountPage() {
     if (!user || !profile) return;
     setSaving(true);
     try {
+      const nextEmail = profileForm.email.trim();
+      if (nextEmail !== (profile.email || '').trim()) {
+        const { error: authEmailErr } = await supabase.auth.updateUser({ email: nextEmail });
+        if (authEmailErr) throw authEmailErr;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
-          first_name: profileForm.first_name,
-          last_name: profileForm.last_name,
-          email: profileForm.email,
+          first_name: profileForm.first_name.trim() || null,
+          last_name: profileForm.last_name.trim() || null,
+          email: nextEmail || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (error) throw error;
 
+      setProfileForm((f) => ({ ...f, email: nextEmail }));
       setProfile((prev) =>
         prev
           ? {
               ...prev,
-              first_name: profileForm.first_name,
-              last_name: profileForm.last_name,
-              email: profileForm.email,
+              first_name: profileForm.first_name.trim() || null,
+              last_name: profileForm.last_name.trim() || null,
+              email: nextEmail || null,
               updated_at: new Date().toISOString(),
             }
           : null,
@@ -562,15 +574,7 @@ export default function AccountPage() {
       await sync('chiropractor_focus_areas', 'focus_areas', 'focus_area_id', chiroFocusNames);
       await sync('chiropractor_philosophies', 'philosophies', 'philosophy_id', chiroPhilosophyNames);
       await sync('chiropractor_payment_models', 'payment_models', 'payment_model_id', chiroPaymentNames);
-
-      try {
-        await sync('chiropractor_insurances', 'insurances', 'insurance_id', chiroInsuranceNames);
-      } catch (insErr) {
-        console.warn(
-          'chiropractor_insurances not saved (add table via supabase/optional-chiropractor-profile-extras.sql):',
-          insErr,
-        );
-      }
+      await sync('chiropractor_insurances', 'insurances', 'insurance_id', chiroInsuranceNames);
 
       const budgetPayload = {
         id: user.id,
@@ -578,11 +582,8 @@ export default function AccountPage() {
         updated_at: new Date().toISOString(),
       };
       const { error: bErr } = await supabase.from('chiropractors').update(budgetPayload).eq('id', user.id);
-      if (bErr) {
-        console.warn(budgetPayload, bErr);
-      } else {
-        setChiropractorProfile((prev) => (prev ? { ...prev, budget_range: budgetPayload.budget_range ?? undefined } : prev));
-      }
+      if (bErr) throw bErr;
+      setChiropractorProfile((prev) => (prev ? { ...prev, budget_range: budgetPayload.budget_range ?? undefined } : prev));
     } catch (e) {
       console.error(e);
       alert('Could not update specialties. Your database may use different table names or permissions.');
@@ -597,19 +598,19 @@ export default function AccountPage() {
     try {
       const updateData = {
         id: user.id,
-        phone: patientForm.phone || null,
+        phone: patientForm.phone.trim() || null,
         date_of_birth: patientForm.date_of_birth || null,
-        emergency_contact: patientForm.emergency_contact || null,
-        emergency_phone: patientForm.emergency_phone || null,
+        emergency_contact: patientForm.emergency_contact.trim() || null,
+        emergency_phone: patientForm.emergency_phone.trim() || null,
         preferred_modalities: patientForm.preferred_modalities,
         focus_areas: patientForm.focus_areas,
         preferred_business_model: patientForm.preferred_business_model || null,
         insurance_type: patientForm.insurance_type || null,
         budget_range: patientForm.budget_range || null,
-        city: patientForm.city || null,
-        state: patientForm.state || null,
-        zip_code: patientForm.zip_code || null,
-        search_radius: patientForm.search_radius,
+        city: patientForm.city.trim() || null,
+        state: patientForm.state.trim() || null,
+        preferred_zip_code: patientForm.zip_code.trim() || null,
+        search_radius_miles: patientForm.search_radius,
         preferred_days: patientForm.preferred_days,
         preferred_times: patientForm.preferred_times,
         updated_at: new Date().toISOString(),
@@ -862,12 +863,6 @@ export default function AccountPage() {
     const practiceLocked = !practiceEditing;
     return (
     <>
-      <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
-        Practice &amp; location
-      </h3>
-      <p className={styles.mutedNote} style={{ marginTop: 0 }}>
-        Address and ZIP power search and distance matching for patients.
-      </p>
       <div className={styles.fieldGrid}>
         <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
           <label className={styles.fieldLabel} htmlFor="org-name">
@@ -1380,8 +1375,8 @@ export default function AccountPage() {
                   budget_range: patientProfile.budget_range || '',
                   city: patientProfile.city || '',
                   state: patientProfile.state || '',
-                  zip_code: patientProfile.zip_code || '',
-                  search_radius: patientProfile.search_radius || 25,
+                  zip_code: patientProfile.zip_code || patientProfile.preferred_zip_code || '',
+                  search_radius: patientProfile.search_radius ?? patientProfile.search_radius_miles ?? 25,
                   preferred_days: patientProfile.preferred_days || [],
                   preferred_times: patientProfile.preferred_times || [],
                 });
