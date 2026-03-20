@@ -1379,8 +1379,10 @@ export default function AccountPage() {
           <div className={styles.mainCard}>
             {showHero && <div className={styles.heroBar} aria-hidden />}
             <div className={styles.mainInner}>
-              <h1 className={styles.pageSectionTitle}>{accountPageTitle(activeNav)}</h1>
-              <div className={styles.pageSectionBody}>{mainContent}</div>
+              <div className={styles.mainScroll}>
+                <h1 className={styles.pageSectionTitle}>{accountPageTitle(activeNav)}</h1>
+                <div className={styles.pageSectionBody}>{mainContent}</div>
+              </div>
             </div>
           </div>
         </main>
