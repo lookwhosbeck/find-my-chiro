@@ -1,0 +1,428 @@
+/* Create-account split — Figma node 37:4890 (dark panel left, form right) */
+
+.signupPage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  background: #ffffff;
+}
+
+.signupSplit {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  min-height: min(900px, 100vh);
+}
+
+.signupAsideWrap {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-width: 0;
+  min-height: 240px;
+}
+
+.signupAside {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  background: #1d1d1f;
+  border-radius: 24px;
+  padding: 24px clamp(24px, 10.6vw, 136px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.signupAsideInner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 80px;
+  width: 100%;
+  max-width: 364px;
+}
+
+.signupLogo {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.signupAsideStack {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
+.signupAsideHeadline {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: -0.72px;
+  color: #ffffff;
+}
+
+.signupAsideSubtext {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.48px;
+  color: #ffffff;
+}
+
+.signupStepList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.signupStepRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.signupStepBadge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: -0.48px;
+  box-sizing: border-box;
+}
+
+.signupStepBadgeDone {
+  background: #ffffff;
+  color: #000000;
+}
+
+.signupStepBadgeUpcoming {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+}
+
+.signupStepLabel {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.48px;
+  color: #ffffff;
+  max-width: 302px;
+}
+
+.signupAsideRule {
+  width: 100%;
+  max-width: 364px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.signupWhy {
+  margin: 0;
+}
+
+.signupWhyLead {
+  margin: 0 0 0.25em;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.48px;
+  color: #bbbbbb;
+}
+
+.signupWhyLead strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.signupWhyBody {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.48px;
+  color: #bbbbbb;
+}
+
+.signupMain {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-width: 0;
+  padding: 24px 16px;
+}
+
+.signupTitle {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: -0.72px;
+  color: #202020;
+  text-align: center;
+}
+
+/* Step 1 card — Figma node 37:4894 */
+.signupCard {
+  box-sizing: border-box;
+  width: 433.33px;
+  max-width: 100%;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow:
+    0 50px 40px rgba(0, 0, 0, 0.01),
+    0 50px 40px rgba(0, 0, 0, 0.02),
+    0 20px 40px rgba(0, 0, 0, 0.05),
+    0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 24px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+/* Steps 2+ — wider form column */
+.signupCardWide {
+  width: 100%;
+  max-width: 600px;
+  align-items: stretch;
+}
+
+.signupTabs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.signupTab {
+  box-sizing: border-box;
+  width: 116px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  cursor: pointer;
+  background: #f3f3f3;
+  color: #202020;
+  font-family: inherit;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.signupTab:hover {
+  filter: brightness(0.97);
+}
+
+.signupTab:focus-visible {
+  outline: 2px solid #0072de;
+  outline-offset: 2px;
+}
+
+.signupTabActive {
+  background: #0072de;
+  color: #ffffff;
+}
+
+.signupTabActive:hover {
+  filter: brightness(1.05);
+}
+
+.signupStep1Form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.signupFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.signupField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.signupLabel {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  color: #202020;
+}
+
+.signupInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+  font-family: inherit;
+  color: #202020;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.signupInput::placeholder {
+  color: #e8e8e8;
+}
+
+.signupInput:focus {
+  outline: none;
+  border-color: #0072de;
+  box-shadow: 0 0 0 1px #0072de;
+}
+
+.signupError {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--red-3, #fee7e9);
+  border: 1px solid var(--red-6, #e5484d);
+  color: var(--red-11, #ce2c31);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.signupSubmit {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #0072de;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.signupSubmit:hover:not(:disabled) {
+  background: #0066c7;
+}
+
+.signupSubmit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.signupSubmit:focus-visible {
+  outline: 2px solid #0072de;
+  outline-offset: 2px;
+}
+
+.signupCardFooter {
+  margin: 0;
+  width: 261px;
+  max-width: 100%;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.48px;
+  color: #202020;
+  text-align: center;
+}
+
+.signupInlineLink {
+  color: #0072de;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.signupInlineLink:hover {
+  text-decoration: underline;
+}
+
+.signupBack {
+  display: block;
+  margin: 0;
+  width: 261px;
+  max-width: 100%;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.48px;
+  color: #0072de;
+  text-align: center;
+  text-decoration: none;
+  font-family: inherit;
+  padding: 0;
+}
+
+.signupBack:hover {
+  text-decoration: underline;
+}
+
+.signupBack:focus-visible {
+  outline: 2px solid #0072de;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.signupWideBody {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: stretch;
+}
+
+@media (min-width: 900px) {
+  .signupSplit {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: max(900px, 100vh);
+  }
+
+  .signupAsideWrap {
+    min-height: 0;
+    align-self: stretch;
+  }
+
+  .signupAside {
+    min-height: min(900px, calc(100vh - 32px));
+  }
+}

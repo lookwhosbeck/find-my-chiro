@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Grid, Card, Flex, Text, Heading, TextField, Button, Select, TextArea, Tabs, Checkbox, RadioGroup, Box, Callout } from '@radix-ui/themes';
+import { Grid, Flex, Text, Heading, TextField, Button, Select, TextArea, Tabs, Checkbox, RadioGroup, Box, Callout } from '@radix-ui/themes';
 import { GlobeIcon, InstagramLogoIcon, MagicWandIcon, InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
-import { Container } from '../components/Container';
+import { SignupSplitShell } from '../components/SignupSplitShell';
+import layoutStyles from '../components/SignupSplitShell.module.css';
 import { signUpChiropractor, type SignUpData } from '../lib/auth';
 import { getChiropracticColleges, type ChiropracticCollege } from '../lib/queries';
 
@@ -154,21 +154,6 @@ export default function SignUpPage() {
     }
   };
 
-  const getStepDescriptions = () => {
-    switch (step) {
-      case 1:
-        return 'Create your account to get started.';
-      case 2:
-        return 'Tell us about your professional background.';
-      case 3:
-        return 'Help patients find you by selecting your specialties.';
-      case 4:
-        return 'Add your practice location and contact information.';
-      default:
-        return '';
-    }
-  };
-
   const getWhyDetailText = () => {
     switch (step) {
       case 1:
@@ -185,160 +170,142 @@ export default function SignUpPage() {
   };
 
   return (
-    <Flex direction="column" style={{ minHeight: '100vh' }} className="page-with-header">
-      <Header />
-      
-      <Box py="9" style={{ flex: 1 }}>
-        <Container>
-        <Grid columns={{ initial: '1', lg: '2' }} gap="9">
-          {/* Left Column: Progress and Value Proposition */}
-          <Flex direction="column" gap="6" style={{ maxWidth: '400px' }}>
-            <Flex direction="column" gap="2">
-              <Heading size="8">Let's build your profile.</Heading>
-              <Text size="4" color="gray">
-                Completing this application allows our algorithms to match you with ideal patients.
-              </Text>
-            </Flex>
+    <SignupSplitShell
+      currentStep={step}
+      steps={steps}
+      headline="Let's build your profile."
+      subtext="Completing this application allows our algorithms to match you with ideal patients."
+      whyDetail={getWhyDetailText()}
+    >
+      <h1 className={layoutStyles.signupTitle}>Create your account</h1>
 
-            {/* Vertical Progress Indicator */}
-            <Flex direction="column" gap="4" mt="4">
-              {steps.map((s, index) => (
-                <Flex key={s.number} gap="3" align="center">
-                  <Flex
-                    align="center"
-                    justify="center"
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: step >= s.number ? 'var(--gray-12)' : 'transparent',
-                      border: step >= s.number ? 'none' : '2px solid var(--gray-6)',
-                      color: step >= s.number ? 'white' : 'var(--gray-9)',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {s.number}
-                  </Flex>
-                  <Text
-                    size="3"
-                    weight={step >= s.number ? 'medium' : 'regular'}
-                    color={step >= s.number ? 'gray' : 'gray'}
-                  >
-                    {s.number} {s.label}
-                  </Text>
-                </Flex>
-              ))}
-            </Flex>
-
-            {/* Why this detail? Box */}
-            <Card
-              style={{
-                background: 'var(--teal-2)',
-                border: '1px solid var(--teal-4)',
-                marginTop: 'auto',
-              }}
+      {step === 1 ? (
+        <div className={layoutStyles.signupCard}>
+          <div className={layoutStyles.signupTabs} role="tablist" aria-label="Account type">
+            <button
+              type="button"
+              role="tab"
+              aria-selected
+              className={`${layoutStyles.signupTab} ${layoutStyles.signupTabActive}`}
             >
-              <Flex direction="column" gap="2">
-                <Heading size="4">Why this detail?</Heading>
-                <Text size="2" color="gray">
-                  {getWhyDetailText()}
-                </Text>
-              </Flex>
-            </Card>
-          </Flex>
+              Chiropractor
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={false}
+              className={layoutStyles.signupTab}
+              onClick={() => router.push('/signup-patient')}
+            >
+              Patient
+            </button>
+          </div>
 
-          {/* Right Column: Form Steps */}
-          <Card size="4" style={{ maxWidth: '600px' }}>
-            <Flex direction="column" gap="6">
-              {/* Success Message */}
-              {submitSuccess && (
-                <Callout.Root color="green">
-                  <Callout.Icon>
-                    <CheckCircledIcon />
-                  </Callout.Icon>
-                  <Callout.Text>
-                    Account created successfully! Redirecting...
-                  </Callout.Text>
-                </Callout.Root>
-              )}
+          <form
+            className={layoutStyles.signupStep1Form}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleNext();
+            }}
+            noValidate
+          >
+            <div className={layoutStyles.signupFields}>
+              <div className={layoutStyles.signupField}>
+                <label className={layoutStyles.signupLabel} htmlFor="signup-chiro-first">
+                  First Name
+                </label>
+                <input
+                  id="signup-chiro-first"
+                  className={layoutStyles.signupInput}
+                  value={formData.firstName}
+                  onChange={handleTextFieldChange('firstName')}
+                  placeholder="John"
+                  autoComplete="given-name"
+                  required
+                />
+              </div>
+              <div className={layoutStyles.signupField}>
+                <label className={layoutStyles.signupLabel} htmlFor="signup-chiro-last">
+                  Last Name
+                </label>
+                <input
+                  id="signup-chiro-last"
+                  className={layoutStyles.signupInput}
+                  value={formData.lastName}
+                  onChange={handleTextFieldChange('lastName')}
+                  placeholder="Doe"
+                  autoComplete="family-name"
+                  required
+                />
+              </div>
+              <div className={layoutStyles.signupField}>
+                <label className={layoutStyles.signupLabel} htmlFor="signup-chiro-email">
+                  Email
+                </label>
+                <input
+                  id="signup-chiro-email"
+                  className={layoutStyles.signupInput}
+                  type="email"
+                  value={formData.email}
+                  onChange={handleTextFieldChange('email')}
+                  placeholder="email@email.com"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+              <div className={layoutStyles.signupField}>
+                <label className={layoutStyles.signupLabel} htmlFor="signup-chiro-password">
+                  Password
+                </label>
+                <input
+                  id="signup-chiro-password"
+                  className={layoutStyles.signupInput}
+                  type="password"
+                  value={formData.password}
+                  onChange={handleTextFieldChange('password')}
+                  placeholder="Password"
+                  autoComplete="new-password"
+                  minLength={6}
+                  required
+                />
+              </div>
+            </div>
 
-              {/* Error Message */}
-              {submitError && (
-                <Callout.Root color="red">
-                  <Callout.Icon>
-                    <InfoCircledIcon />
-                  </Callout.Icon>
-                  <Callout.Text>
-                    {submitError}
-                  </Callout.Text>
-                </Callout.Root>
-              )}
+            <button type="submit" className={layoutStyles.signupSubmit}>
+              Next Step
+            </button>
+          </form>
 
-              {/* Step 1: Account & Identity */}
-              {step === 1 && (
-                <form onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
-                  <Flex direction="column" gap="4">
-                    <Heading size="6">Create Your Account</Heading>
-                    <Flex direction="column" gap="3">
-                      <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">First Name</Text>
-                        <TextField.Root
-                          size="3"
-                          value={formData.firstName}
-                          onChange={handleTextFieldChange('firstName')}
-                          placeholder="John"
-                          required
-                        />
-                      </Flex>
-                      <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">Last Name</Text>
-                        <TextField.Root
-                          size="3"
-                          value={formData.lastName}
-                          onChange={handleTextFieldChange('lastName')}
-                          placeholder="Doe"
-                          required
-                        />
-                      </Flex>
-                      <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">Email</Text>
-                        <TextField.Root
-                          size="3"
-                          type="email"
-                          value={formData.email}
-                          onChange={handleTextFieldChange('email')}
-                          placeholder="john@example.com"
-                          required
-                          autoComplete="email"
-                        />
-                      </Flex>
-                      <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">Password</Text>
-                        <TextField.Root
-                          size="3"
-                          type="password"
-                          value={formData.password}
-                          onChange={handleTextFieldChange('password')}
-                          placeholder="••••••••"
-                          required
-                          minLength={6}
-                          autoComplete="new-password"
-                        />
-                      </Flex>
-                    </Flex>
-                    <Flex gap="3" justify="end" mt="4">
-                      <Button type="submit" size="3" variant="solid">
-                        Next Step
-                      </Button>
-                    </Flex>
-                  </Flex>
-                </form>
-              )}
+          <p className={layoutStyles.signupCardFooter}>
+            Already have an account?{' '}
+            <Link href="/signin" className={layoutStyles.signupInlineLink}>
+              Sign in
+            </Link>
+          </p>
+        </div>
+      ) : (
+        <div className={`${layoutStyles.signupCard} ${layoutStyles.signupCardWide}`}>
+          <div className={layoutStyles.signupWideBody}>
+            {submitSuccess && (
+              <Callout.Root color="green">
+                <Callout.Icon>
+                  <CheckCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>Account created successfully! Redirecting...</Callout.Text>
+              </Callout.Root>
+            )}
 
-              {/* Step 2: Professional Details */}
-              {step === 2 && (
+            {submitError && (
+              <Callout.Root color="red">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>{submitError}</Callout.Text>
+              </Callout.Root>
+            )}
+
+            {/* Step 2: Professional Details */}
+            {step === 2 && (
                 <Flex direction="column" gap="4">
                   <Heading size="6">Professional Details</Heading>
                   <Flex direction="column" gap="3">
@@ -616,13 +583,13 @@ export default function SignUpPage() {
                   </Flex>
                 </Flex>
               )}
-            </Flex>
-          </Card>
-        </Grid>
-        </Container>
-      </Box>
+          </div>
+        </div>
+      )}
 
-      <Footer />
-    </Flex>
+      <Link href="/" className={layoutStyles.signupBack}>
+        Back to home
+      </Link>
+    </SignupSplitShell>
   );
 }

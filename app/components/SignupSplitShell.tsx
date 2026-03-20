@@ -1,0 +1,65 @@
+import type { ReactNode } from 'react';
+import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import styles from './SignupSplitShell.module.css';
+
+export type SignupSplitStep = { number: number; label: string };
+
+type SignupSplitShellProps = {
+  currentStep: number;
+  steps: SignupSplitStep[];
+  headline: string;
+  subtext: string;
+  whyDetail: string;
+  children: ReactNode;
+};
+
+export function SignupSplitShell({
+  currentStep,
+  steps,
+  headline,
+  subtext,
+  whyDetail,
+  children,
+}: SignupSplitShellProps) {
+  return (
+    <div className={styles.signupPage}>
+      <div className={styles.signupSplit}>
+        <div className={styles.signupAsideWrap}>
+          <div className={styles.signupAside}>
+            <div className={styles.signupAsideInner}>
+              <FindMyChiroLogo variant="onDark" className={styles.signupLogo} />
+              <div className={styles.signupAsideStack}>
+                <h2 className={styles.signupAsideHeadline}>{headline}</h2>
+                <p className={styles.signupAsideSubtext}>{subtext}</p>
+                <ol className={styles.signupStepList} aria-label="Sign-up progress">
+                  {steps.map((s) => {
+                    const done = currentStep >= s.number;
+                    return (
+                      <li key={s.number} className={styles.signupStepRow}>
+                        <span
+                          className={`${styles.signupStepBadge} ${done ? styles.signupStepBadgeDone : styles.signupStepBadgeUpcoming}`}
+                          aria-current={currentStep === s.number ? 'step' : undefined}
+                        >
+                          {s.number}
+                        </span>
+                        <span className={styles.signupStepLabel}>{s.label}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <div className={styles.signupAsideRule} aria-hidden />
+                <div className={styles.signupWhy}>
+                  <p className={styles.signupWhyLead}>
+                    <strong>Why this detail?</strong>
+                  </p>
+                  <p className={styles.signupWhyBody}>{whyDetail}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className={styles.signupMain}>{children}</div>
+      </div>
+    </div>
+  );
+}
