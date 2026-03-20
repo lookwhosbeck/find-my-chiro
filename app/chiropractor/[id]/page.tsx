@@ -174,32 +174,25 @@ function ChiropractorProfileContent() {
               ← Back to search
             </Link>
             <Flex direction="column" align="center" gap="4" className={styles.profileHeroMeta}>
-              <Flex direction="column" align="center" gap="3">
-                <div className={styles.profileAvatar}>
-                  {chiro.avatarUrl ? (
-                    <img src={chiro.avatarUrl} alt={displayName} />
-                  ) : (
-                    <Flex align="center" justify="center" style={{ width: '100%', height: '100%' }}>
-                      <Text
-                        weight="medium"
-                        style={{
-                          color: 'var(--color-chiro-card-text)',
-                          fontFamily: 'var(--font-body)',
-                          fontSize: 40,
-                          lineHeight: 1,
-                        }}
-                      >
-                        {initials}
-                      </Text>
-                    </Flex>
-                  )}
-                </div>
-                {hasFilterContext && matchPill ? (
-                  <span className="match-potential-pill" style={matchPill}>
-                    {matchPct}% match to your search
-                  </span>
-                ) : null}
-              </Flex>
+              <div className={styles.profileAvatar}>
+                {chiro.avatarUrl ? (
+                  <img src={chiro.avatarUrl} alt={displayName} />
+                ) : (
+                  <Flex align="center" justify="center" style={{ width: '100%', height: '100%' }}>
+                    <Text
+                      weight="medium"
+                      style={{
+                        color: 'var(--color-chiro-card-text)',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 40,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {initials}
+                    </Text>
+                  </Flex>
+                )}
+              </div>
               <Heading
                 as="h1"
                 style={{
@@ -223,6 +216,11 @@ function ChiropractorProfileContent() {
                 <Text size="3" style={{ color: 'rgba(247,247,247,0.88)', fontFamily: 'var(--font-body)' }}>
                   {cityStateZip}
                 </Text>
+              ) : null}
+              {hasFilterContext && matchPill ? (
+                <span className="match-potential-pill" style={matchPill}>
+                  {matchPct}% match to your search
+                </span>
               ) : null}
             </Flex>
           </div>

@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import styles from './ProximitySearchBar.module.css';
-
-const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100] as const;
 
 type ProximitySearchBarProps = {
   variant: 'onDark' | 'onLight';
@@ -64,7 +63,14 @@ export function ProximitySearchBar({
   const radiusId = useId();
 
   const zip = navigate ? localZip : (controlledZip ?? '');
-  const radius = navigate ? localRadius : (controlledRadius ?? 25);
+  const rawRadius = navigate ? localRadius : (controlledRadius ?? 25);
+  const radius = clampSearchRadiusMiles(rawRadius);
+
+  useEffect(() => {
+    if (navigate || controlledRadius == null) return;
+    const c = clampSearchRadiusMiles(controlledRadius);
+    if (c !== controlledRadius) onRadiusChange?.(c);
+  }, [navigate, controlledRadius, onRadiusChange]);
 
   const setZip = useCallback(
     (z: string) => {
@@ -131,7 +137,7 @@ export function ProximitySearchBar({
             onChange={(e) => setRadius(parseInt(e.target.value, 10))}
             aria-label="Distance"
           >
-            {RADIUS_OPTIONS.map((miles) => (
+            {SEARCH_RADIUS_MILES_OPTIONS.map((miles) => (
               <option key={miles} value={miles}>
                 {miles} miles
               </option>

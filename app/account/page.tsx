@@ -18,6 +18,7 @@ import {
   CHIRO_INSURANCE_OPTIONS,
   CHIRO_BUDGET_RANGE_OPTIONS,
 } from './constants';
+import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import styles from './page.module.css';
 
 function supabaseErrorMessage(err: unknown): string {
@@ -398,7 +399,9 @@ export default function AccountPage() {
             city: pRow.city || '',
             state: pRow.state || '',
             zip_code: pRow.zip_code || pRow.preferred_zip_code || '',
-            search_radius: pRow.search_radius ?? pRow.search_radius_miles ?? 25,
+            search_radius: clampSearchRadiusMiles(
+              pRow.search_radius ?? pRow.search_radius_miles ?? 25
+            ),
             preferred_days: pRow.preferred_days || [],
             preferred_times: pRow.preferred_times || [],
           });
@@ -1261,7 +1264,7 @@ export default function AccountPage() {
                 setPatientForm((p) => ({ ...p, search_radius: parseInt(e.target.value, 10) }))
               }
             >
-              {[5, 10, 15, 25, 50, 100].map((n) => (
+              {SEARCH_RADIUS_MILES_OPTIONS.map((n) => (
                 <option key={n} value={n}>
                   {n} miles
                 </option>
@@ -1407,7 +1410,9 @@ export default function AccountPage() {
                   city: patientProfile.city || '',
                   state: patientProfile.state || '',
                   zip_code: patientProfile.zip_code || patientProfile.preferred_zip_code || '',
-                  search_radius: patientProfile.search_radius ?? patientProfile.search_radius_miles ?? 25,
+                  search_radius: clampSearchRadiusMiles(
+                    patientProfile.search_radius ?? patientProfile.search_radius_miles ?? 25
+                  ),
                   preferred_days: patientProfile.preferred_days || [],
                   preferred_times: patientProfile.preferred_times || [],
                 });

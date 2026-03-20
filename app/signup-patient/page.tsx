@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { SignupSplitShell } from '../components/SignupSplitShell';
 import layoutStyles from '../components/SignupSplitShell.module.css';
 import { signUpPatient, type PatientSignUpData } from '../lib/auth';
+import { SEARCH_RADIUS_MILES_OPTIONS } from '../lib/search-radius';
 
 const steps = [
   { number: 1, label: 'Account' },
@@ -516,12 +517,11 @@ export default function PatientSignUpPage() {
                       >
                         <Select.Trigger />
                         <Select.Content>
-                          <Select.Item value="5">5 miles</Select.Item>
-                          <Select.Item value="10">10 miles</Select.Item>
-                          <Select.Item value="15">15 miles</Select.Item>
-                          <Select.Item value="25">25 miles</Select.Item>
-                          <Select.Item value="50">50 miles</Select.Item>
-                          <Select.Item value="100">100 miles</Select.Item>
+                          {SEARCH_RADIUS_MILES_OPTIONS.map((n) => (
+                            <Select.Item key={n} value={String(n)}>
+                              {n} miles
+                            </Select.Item>
+                          ))}
                         </Select.Content>
                       </Select.Root>
                     </Flex>

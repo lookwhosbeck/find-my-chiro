@@ -57,13 +57,28 @@ function businessModelMatch(models: string[], patientPref: string): number {
     (patientPref === 'cash' || patientPref === 'insurance') &&
     models.includes('hybrid')
   ) {
-    return 0.55;
+    return 0.7;
   }
   return 0;
 }
 
 function clampScore100(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+/**
+ * Multi-select axes (techniques, specialties, philosophy): linear ratio `n/prefs` over-penalizes
+ * near-perfect overlap. Blend a floor so each matched preference still counts strongly.
+ * Example: 4/5 → ~88% instead of 80%.
+ */
+const LIST_MATCH_SCORE_BASE = 0.38;
+
+function listPreferenceAxisScore(matchCount: number, preferencesCount: number): number {
+  if (preferencesCount <= 0 || matchCount < 0) return 0;
+  if (matchCount === 0) return 0;
+  const ratio = matchCount / preferencesCount;
+  const blended = LIST_MATCH_SCORE_BASE + (1 - LIST_MATCH_SCORE_BASE) * ratio;
+  return clampScore100(blended * 100);
 }
 
 /**
@@ -78,9 +93,19 @@ export function computeMatchAxes(chiro: Chiropractor, filters: PatientSearchFilt
   if (filterZip) {
     locActive = true;
     const chiroZip = normalizeUsZip(chiro.zipCode);
+    const radiusMiles = filters.searchRadius ?? 25;
+    const d = chiro.distanceMiles;
     let achievedFrac: number;
     if (chiroZip === filterZip) {
       achievedFrac = 1;
+    } else if (
+      d != null &&
+      Number.isFinite(d) &&
+      d <= radiusMiles
+    ) {
+      // In search radius: stay high; closer to origin ZIP = slightly higher (no harsh ZIP-only dock).
+      const t = radiusMiles > 0 ? Math.min(1, Math.max(0, d / radiusMiles)) : 0;
+      achievedFrac = 0.9 + 0.1 * (1 - t);
     } else if (
       filters.city &&
       filters.state &&
@@ -89,9 +114,10 @@ export function computeMatchAxes(chiro: Chiropractor, filters: PatientSearchFilt
       chiro.city === filters.city &&
       chiro.state === filters.state
     ) {
-      achievedFrac = 0.65;
+      achievedFrac = 0.84;
     } else {
-      achievedFrac = 0.45;
+      // No usable distance (e.g. profile view) or outside radius — neutral fallback, not a harsh dock.
+      achievedFrac = 0.74;
     }
     locScore = clampScore100(achievedFrac * 100);
   }
@@ -104,7 +130,7 @@ export function computeMatchAxes(chiro: Chiropractor, filters: PatientSearchFilt
     const chiroMods = chiro.modalities ?? [];
     if (chiroMods.length > 0) {
       const n = countMatchingPreferences(prefsMods, chiroMods);
-      modScore = clampScore100((n / prefsMods.length) * 100);
+      modScore = listPreferenceAxisScore(n, prefsMods.length);
     } else {
       modScore = 0;
     }
@@ -118,7 +144,7 @@ export function computeMatchAxes(chiro: Chiropractor, filters: PatientSearchFilt
     const chiroFocus = chiro.focusAreas ?? [];
     if (chiroFocus.length > 0) {
       const n = countMatchingPreferences(prefsFocus, chiroFocus);
-      focusScore = clampScore100((n / prefsFocus.length) * 100);
+      focusScore = listPreferenceAxisScore(n, prefsFocus.length);
     } else {
       focusScore = 0;
     }
@@ -132,7 +158,7 @@ export function computeMatchAxes(chiro: Chiropractor, filters: PatientSearchFilt
     const chiroPhil = chiroPhilosophyList(chiro);
     if (chiroPhil.length > 0) {
       const n = countMatchingPreferences(prefsPhil, chiroPhil);
-      philScore = clampScore100((n / prefsPhil.length) * 100);
+      philScore = listPreferenceAxisScore(n, prefsPhil.length);
     } else {
       philScore = 0;
     }

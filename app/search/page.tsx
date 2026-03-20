@@ -13,6 +13,7 @@ import { ProximitySearchBar } from '../components/ProximitySearchBar';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { appendSearchFiltersToQuery } from '../lib/search-filters-url';
+import { clampSearchRadiusMiles } from '../lib/search-radius';
 
 function ArrowUpRightIcon() {
   return (
@@ -269,8 +270,11 @@ function SearchPageContent() {
       }
       if (radiusParam != null && radiusParam !== '') {
         const n = parseInt(radiusParam, 10);
-        if (!Number.isNaN(n) && next.searchRadius !== n) {
-          next = { ...next, searchRadius: n };
+        if (!Number.isNaN(n)) {
+          const c = clampSearchRadiusMiles(n);
+          if (next.searchRadius !== c) {
+            next = { ...next, searchRadius: c };
+          }
         }
       }
       return next;

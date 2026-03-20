@@ -5,6 +5,7 @@ import zipcodes from 'zipcodes';
 import { haversineMiles, normalizeUsZip } from './geo';
 import { mapChiropractorDataFromNormalizedSchema, type Chiropractor, type PatientSearchFilters } from './queries';
 import { scoreChiropractors } from './patient-match';
+import { clampSearchRadiusMiles } from './search-radius';
 
 const GEO_CANDIDATE_CAP = 500;
 
@@ -14,7 +15,11 @@ export async function searchChiropractorsWithClient(
   limit: number = 20
 ): Promise<Chiropractor[]> {
   const baseZip = filters.zipCode ? normalizeUsZip(filters.zipCode) : null;
-  const radiusMiles = filters.searchRadius ?? 25;
+  const radiusMiles = clampSearchRadiusMiles(
+    typeof filters.searchRadius === 'number' && !Number.isNaN(filters.searchRadius)
+      ? filters.searchRadius
+      : 25
+  );
 
   const query = supabase
     .from('chiropractors')

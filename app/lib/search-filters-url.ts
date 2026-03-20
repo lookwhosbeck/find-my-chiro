@@ -1,4 +1,5 @@
 import type { PatientSearchFilters } from './queries';
+import { clampSearchRadiusMiles } from './search-radius';
 
 const KEYS = {
   zip: 'zip',
@@ -35,10 +36,11 @@ export function appendSearchFiltersToQuery(basePath: string, filters: PatientSea
 export function parseSearchFiltersFromParams(searchParams: URLSearchParams): PatientSearchFilters {
   const zip = searchParams.get(KEYS.zip) || '';
   const radiusRaw = searchParams.get(KEYS.radius);
-  const radius = radiusRaw != null && radiusRaw !== '' ? parseInt(radiusRaw, 10) : 25;
+  const radiusParsed = radiusRaw != null && radiusRaw !== '' ? parseInt(radiusRaw, 10) : 25;
+  const radius = Number.isNaN(radiusParsed) ? 25 : clampSearchRadiusMiles(radiusParsed);
   return {
     zipCode: zip,
-    searchRadius: Number.isNaN(radius) ? 25 : radius,
+    searchRadius: radius,
     city: searchParams.get(KEYS.city) || '',
     state: searchParams.get(KEYS.state) || '',
     preferredModalities: searchParams.getAll(KEYS.modalities).filter(Boolean),
