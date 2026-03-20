@@ -1,5 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseClient } from './supabase-client';
+import { clampSearchRadiusMiles } from './search-radius';
+
+function normalizePatientInsuranceForDb(raw: string | undefined): string | null {
+  const t = raw?.trim();
+  if (!t || t.toLowerCase() === 'none') return null;
+  return t;
+}
+
+function normalizePatientBudgetForDb(raw: string | undefined): string | null {
+  const t = raw?.trim();
+  if (!t || t.toLowerCase() === 'none') return null;
+  return t;
+}
 
 /** Signup form uses BCBS; DB seed uses full carrier name */
 const SIGNUP_INSURANCE_TO_DB_NAME: Record<string, string> = {
@@ -256,9 +269,13 @@ export interface PatientSignUpData {
   insuranceType?: string;
   budgetRange?: string;
 
-  // Step 4: Location & Preferences
+  // Step 4: Location & schedule
+  city: string;
+  state: string;
   zipCode: string;
   searchRadius: number; // miles
+  preferredDays: string[];
+  preferredTimes: string[];
 }
 
 export interface SignUpResult {
@@ -464,6 +481,13 @@ export async function signUpPatient(data: PatientSignUpData): Promise<SignUpResu
 
     const userId = authData.user.id;
 
+    if (authData.session) {
+      await supabase.auth.setSession({
+        access_token: authData.session.access_token,
+        refresh_token: authData.session.refresh_token,
+      });
+    }
+
     // Step 2: Create/update profile record
     const { error: profileError } = await supabase
       .from('profiles')
@@ -482,30 +506,39 @@ export async function signUpPatient(data: PatientSignUpData): Promise<SignUpResu
       console.error('Profile creation error:', profileError);
     }
 
-    // Step 3: Create patient record with basic info
-    const patientData = {
+    // Step 3: Patient row — same fields as account preferences save
+    const patientPayload = {
       id: userId,
-      preferred_zip_code: data.zipCode || null,
-      search_radius_miles: data.searchRadius || 25,
+      phone: data.phone?.trim() || null,
+      date_of_birth: data.dateOfBirth?.trim() || null,
+      emergency_contact: data.emergencyContact?.trim() || null,
+      emergency_phone: data.emergencyPhone?.trim() || null,
+      preferred_modalities: data.preferredModalities ?? [],
+      focus_areas: data.focusAreas ?? [],
+      preferred_business_model: data.preferredBusinessModel?.trim() || null,
+      insurance_type: normalizePatientInsuranceForDb(data.insuranceType),
+      budget_range: normalizePatientBudgetForDb(data.budgetRange),
+      city: data.city?.trim() || null,
+      state: data.state?.trim() || null,
+      preferred_zip_code: data.zipCode?.trim() || null,
+      search_radius_miles: clampSearchRadiusMiles(data.searchRadius ?? 25),
+      preferred_days: data.preferredDays ?? [],
+      preferred_times: data.preferredTimes ?? [],
       updated_at: new Date().toISOString(),
     };
 
     const { error: patientError } = await supabase
       .from('patients')
-      .insert(patientData);
+      .upsert(patientPayload, { onConflict: 'id' });
 
     if (patientError) {
       console.error('Patient creation error:', patientError);
-      let errorMessage = 'Account created, but there was an issue saving your preferences. ';
+      const errorMessage = 'Account created, but there was an issue saving your preferences. ';
       return {
         success: false,
-        error: errorMessage + patientError.message
+        error: errorMessage + patientError.message,
       };
     }
-
-    // Step 4: Add patient preferences using junction tables
-    // Note: This assumes the reference tables (modalities, focus_areas, etc.) exist
-    // In a production system, you'd need to handle these relationships properly
 
     return { success: true, userId };
   } catch (error: any) {

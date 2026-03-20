@@ -108,7 +108,7 @@ export default function PatientSignUpPage() {
     setSubmitError(null);
 
     try {
-      const result = await signUpPatient(formData as PatientSignUpData);
+      const result = await signUpPatient(formData satisfies PatientSignUpData);
 
       if (result.success) {
         setSubmitSuccess(true);

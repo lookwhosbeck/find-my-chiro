@@ -12,8 +12,13 @@ import { ChiropractorCard } from '../components/ChiropractorCard';
 import { ProximitySearchBar } from '../components/ProximitySearchBar';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
-import { appendSearchFiltersToQuery } from '../lib/search-filters-url';
-import { clampSearchRadiusMiles } from '../lib/search-radius';
+import {
+  appendSearchFiltersToQuery,
+  getDefaultEmptySearchFilters,
+  mergeProfileDefaultsWithUrlParams,
+  patientRowToSearchFilters,
+} from '../lib/search-filters-url';
+import { createSupabaseClient } from '../lib/supabase-client';
 
 function ArrowUpRightIcon() {
   return (
@@ -245,41 +250,50 @@ function RefineSearchPanel({
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
+  const paramsKey = searchParams.toString();
   const [chiropractors, setChiropractors] = useState<Chiropractor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [filtersReady, setFiltersReady] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
 
-  const [filters, setFilters] = useState<PatientSearchFilters>({
-    zipCode: searchParams.get('zip') || '',
-    preferredModalities: [],
-    focusAreas: [],
-    preferredBusinessModel: '',
-    insuranceType: '',
-    budgetRange: '',
-    searchRadius: 25,
-    preferredPhilosophies: [],
-  });
+  const [filters, setFilters] = useState<PatientSearchFilters>(() => getDefaultEmptySearchFilters());
 
   useEffect(() => {
-    const zip = searchParams.get('zip');
-    const radiusParam = searchParams.get('radius');
-    setFilters((prev) => {
-      let next = prev;
-      if (zip != null && zip !== '' && prev.zipCode !== zip) {
-        next = { ...next, zipCode: zip };
-      }
-      if (radiusParam != null && radiusParam !== '') {
-        const n = parseInt(radiusParam, 10);
-        if (!Number.isNaN(n)) {
-          const c = clampSearchRadiusMiles(n);
-          if (next.searchRadius !== c) {
-            next = { ...next, searchRadius: c };
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createSupabaseClient();
+        const params = new URLSearchParams(paramsKey);
+        let base = getDefaultEmptySearchFilters();
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user && !cancelled) {
+          const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+          if (prof?.role === 'patient' && !cancelled) {
+            const { data: patient } = await supabase.from('patients').select('*').eq('id', user.id).maybeSingle();
+            if (patient && !cancelled) {
+              base = patientRowToSearchFilters(patient as Record<string, unknown>);
+            }
           }
         }
+
+        if (cancelled) return;
+        setFilters(mergeProfileDefaultsWithUrlParams(base, params));
+        setFiltersReady(true);
+      } catch (e) {
+        console.error('Search filter hydration failed:', e);
+        if (!cancelled) {
+          setFilters(mergeProfileDefaultsWithUrlParams(getDefaultEmptySearchFilters(), new URLSearchParams(paramsKey)));
+          setFiltersReady(true);
+        }
       }
-      return next;
-    });
-  }, [searchParams]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [paramsKey]);
 
   const resultsMatchAverage = useMemo(() => {
     if (chiropractors.length === 0) return null;
@@ -305,8 +319,9 @@ function SearchPageContent() {
   }, [filters]);
 
   useEffect(() => {
+    if (!filtersReady) return;
     performSearch();
-  }, [performSearch]);
+  }, [performSearch, filtersReady]);
 
   const handleModalityChange = (modality: string, checked: boolean) => {
     setFilters((prev) => ({
@@ -458,9 +473,9 @@ function SearchPageContent() {
                       size="5"
                       style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
                     >
-                      {loading ? 'Searching…' : `${chiropractors.length} Results`}
+                      {!filtersReady ? 'Loading…' : loading ? 'Searching…' : `${chiropractors.length} Results`}
                     </Heading>
-                    {!loading && chiropractors.length > 0 && (
+                    {filtersReady && !loading && chiropractors.length > 0 && (
                       <Flex align="center" gap="3" wrap="wrap">
                         <Text size="2" style={{ color: 'rgba(0,0,0,0.61)' }}>
                           Sorted by match score
@@ -477,9 +492,11 @@ function SearchPageContent() {
                     )}
                   </div>
 
-                  {loading ? (
+                  {!filtersReady || loading ? (
                     <Flex justify="center" py="6">
-                      <Text style={{ color: 'rgba(0,0,0,0.61)' }}>Loading results…</Text>
+                      <Text style={{ color: 'rgba(0,0,0,0.61)' }}>
+                        {!filtersReady ? 'Loading your search…' : 'Loading results…'}
+                      </Text>
                     </Flex>
                   ) : chiropractors.length > 0 ? (
                     <div className="search-results-grid">
