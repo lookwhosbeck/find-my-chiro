@@ -7,7 +7,7 @@
 
 .viewport {
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   /* Large card shadow extends past the box; padding keeps blur + corners inside the clip */
   padding-block: 40px;
