@@ -46,8 +46,12 @@
 
 @media (min-width: 900px) {
   .sidebar {
+    position: sticky;
+    top: var(--space-4);
     min-height: calc(100vh - 32px);
     max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
@@ -141,7 +145,8 @@
   border-radius: var(--radius-xl);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Document scrolls; do not clip long forms (overflow:hidden + flex min-height broke page scroll) */
+  overflow: visible;
   min-height: 0;
 }
 
@@ -150,6 +155,8 @@
   width: 100%;
   flex-shrink: 0;
   background: #0072de;
+  /* Match card top radius now that .mainCard no longer uses overflow:hidden */
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .mainInner {
