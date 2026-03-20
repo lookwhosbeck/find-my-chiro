@@ -78,7 +78,7 @@ export function Header({ embedded = false }: HeaderProps) {
           WebkitBackdropFilter: 'blur(2px)',
           background: '#ffffff',
           boxShadow: '0 2px 12px 2px rgba(0, 0, 0, 0.1)',
-          padding: '8px 8px 8px 16px',
+          padding: '8px 20px',
           borderRadius: '26px',
         }}
       >

@@ -434,20 +434,64 @@ header .join-network-button,
 }
 
 /* ========================================
-   Search page (Figma — findmychiro search)
+   Search page hero — match homepage heroOuter / heroPanel
    ======================================== */
 
-.search-page-hero {
-  background: linear-gradient(180deg, var(--color-bg-gradient-start) 0%, var(--color-bg-gradient-end) 100%);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-search-hero);
-  padding: var(--space-6) var(--space-6) var(--space-8);
+.search-hero-outer {
+  padding: 32px 32px 0;
   width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 767px) {
+/* Plain <div> required: Radix Box applies .rt-Box { display: block } and kills flex/gap/centering */
+.search-page-hero {
+  background: #030302;
+  border-radius: 24px;
+  box-shadow:
+    0 50px 40px rgba(0, 0, 0, 0.01),
+    0 50px 40px rgba(0, 0, 0, 0.02),
+    0 20px 40px rgba(0, 0, 0, 0.05),
+    0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 32px 32px 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Extra space below nav vs homepage (64px) — feels less cramped under the pill */
+  gap: 80px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-hero-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 666px;
+  box-sizing: border-box;
+}
+
+.search-hero-bar-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-hero-signup-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .search-hero-outer {
+    padding: 16px 16px 0;
+  }
+
   .search-page-hero {
-    padding: var(--space-5) var(--space-4) var(--space-7);
+    padding: 24px 20px 64px;
+    gap: 56px;
   }
 }
 

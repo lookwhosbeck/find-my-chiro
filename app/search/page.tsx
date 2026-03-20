@@ -340,10 +340,11 @@ function SearchPageContent() {
   const linkSignupStyle = {
     display: 'flex' as const,
     alignItems: 'center' as const,
-    gap: 'var(--space-2)',
-    color: 'var(--color-hero-ink)',
+    gap: '8px',
+    color: '#ffffff',
     textDecoration: 'none' as const,
-    fontSize: 'var(--text-base)',
+    fontSize: '16px',
+    lineHeight: '24px',
     fontFamily: 'var(--font-body)',
   };
 
@@ -362,57 +363,58 @@ function SearchPageContent() {
   );
 
   return (
-    <Flex direction="column" style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
-      <Box style={{ paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-8)' }}>
+    <Flex direction="column" style={{ minHeight: '100vh', background: '#ffffff' }}>
+      <div className="search-hero-outer">
+        <div className="search-page-hero">
+          <Header embedded />
+
+          <div className="search-hero-body">
+            <Heading
+              as="h1"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2.5rem, 6vw, 4.125rem)',
+                lineHeight: 1.1,
+                letterSpacing: '-0.03em',
+                fontWeight: 400,
+                color: '#f7f7f7',
+                textAlign: 'center',
+                margin: 0,
+                width: '100%',
+              }}
+            >
+              Find a chiropractor
+            </Heading>
+
+            <div className="search-hero-bar-wrap">
+              <ProximitySearchBar
+                variant="onDark"
+                navigate={false}
+                zipCode={filters.zipCode}
+                searchRadius={filters.searchRadius}
+                onZipChange={(z) => setFilters((prev) => ({ ...prev, zipCode: z }))}
+                onRadiusChange={(r) => setFilters((prev) => ({ ...prev, searchRadius: r }))}
+                onSubmit={handleZipSearch}
+              />
+            </div>
+
+            <Flex align="center" wrap="wrap" justify="center" style={{ gap: '40px', width: '100%' }}>
+              <Link href="/signup-patient" className="search-hero-signup-link" style={linkSignupStyle}>
+                Patient Signup
+                <ArrowUpRightIcon />
+              </Link>
+              <Link href="/signup" className="search-hero-signup-link" style={linkSignupStyle}>
+                Chiropractor Signup
+                <ArrowUpRightIcon />
+              </Link>
+            </Flex>
+          </div>
+        </div>
+      </div>
+
+      <Box style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <Container>
           <Flex direction="column" style={{ gap: 'var(--space-8)' }}>
-            <Box className="search-page-hero">
-              <Flex direction="column" align="center" style={{ gap: 'var(--space-8)', width: '100%' }}>
-                <Header embedded />
-
-                <Flex direction="column" align="center" style={{ gap: '40px', width: '100%', maxWidth: 666 }}>
-                  <Heading
-                    as="h1"
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontSize: 'clamp(2.25rem, 5.5vw, 4.125rem)',
-                      lineHeight: 1,
-                      letterSpacing: '-0.03em',
-                      fontWeight: 400,
-                      color: 'var(--color-hero-ink)',
-                      textAlign: 'center',
-                      margin: 0,
-                    }}
-                  >
-                    Find a chiropractor
-                  </Heading>
-
-                  <Flex align="stretch" justify="center" wrap="wrap" style={{ width: '100%' }}>
-                    <ProximitySearchBar
-                      variant="onLight"
-                      navigate={false}
-                      zipCode={filters.zipCode}
-                      searchRadius={filters.searchRadius}
-                      onZipChange={(z) => setFilters((prev) => ({ ...prev, zipCode: z }))}
-                      onRadiusChange={(r) => setFilters((prev) => ({ ...prev, searchRadius: r }))}
-                      onSubmit={handleZipSearch}
-                    />
-                  </Flex>
-
-                  <Flex gap="6" align="center" wrap="wrap" justify="center">
-                    <Link href="/signup-patient" style={linkSignupStyle}>
-                      Patient Signup
-                      <ArrowUpRightIcon />
-                    </Link>
-                    <Link href="/signup" style={linkSignupStyle}>
-                      Chiropractor Signup
-                      <ArrowUpRightIcon />
-                    </Link>
-                  </Flex>
-                </Flex>
-              </Flex>
-            </Box>
-
             <Flex
               direction={{ initial: 'column', lg: 'row' }}
               gap="6"
