@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Flex, Button, Box, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
+import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
 import styles from './Header.module.css';
 
 type HeaderProps = {
@@ -86,18 +87,12 @@ export function Header({ embedded = false }: HeaderProps) {
           style={{ height: 'var(--touch-target-min)', minHeight: 'var(--touch-target-min)' }}
         >
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <Text
-              style={{
-                fontSize: 'var(--text-base)',
-                fontWeight: '600',
-                color: 'var(--color-text-primary)',
-                letterSpacing: 'var(--tracking-normal)',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              Find My Chiro
-            </Text>
+          <Link
+            href="/"
+            className={styles.logoLink}
+            style={{ textDecoration: 'none' }}
+          >
+            <FindMyChiroLogo variant="standard" className={styles.headerLogo} />
           </Link>
 
           {/* Desktop Navigation */}

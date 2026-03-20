@@ -1,3 +1,18 @@
+.logoLink {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* 482×85 viewBox — width-limited so height:auto keeps proportions (no squish) */
+.headerLogo {
+  display: block;
+  width: min(181px, 42vw);
+  max-width: 100%;
+  height: auto;
+}
+
 .desktopNav {
   display: none;
 }

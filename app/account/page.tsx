@@ -1,12 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Flex, Text, Button, Heading, Card, TextField, TextArea, Box, Avatar, Badge, Tabs, Grid, Select } from '@radix-ui/themes';
+import { Checkbox } from '@radix-ui/themes';
+import { EnvelopeClosedIcon } from '@radix-ui/react-icons';
 import { supabase } from '@/app/lib/supabase';
-import { Container } from '@/app/components/Container';
 import { uploadAvatar, deleteAvatar, updateProfileAvatarUrl } from '@/app/lib/avatar-upload';
+import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import {
+  MODALITY_OPTIONS,
+  FOCUS_AREA_OPTIONS,
+  PREFERRED_DAY_OPTIONS,
+  PREFERRED_TIME_OPTIONS,
+} from './constants';
+import styles from './page.module.css';
 
 interface UserProfile {
   id: string;
@@ -49,22 +57,27 @@ interface PatientProfile {
   updated_at: string;
 }
 
+type NavKey = 'profile' | 'practice' | 'specialties' | 'preferences' | 'referrals' | 'messages';
+
 export default function AccountPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string } | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [chiropractorProfile, setChiropractorProfile] = useState<ChiropractorProfile | null>(null);
   const [patientProfile, setPatientProfile] = useState<PatientProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeNav, setActiveNav] = useState<NavKey>('profile');
+  const [profileEditing, setProfileEditing] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  // Form states
+  const [chiroModalityNames, setChiroModalityNames] = useState<string[]>([]);
+  const [chiroFocusNames, setChiroFocusNames] = useState<string[]>([]);
+
   const [profileForm, setProfileForm] = useState({
     first_name: '',
     last_name: '',
-    email: ''
+    email: '',
   });
 
   const [chiropractorForm, setChiropractorForm] = useState({
@@ -72,7 +85,7 @@ export default function AccountPage() {
     chiropractic_college: '',
     graduation_year: '',
     license_number: '',
-    accepting_new_patients: true
+    accepting_new_patients: true,
   });
 
   const [patientForm, setPatientForm] = useState({
@@ -93,76 +106,119 @@ export default function AccountPage() {
     preferred_times: [] as string[],
   });
 
+  const loadChiroSpecialties = useCallback(async (userId: string) => {
+    try {
+      const [mods, focus] = await Promise.all([
+        supabase.from('chiropractor_modalities').select('modalities(name)').eq('chiropractor_id', userId),
+        supabase.from('chiropractor_focus_areas').select('focus_areas(name)').eq('chiropractor_id', userId),
+      ]);
+      const pickName = (rel: unknown): string | undefined => {
+        if (rel == null) return undefined;
+        if (Array.isArray(rel)) return (rel[0] as { name?: string })?.name;
+        return (rel as { name?: string }).name;
+      };
+      const mn = mods.data?.map((r) => pickName((r as { modalities?: unknown }).modalities)).filter(Boolean) || [];
+      const fn =
+        focus.data?.map((r) => pickName((r as { focus_areas?: unknown }).focus_areas)).filter(Boolean) || [];
+      setChiroModalityNames(mn as string[]);
+      setChiroFocusNames(fn as string[]);
+    } catch {
+      setChiroModalityNames([]);
+      setChiroFocusNames([]);
+    }
+  }, []);
+
+  const toggleChiroMod = (name: string) => {
+    setChiroModalityNames((prev) =>
+      prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name],
+    );
+  };
+
+  const toggleChiroFocus = (name: string) => {
+    setChiroFocusNames((prev) =>
+      prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name],
+    );
+  };
+
+  const togglePatientArr = (field: 'preferred_modalities' | 'focus_areas' | 'preferred_days' | 'preferred_times', value: string) => {
+    setPatientForm((prev) => {
+      const arr = prev[field];
+      return {
+        ...prev,
+        [field]: arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value],
+      };
+    });
+  };
+
   useEffect(() => {
     checkUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (!authUser) {
         router.push('/signin');
         return;
       }
 
-      setUser(user);
+      setUser(authUser);
 
-      // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .single();
 
-      if (profileError) {
+      if (profileError || !profileData) {
         console.error('Error fetching profile:', profileError);
-      } else {
-        setProfile(profileData);
-        setProfileForm({
-          first_name: profileData.first_name || '',
-          last_name: profileData.last_name || '',
-          email: profileData.email || ''
-        });
+        setLoading(false);
+        return;
       }
 
-      // Fetch chiropractor profile if user is a chiropractor
-      if (profileData?.role === 'chiropractor') {
+      setProfile(profileData as UserProfile);
+      setProfileForm({
+        first_name: profileData.first_name || '',
+        last_name: profileData.last_name || '',
+        email: profileData.email || '',
+      });
+
+      if (profileData.role === 'chiropractor') {
         const { data: chiroData, error: chiroError } = await supabase
           .from('chiropractors')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', authUser.id)
           .single();
 
-        if (chiroError) {
-          console.error('Error fetching chiropractor profile:', chiroError);
-        } else {
-          setChiropractorProfile(chiroData);
+        if (!chiroError && chiroData) {
+          setChiropractorProfile(chiroData as ChiropractorProfile);
           setChiropractorForm({
             bio: chiroData.bio || '',
             chiropractic_college: chiroData.chiropractic_college || '',
             graduation_year: chiroData.graduation_year?.toString() || '',
             license_number: chiroData.license_number || '',
-            accepting_new_patients: chiroData.accepting_new_patients ?? true
+            accepting_new_patients: chiroData.accepting_new_patients ?? true,
           });
+          await loadChiroSpecialties(authUser.id);
         }
       }
 
-      // Fetch patient profile if user is a patient
-      if (profileData?.role === 'patient') {
+      if (profileData.role === 'patient') {
         const { data: patientData, error: patientError } = await supabase
           .from('patients')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', authUser.id)
           .single();
 
-        if (patientError) {
-          console.error('Error fetching patient profile:', patientError);
-        } else {
-          setPatientProfile(patientData);
+        if (!patientError && patientData) {
+          setPatientProfile(patientData as PatientProfile);
           setPatientForm({
             phone: patientData.phone || '',
-            date_of_birth: patientData.date_of_birth || '',
+            date_of_birth: patientData.date_of_birth?.slice(0, 10) || '',
             emergency_contact: patientData.emergency_contact || '',
             emergency_phone: patientData.emergency_phone || '',
             preferred_modalities: patientData.preferred_modalities || [],
@@ -179,9 +235,8 @@ export default function AccountPage() {
           });
         }
       }
-
-    } catch (error) {
-      console.error('Error checking user:', error);
+    } catch (e) {
+      console.error('Error checking user:', e);
       router.push('/');
     } finally {
       setLoading(false);
@@ -194,83 +249,46 @@ export default function AccountPage() {
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user || !event.target.files || event.target.files.length === 0) return;
-
+    if (!user || !event.target.files?.length) return;
     const file = event.target.files[0];
     setUploadingAvatar(true);
-
     try {
-      // Upload the avatar
       const avatarUrl = await uploadAvatar(file, user.id);
-      
-      if (!avatarUrl) {
-        throw new Error('Failed to upload avatar');
-      }
-
-      // Update the profile with the new avatar URL
+      if (!avatarUrl) throw new Error('Failed to upload avatar');
       const success = await updateProfileAvatarUrl(user.id, avatarUrl);
-      
-      if (!success) {
-        throw new Error('Failed to update profile');
-      }
-
-      // Update local state
-      setProfile(prev => prev ? {
-        ...prev,
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString()
-      } : null);
-
-      alert('Avatar uploaded successfully!');
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
+      if (!success) throw new Error('Failed to update profile');
+      setProfile((prev) =>
+        prev ? { ...prev, avatar_url: avatarUrl, updated_at: new Date().toISOString() } : null,
+      );
+    } catch (e) {
+      console.error(e);
       alert('Error uploading avatar. Please try again.');
     } finally {
       setUploadingAvatar(false);
-      // Reset the input
       event.target.value = '';
     }
   };
 
   const handleAvatarDelete = async () => {
     if (!user || !profile?.avatar_url) return;
-
-    if (!confirm('Are you sure you want to remove your avatar?')) {
-      return;
-    }
-
+    if (!confirm('Remove your profile photo?')) return;
     setUploadingAvatar(true);
-
     try {
-      // Delete the avatar from storage
       await deleteAvatar(user.id);
-
-      // Update the profile to remove the avatar URL
-      const success = await updateProfileAvatarUrl(user.id, null);
-      
-      if (!success) {
-        throw new Error('Failed to update profile');
-      }
-
-      // Update local state
-      setProfile(prev => prev ? {
-        ...prev,
-        avatar_url: undefined,
-        updated_at: new Date().toISOString()
-      } : null);
-
-      alert('Avatar removed successfully!');
-    } catch (error) {
-      console.error('Error deleting avatar:', error);
-      alert('Error removing avatar. Please try again.');
+      await updateProfileAvatarUrl(user.id, null);
+      setProfile((prev) =>
+        prev ? { ...prev, avatar_url: undefined, updated_at: new Date().toISOString() } : null,
+      );
+    } catch (e) {
+      console.error(e);
+      alert('Error removing avatar.');
     } finally {
       setUploadingAvatar(false);
     }
   };
 
   const saveProfile = async () => {
-    if (!user) return;
-
+    if (!user || !profile) return;
     setSaving(true);
     try {
       const { error } = await supabase
@@ -279,61 +297,91 @@ export default function AccountPage() {
           first_name: profileForm.first_name,
           last_name: profileForm.last_name,
           email: profileForm.email,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (error) throw error;
 
-      // Update local state
-      setProfile(prev => prev ? {
-        ...prev,
-        first_name: profileForm.first_name,
-        last_name: profileForm.last_name,
-        email: profileForm.email,
-        updated_at: new Date().toISOString()
-      } : null);
-
-      alert('Profile updated successfully!');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Error updating profile. Please try again.');
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              first_name: profileForm.first_name,
+              last_name: profileForm.last_name,
+              email: profileForm.email,
+              updated_at: new Date().toISOString(),
+            }
+          : null,
+      );
+      setProfileEditing(false);
+    } catch (e) {
+      console.error(e);
+      alert('Could not update profile.');
     } finally {
       setSaving(false);
     }
   };
 
-
   const saveChiropractorProfile = async () => {
     if (!user) return;
-
     setSaving(true);
     try {
       const updateData = {
+        id: user.id,
         bio: chiropractorForm.bio,
         chiropractic_college: chiropractorForm.chiropractic_college,
-        graduation_year: chiropractorForm.graduation_year ? parseInt(chiropractorForm.graduation_year) : null,
+        graduation_year: chiropractorForm.graduation_year ? parseInt(chiropractorForm.graduation_year, 10) : null,
         license_number: chiropractorForm.license_number,
         accepting_new_patients: chiropractorForm.accepting_new_patients,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('chiropractors')
-        .upsert(updateData, { onConflict: 'id' });
-
+      const { error } = await supabase.from('chiropractors').upsert(updateData, { onConflict: 'id' });
       if (error) throw error;
 
-      // Update local state
-      setChiropractorProfile(prev => prev ? {
-        ...prev,
-        ...updateData
-      } : updateData as ChiropractorProfile);
+      setChiropractorProfile((prev) => (prev ? { ...prev, ...updateData } : (updateData as ChiropractorProfile)));
+    } catch (e) {
+      console.error(e);
+      alert('Could not update practice profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-      alert('Chiropractor profile updated successfully!');
-    } catch (error) {
-      console.error('Error updating chiropractor profile:', error);
-      alert('Error updating chiropractor profile. Please try again.');
+  const saveChiroSpecialties = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const sync = async (
+        table: 'chiropractor_modalities' | 'chiropractor_focus_areas',
+        refTable: 'modalities' | 'focus_areas',
+        fk: 'modality_id' | 'focus_area_id',
+        names: string[],
+      ) => {
+        const { data: rows, error: refErr } = await supabase.from(refTable).select('id,name');
+        if (refErr) throw refErr;
+        const ids = names
+          .map((n) => rows?.find((r: { name: string }) => r.name === n)?.id)
+          .filter(Boolean) as string[];
+
+        await supabase.from(table).delete().eq('chiropractor_id', user.id);
+
+        if (ids.length) {
+          const payload = ids.map((id) => ({
+            chiropractor_id: user.id,
+            [fk]: id,
+          }));
+          const { error: insErr } = await supabase.from(table).insert(payload);
+          if (insErr) throw insErr;
+        }
+      };
+
+      await sync('chiropractor_modalities', 'modalities', 'modality_id', chiroModalityNames);
+      await sync('chiropractor_focus_areas', 'focus_areas', 'focus_area_id', chiroFocusNames);
+    } catch (e) {
+      console.error(e);
+      alert('Could not update specialties. Your database may use different table names or permissions.');
     } finally {
       setSaving(false);
     }
@@ -341,12 +389,12 @@ export default function AccountPage() {
 
   const savePatientProfile = async () => {
     if (!user) return;
-
     setSaving(true);
     try {
       const updateData = {
+        id: user.id,
         phone: patientForm.phone || null,
-        date_of_birth: patientForm.date_of_birth ? new Date(patientForm.date_of_birth).toISOString().split('T')[0] : null,
+        date_of_birth: patientForm.date_of_birth || null,
         emergency_contact: patientForm.emergency_contact || null,
         emergency_phone: patientForm.emergency_phone || null,
         preferred_modalities: patientForm.preferred_modalities,
@@ -360,25 +408,16 @@ export default function AccountPage() {
         search_radius: patientForm.search_radius,
         preferred_days: patientForm.preferred_days,
         preferred_times: patientForm.preferred_times,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('patients')
-        .upsert(updateData, { onConflict: 'id' });
-
+      const { error } = await supabase.from('patients').upsert(updateData, { onConflict: 'id' });
       if (error) throw error;
 
-      // Update local state
-      setPatientProfile(prev => prev ? {
-        ...prev,
-        ...updateData
-      } : updateData as PatientProfile);
-
-      alert('Patient profile updated successfully!');
-    } catch (error) {
-      console.error('Error updating patient profile:', error);
-      alert('Error updating patient profile. Please try again.');
+      setPatientProfile((prev) => (prev ? { ...prev, ...updateData } : (updateData as PatientProfile)));
+    } catch (e) {
+      console.error(e);
+      alert('Could not update preferences.');
     } finally {
       setSaving(false);
     }
@@ -386,420 +425,620 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <Container className="page-with-header">
-        <Flex justify="center" align="center" style={{ minHeight: '50vh' }}>
-          <Text>Loading...</Text>
-        </Flex>
-      </Container>
+      <div className={styles.shell}>
+        <div className={styles.loadingBox}>Loading…</div>
+      </div>
     );
   }
 
-  // If user is not authenticated, redirect happens in checkUser
-  // This component should only render for authenticated users
+  if (!profile || !user) {
+    return (
+      <div className={styles.shell}>
+        <div className={styles.loadingBox}>Unable to load your profile.</div>
+      </div>
+    );
+  }
+
+  const isChiro = profile.role === 'chiropractor';
+  const isPatient = profile.role === 'patient';
+
+  const chiroNav: { key: NavKey; label: string; disabled?: boolean }[] = [
+    { key: 'practice', label: 'Your practice' },
+    { key: 'profile', label: 'Your profile' },
+    { key: 'specialties', label: 'Specialties' },
+    { key: 'referrals', label: 'Referrals', disabled: true },
+    { key: 'messages', label: 'Messages', disabled: true },
+  ];
+
+  const patientNav: { key: NavKey; label: string; disabled?: boolean }[] = [
+    { key: 'profile', label: 'Your profile' },
+    { key: 'preferences', label: 'Your preferences' },
+    { key: 'referrals', label: 'Referrals', disabled: true },
+    { key: 'messages', label: 'Messages', disabled: true },
+  ];
+
+  const navItems = isChiro ? chiroNav : patientNav;
+
+  const displayName =
+    [profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'there';
+
+  const initialsRaw =
+    `${profileForm.first_name?.[0] || ''}${profileForm.last_name?.[0] || ''}`.trim() ||
+    profileForm.email?.[0] ||
+    '?';
+  const initials = initialsRaw.toUpperCase();
+
+  const memberSince = new Date(profile.created_at).toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const emailUpdated = new Date(profile.updated_at).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const renderProfilePanel = () => (
+    <>
+      <div className={styles.headerRow}>
+        <div className={styles.headerLeft}>
+          {profile.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={styles.avatar} src={profile.avatar_url} alt="" width={100} height={100} />
+          ) : (
+            <div className={`${styles.avatar} ${styles.avatarFallback}`}>{initials}</div>
+          )}
+          <div className={styles.welcomeBlock}>
+            <p className={styles.welcomeTitle}>Welcome, {displayName}</p>
+            <p className={styles.welcomeEmail}>{profileForm.email}</p>
+            <p className={styles.welcomeMeta}>Member since {memberSince}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className={profileEditing ? `${styles.editBtn} ${styles.editBtnMuted}` : styles.editBtn}
+          onClick={() => setProfileEditing((e) => !e)}
+        >
+          {profileEditing ? 'Done' : 'Edit'}
+        </button>
+      </div>
+
+      <input
+        id="account-avatar-input"
+        type="file"
+        accept="image/*"
+        className={styles.hiddenFile}
+        onChange={handleAvatarUpload}
+        disabled={uploadingAvatar || !profileEditing}
+      />
+      {profileEditing && (
+        <div className={styles.avatarActions}>
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            onClick={() => document.getElementById('account-avatar-input')?.click()}
+            disabled={uploadingAvatar}
+          >
+            {uploadingAvatar ? 'Uploading…' : profile.avatar_url ? 'Change photo' : 'Upload photo'}
+          </button>
+          {profile.avatar_url && (
+            <button type="button" className={styles.secondaryBtn} onClick={handleAvatarDelete} disabled={uploadingAvatar}>
+              Remove
+            </button>
+          )}
+        </div>
+      )}
+      <p className={styles.mutedNote}>JPG, PNG or GIF. Max 5MB.</p>
+
+      <div className={styles.fieldGrid}>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="pf-first">
+            First name
+          </label>
+          <input
+            id="pf-first"
+            className={styles.input}
+            value={profileForm.first_name}
+            onChange={(e) => setProfileForm((p) => ({ ...p, first_name: e.target.value }))}
+            disabled={!profileEditing}
+            placeholder="First name"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="pf-last">
+            Last name
+          </label>
+          <input
+            id="pf-last"
+            className={styles.input}
+            value={profileForm.last_name}
+            onChange={(e) => setProfileForm((p) => ({ ...p, last_name: e.target.value }))}
+            disabled={!profileEditing}
+            placeholder="Last name"
+          />
+        </div>
+        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+          <label className={styles.fieldLabel} htmlFor="pf-email">
+            Email
+          </label>
+          <input
+            id="pf-email"
+            className={styles.input}
+            type="email"
+            value={profileForm.email}
+            onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+            disabled={!profileEditing}
+            placeholder="you@example.com"
+          />
+        </div>
+      </div>
+
+      <div className={styles.emailSection}>
+        <h3 className={styles.sectionTitle}>My email address</h3>
+        <div className={styles.emailRow}>
+          <div className={styles.emailIconWrap}>
+            <div className={styles.emailIconBg} />
+            <EnvelopeClosedIcon className={styles.emailIcon} aria-hidden />
+          </div>
+          <div className={styles.emailTextBlock}>
+            <span>{profileForm.email}</span>
+            <span className={styles.emailSub}>Last updated {emailUpdated}</span>
+          </div>
+        </div>
+        <button type="button" className={styles.addEmailBtn} disabled title="Secondary email is not available yet">
+          + Add email address
+        </button>
+      </div>
+
+      {profileEditing && (
+        <div className={styles.actionsRow}>
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            onClick={() => {
+              setProfileForm({
+                first_name: profile.first_name || '',
+                last_name: profile.last_name || '',
+                email: profile.email || '',
+              });
+            }}
+          >
+            Reset
+          </button>
+          <button type="button" className={styles.primaryBtn} onClick={saveProfile} disabled={saving}>
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  const renderPracticePanel = () => (
+    <>
+      <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
+        Your practice
+      </h3>
+      <div className={styles.fieldGrid}>
+        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+          <label className={styles.fieldLabel} htmlFor="ch-bio">
+            Professional bio
+          </label>
+          <textarea
+            id="ch-bio"
+            className={`${styles.input} ${styles.textarea}`}
+            value={chiropractorForm.bio}
+            onChange={(e) => setChiropractorForm((p) => ({ ...p, bio: e.target.value }))}
+            placeholder="Tell patients about your experience and approach…"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="ch-college">
+            Chiropractic college
+          </label>
+          <input
+            id="ch-college"
+            className={styles.input}
+            value={chiropractorForm.chiropractic_college}
+            onChange={(e) => setChiropractorForm((p) => ({ ...p, chiropractic_college: e.target.value }))}
+            placeholder="College name"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="ch-year">
+            Graduation year
+          </label>
+          <input
+            id="ch-year"
+            className={styles.input}
+            type="number"
+            value={chiropractorForm.graduation_year}
+            onChange={(e) => setChiropractorForm((p) => ({ ...p, graduation_year: e.target.value }))}
+            placeholder="e.g. 2020"
+          />
+        </div>
+        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+          <label className={styles.fieldLabel} htmlFor="ch-license">
+            License number
+          </label>
+          <input
+            id="ch-license"
+            className={styles.input}
+            value={chiropractorForm.license_number}
+            onChange={(e) => setChiropractorForm((p) => ({ ...p, license_number: e.target.value }))}
+            placeholder="License number"
+          />
+        </div>
+        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+          <label className={styles.checkboxRow}>
+            <Checkbox
+              checked={chiropractorForm.accepting_new_patients}
+              onCheckedChange={(v) =>
+                setChiropractorForm((p) => ({ ...p, accepting_new_patients: v === true }))
+              }
+            />
+            Currently accepting new patients
+          </label>
+        </div>
+      </div>
+      <div className={styles.actionsRow}>
+        <button
+          type="button"
+          className={styles.secondaryBtn}
+          onClick={() => {
+            if (chiropractorProfile) {
+              setChiropractorForm({
+                bio: chiropractorProfile.bio || '',
+                chiropractic_college: chiropractorProfile.chiropractic_college || '',
+                graduation_year: chiropractorProfile.graduation_year?.toString() || '',
+                license_number: chiropractorProfile.license_number || '',
+                accepting_new_patients: chiropractorProfile.accepting_new_patients ?? true,
+              });
+            }
+          }}
+        >
+          Reset
+        </button>
+        <button type="button" className={styles.primaryBtn} onClick={saveChiropractorProfile} disabled={saving}>
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
+    </>
+  );
+
+  const renderSpecialtiesPanel = () => (
+    <>
+      <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
+        Techniques &amp; modalities
+      </h3>
+      <div className={styles.checkboxGrid}>
+        {MODALITY_OPTIONS.map((m) => (
+          <label key={m} className={styles.checkboxRow}>
+            <Checkbox checked={chiroModalityNames.includes(m)} onCheckedChange={() => toggleChiroMod(m)} />
+            {m}
+          </label>
+        ))}
+      </div>
+      <h3 className={styles.sectionTitle}>Focus areas</h3>
+      <div className={styles.checkboxGrid}>
+        {FOCUS_AREA_OPTIONS.map((m) => (
+          <label key={m} className={styles.checkboxRow}>
+            <Checkbox checked={chiroFocusNames.includes(m)} onCheckedChange={() => toggleChiroFocus(m)} />
+            {m}
+          </label>
+        ))}
+      </div>
+      <div className={styles.actionsRow}>
+        <button type="button" className={styles.primaryBtn} onClick={saveChiroSpecialties} disabled={saving}>
+          {saving ? 'Saving…' : 'Save specialties'}
+        </button>
+      </div>
+    </>
+  );
+
+  const renderPreferencesPanel = () => (
+    <>
+      <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
+        Contact &amp; personal
+      </h3>
+      <div className={styles.fieldGrid}>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Phone</label>
+          <input
+            className={styles.input}
+            value={patientForm.phone}
+            onChange={(e) => setPatientForm((p) => ({ ...p, phone: e.target.value }))}
+            placeholder="Phone number"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Date of birth</label>
+          <input
+            className={styles.input}
+            type="date"
+            value={patientForm.date_of_birth}
+            onChange={(e) => setPatientForm((p) => ({ ...p, date_of_birth: e.target.value }))}
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Emergency contact</label>
+          <input
+            className={styles.input}
+            value={patientForm.emergency_contact}
+            onChange={(e) => setPatientForm((p) => ({ ...p, emergency_contact: e.target.value }))}
+            placeholder="Name"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Emergency phone</label>
+          <input
+            className={styles.input}
+            value={patientForm.emergency_phone}
+            onChange={(e) => setPatientForm((p) => ({ ...p, emergency_phone: e.target.value }))}
+            placeholder="Phone"
+          />
+        </div>
+      </div>
+
+      <h3 className={styles.sectionTitle}>Location</h3>
+      <div className={styles.fieldGrid}>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>City</label>
+          <input
+            className={styles.input}
+            value={patientForm.city}
+            onChange={(e) => setPatientForm((p) => ({ ...p, city: e.target.value }))}
+            placeholder="City"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>State</label>
+          <input
+            className={styles.input}
+            value={patientForm.state}
+            onChange={(e) => setPatientForm((p) => ({ ...p, state: e.target.value }))}
+            placeholder="State"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>ZIP code</label>
+          <input
+            className={styles.input}
+            value={patientForm.zip_code}
+            onChange={(e) => setPatientForm((p) => ({ ...p, zip_code: e.target.value }))}
+            placeholder="ZIP"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Search radius (miles)</label>
+          <div className={styles.selectWrap}>
+            <span className={styles.selectChevron} />
+            <select
+              className={`${styles.select} ${styles.selectNative}`}
+              value={patientForm.search_radius}
+              onChange={(e) =>
+                setPatientForm((p) => ({ ...p, search_radius: parseInt(e.target.value, 10) }))
+              }
+            >
+              {[5, 10, 15, 25, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n} miles
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <h3 className={styles.sectionTitle}>Treatment styles</h3>
+      <div className={styles.checkboxGrid}>
+        {MODALITY_OPTIONS.map((m) => (
+          <label key={m} className={styles.checkboxRow}>
+            <Checkbox
+              checked={patientForm.preferred_modalities.includes(m)}
+              onCheckedChange={() => togglePatientArr('preferred_modalities', m)}
+            />
+            {m}
+          </label>
+        ))}
+      </div>
+
+      <h3 className={styles.sectionTitle}>Specialty interests</h3>
+      <div className={styles.checkboxGrid}>
+        {FOCUS_AREA_OPTIONS.map((m) => (
+          <label key={m} className={styles.checkboxRow}>
+            <Checkbox
+              checked={patientForm.focus_areas.includes(m)}
+              onCheckedChange={() => togglePatientArr('focus_areas', m)}
+            />
+            {m}
+          </label>
+        ))}
+      </div>
+
+      <h3 className={styles.sectionTitle}>Payment &amp; insurance</h3>
+      <div className={styles.fieldGrid}>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Preferred business model</label>
+          <div className={styles.selectWrap}>
+            <span className={styles.selectChevron} />
+            <select
+              className={`${styles.select} ${styles.selectNative}`}
+              value={patientForm.preferred_business_model}
+              onChange={(e) => setPatientForm((p) => ({ ...p, preferred_business_model: e.target.value }))}
+            >
+              <option value="">No preference</option>
+              <option value="cash">Cash-based</option>
+              <option value="insurance">Insurance-based</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </div>
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Insurance type</label>
+          <div className={styles.selectWrap}>
+            <span className={styles.selectChevron} />
+            <select
+              className={`${styles.select} ${styles.selectNative}`}
+              value={patientForm.insurance_type}
+              onChange={(e) => setPatientForm((p) => ({ ...p, insurance_type: e.target.value }))}
+            >
+              <option value="">Select…</option>
+              <option value="none">No insurance / self-pay</option>
+              <option value="BCBS">Blue Cross Blue Shield</option>
+              <option value="Aetna">Aetna</option>
+              <option value="Cigna">Cigna</option>
+              <option value="UnitedHealthcare">UnitedHealthcare</option>
+              <option value="Medicare">Medicare</option>
+              <option value="Medicaid">Medicaid</option>
+            </select>
+          </div>
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Budget range (monthly)</label>
+          <div className={styles.selectWrap}>
+            <span className={styles.selectChevron} />
+            <select
+              className={`${styles.select} ${styles.selectNative}`}
+              value={patientForm.budget_range}
+              onChange={(e) => setPatientForm((p) => ({ ...p, budget_range: e.target.value }))}
+            >
+              <option value="">No preference</option>
+              <option value="under-50">Under $50</option>
+              <option value="50-100">$50 – $100</option>
+              <option value="100-150">$100 – $150</option>
+              <option value="over-150">Over $150</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <h3 className={styles.sectionTitle}>Availability</h3>
+      <div className={styles.checkboxGrid}>
+        {PREFERRED_DAY_OPTIONS.map((d) => (
+          <label key={d} className={styles.checkboxRow}>
+            <Checkbox
+              checked={patientForm.preferred_days.includes(d)}
+              onCheckedChange={() => togglePatientArr('preferred_days', d)}
+            />
+            {d}
+          </label>
+        ))}
+      </div>
+      <div className={styles.checkboxGrid} style={{ marginTop: 12 }}>
+        {PREFERRED_TIME_OPTIONS.map((t) => (
+          <label key={t} className={styles.checkboxRow}>
+            <Checkbox
+              checked={patientForm.preferred_times.includes(t)}
+              onCheckedChange={() => togglePatientArr('preferred_times', t)}
+            />
+            {t}
+          </label>
+        ))}
+      </div>
+
+      <div className={styles.actionsRow}>
+        <button
+          type="button"
+          className={styles.secondaryBtn}
+          onClick={() => {
+            if (patientProfile) {
+              setPatientForm({
+                phone: patientProfile.phone || '',
+                date_of_birth: patientProfile.date_of_birth?.slice(0, 10) || '',
+                emergency_contact: patientProfile.emergency_contact || '',
+                emergency_phone: patientProfile.emergency_phone || '',
+                preferred_modalities: patientProfile.preferred_modalities || [],
+                focus_areas: patientProfile.focus_areas || [],
+                preferred_business_model: patientProfile.preferred_business_model || '',
+                insurance_type: patientProfile.insurance_type || '',
+                budget_range: patientProfile.budget_range || '',
+                city: patientProfile.city || '',
+                state: patientProfile.state || '',
+                zip_code: patientProfile.zip_code || '',
+                search_radius: patientProfile.search_radius || 25,
+                preferred_days: patientProfile.preferred_days || [],
+                preferred_times: patientProfile.preferred_times || [],
+              });
+            }
+          }}
+        >
+          Reset
+        </button>
+        <button type="button" className={styles.primaryBtn} onClick={savePatientProfile} disabled={saving}>
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
+    </>
+  );
+
+  const renderPlaceholder = (title: string) => (
+    <div>
+      <h3 className={styles.sectionTitle}>{title}</h3>
+      <div className={styles.placeholderPanel}>This section is coming soon.</div>
+    </div>
+  );
+
+  let mainContent: ReactNode = null;
+  if (activeNav === 'profile') {
+    mainContent = renderProfilePanel();
+  } else if (activeNav === 'practice' && isChiro) {
+    mainContent = renderPracticePanel();
+  } else if (activeNav === 'specialties' && isChiro) {
+    mainContent = renderSpecialtiesPanel();
+  } else if (activeNav === 'preferences' && isPatient) {
+    mainContent = renderPreferencesPanel();
+  } else if (activeNav === 'referrals') {
+    mainContent = renderPlaceholder('Referrals');
+  } else if (activeNav === 'messages') {
+    mainContent = renderPlaceholder('Messages');
+  } else {
+    mainContent = renderProfilePanel();
+  }
+
+  const showHero = true;
 
   return (
-    <Container className="page-with-header">
-      <Flex direction="column" gap="6" py="9">
-        {/* Header */}
-        <Flex justify="between" align="center">
-          <Flex align="center" gap="4">
-            <Avatar
-              size="4"
-              src={profile.avatar_url}
-              fallback={profile.first_name?.[0]?.toUpperCase() || profile.last_name?.[0]?.toUpperCase() || profile.email[0].toUpperCase()}
-            />
-            <Box>
-              <Heading size="6">
-                Welcome back, {profile.first_name || 'User'}!
-              </Heading>
-              <Flex align="center" gap="2" mt="1">
-                <Badge color={profile.role === 'chiropractor' ? 'blue' : 'green'}>
-                  {profile.role}
-                </Badge>
-                <Text size="2" color="gray">
-                  Member since {new Date(profile.created_at).toLocaleDateString()}
-                </Text>
-              </Flex>
-            </Box>
-          </Flex>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign Out
-          </Button>
-        </Flex>
+    <div className={styles.shell}>
+      <div className={styles.layout}>
+        <aside className={styles.sidebarWrap}>
+          <div className={styles.sidebar}>
+            <Link href="/" style={{ lineHeight: 0 }}>
+              <FindMyChiroLogo variant="onDark" className={styles.sidebarLogo} />
+            </Link>
+            <nav className={styles.nav} aria-label="Account sections">
+              {navItems.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`${styles.navItem} ${activeNav === item.key ? styles.navItemActive : ''}`}
+                  onClick={() => !item.disabled && setActiveNav(item.key)}
+                  disabled={item.disabled}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            <div className={styles.sidebarFooter}>
+              <Link href="/" className={styles.sidebarLink}>
+                Back to home
+              </Link>
+              <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
+                Sign out
+              </button>
+            </div>
+          </div>
+        </aside>
 
-        {/* Tabs */}
-        <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
-          <Tabs.List>
-            <Tabs.Trigger value="profile">Account Details</Tabs.Trigger>
-            {profile.role === 'chiropractor' && (
-              <Tabs.Trigger value="chiropractor">Chiropractor Profile</Tabs.Trigger>
-            )}
-            {profile.role === 'patient' && (
-              <Tabs.Trigger value="patient">Patient Preferences</Tabs.Trigger>
-            )}
-          </Tabs.List>
-
-          {/* Account Details Tab */}
-          <Tabs.Content value="profile">
-            <Card>
-              <Flex direction="column" gap="4">
-                <Heading size="4">Account Information</Heading>
-
-                <Flex direction="column" gap="3">
-                  {/* Avatar Upload Section */}
-                  <Box>
-                    <Text size="2" weight="bold" mb="2">Profile Photo</Text>
-                    <Flex gap="4" align="center">
-                      <Avatar
-                        size="6"
-                        src={profile.avatar_url}
-                        fallback={profile.first_name?.[0]?.toUpperCase() || profile.last_name?.[0]?.toUpperCase() || profile.email[0].toUpperCase()}
-                      />
-                      <Flex direction="column" gap="2">
-                        <Flex gap="2">
-                          <input
-                            id="avatar-upload"
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={handleAvatarUpload}
-                            disabled={uploadingAvatar}
-                          />
-                          <Button 
-                            variant="outline" 
-                            size="2"
-                            disabled={uploadingAvatar}
-                            onClick={() => {
-                              const input = document.getElementById('avatar-upload') as HTMLInputElement;
-                              if (input && !uploadingAvatar) {
-                                input.click();
-                              }
-                            }}
-                          >
-                            {uploadingAvatar ? 'Uploading...' : profile.avatar_url ? 'Change Photo' : 'Upload Photo'}
-                          </Button>
-                          {profile.avatar_url && (
-                            <Button 
-                              variant="outline" 
-                              size="2"
-                              color="red"
-                              onClick={handleAvatarDelete}
-                              disabled={uploadingAvatar}
-                            >
-                              Remove
-                            </Button>
-                          )}
-                        </Flex>
-                        <Text size="1" color="gray">
-                          JPG, PNG or GIF. Max size 5MB.
-                        </Text>
-                      </Flex>
-                    </Flex>
-                  </Box>
-
-                  <Box>
-                    <Text size="2" weight="bold" mb="2">First Name</Text>
-                    <TextField.Root
-                      value={profileForm.first_name}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, first_name: e.target.value }))}
-                      placeholder="Enter your first name"
-                    />
-                  </Box>
-
-                  <Box>
-                    <Text size="2" weight="bold" mb="2">Last Name</Text>
-                    <TextField.Root
-                      value={profileForm.last_name}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, last_name: e.target.value }))}
-                      placeholder="Enter your last name"
-                    />
-                  </Box>
-
-                  <Box>
-                    <Text size="2" weight="bold" mb="2">Email</Text>
-                    <TextField.Root
-                      value={profileForm.email}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Enter your email"
-                      type="email"
-                    />
-                  </Box>
-                </Flex>
-
-                <Flex justify="end" gap="2">
-                  <Button variant="outline" onClick={() => setProfileForm({
-                    first_name: profile.first_name || '',
-                    last_name: profile.last_name || '',
-                    email: profile.email || ''
-                  })}>
-                    Reset
-                  </Button>
-                  <Button onClick={saveProfile} disabled={saving}>
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </Flex>
-              </Flex>
-            </Card>
-          </Tabs.Content>
-
-          {/* Chiropractor Profile Tab */}
-          {profile.role === 'chiropractor' && (
-            <Tabs.Content value="chiropractor">
-              <Card>
-                <Flex direction="column" gap="4">
-                  <Heading size="4">Chiropractor Profile</Heading>
-
-                  <Flex direction="column" gap="3">
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Professional Bio</Text>
-                      <TextArea
-                        value={chiropractorForm.bio}
-                        onChange={(e) => setChiropractorForm(prev => ({ ...prev, bio: e.target.value }))}
-                        placeholder="Tell patients about your experience and approach..."
-                        rows={4}
-                      />
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Chiropractic College</Text>
-                      <TextField.Root
-                        value={chiropractorForm.chiropractic_college}
-                        onChange={(e) => setChiropractorForm(prev => ({ ...prev, chiropractic_college: e.target.value }))}
-                        placeholder="Where did you study chiropractic?"
-                      />
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Graduation Year</Text>
-                      <TextField.Root
-                        value={chiropractorForm.graduation_year}
-                        onChange={(e) => setChiropractorForm(prev => ({ ...prev, graduation_year: e.target.value }))}
-                        placeholder="e.g. 2020"
-                        type="number"
-                      />
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">License Number</Text>
-                      <TextField.Root
-                        value={chiropractorForm.license_number}
-                        onChange={(e) => setChiropractorForm(prev => ({ ...prev, license_number: e.target.value }))}
-                        placeholder="Your chiropractic license number"
-                      />
-                    </Box>
-
-                    {/* Note: Website and Instagram fields removed to match simplified schema */}
-
-                    <Box>
-                      <Flex align="center" gap="2">
-                        <input
-                          type="checkbox"
-                          id="accepting_patients"
-                          checked={chiropractorForm.accepting_new_patients}
-                          onChange={(e) => setChiropractorForm(prev => ({ ...prev, accepting_new_patients: e.target.checked }))}
-                        />
-                        <label htmlFor="accepting_patients">
-                          <Text size="2" weight="bold">Currently accepting new patients</Text>
-                        </label>
-                      </Flex>
-                    </Box>
-                  </Flex>
-
-                  <Flex justify="end" gap="2">
-                    <Button variant="outline" onClick={() => setChiropractorForm({
-                      bio: chiropractorProfile?.bio || '',
-                      chiropractic_college: chiropractorProfile?.chiropractic_college || '',
-                      graduation_year: chiropractorProfile?.graduation_year?.toString() || '',
-                      license_number: chiropractorProfile?.license_number || '',
-                      accepting_new_patients: chiropractorProfile?.accepting_new_patients ?? true
-                    })}>
-                      Reset
-                    </Button>
-                    <Button onClick={saveChiropractorProfile} disabled={saving}>
-                      {saving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </Flex>
-                </Flex>
-              </Card>
-            </Tabs.Content>
-          )}
-
-          {/* Patient Profile Tab */}
-          {profile.role === 'patient' && (
-            <Tabs.Content value="patient">
-              <Card>
-                <Flex direction="column" gap="4">
-                  <Heading size="4">Patient Preferences</Heading>
-
-                  <Flex direction="column" gap="3">
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Phone Number</Text>
-                      <TextField.Root
-                        value={patientForm.phone}
-                        onChange={(e) => setPatientForm(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="Enter your phone number"
-                      />
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Date of Birth</Text>
-                      <TextField.Root
-                        type="date"
-                        value={patientForm.date_of_birth}
-                        onChange={(e) => setPatientForm(prev => ({ ...prev, date_of_birth: e.target.value }))}
-                      />
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Emergency Contact Name</Text>
-                      <TextField.Root
-                        value={patientForm.emergency_contact}
-                        onChange={(e) => setPatientForm(prev => ({ ...prev, emergency_contact: e.target.value }))}
-                        placeholder="Emergency contact name"
-                      />
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Emergency Contact Phone</Text>
-                      <TextField.Root
-                        value={patientForm.emergency_phone}
-                        onChange={(e) => setPatientForm(prev => ({ ...prev, emergency_phone: e.target.value }))}
-                        placeholder="Emergency contact phone"
-                      />
-                    </Box>
-
-                    <Grid columns="3" gap="3">
-                      <Box>
-                        <Text size="2" weight="bold" mb="2">City</Text>
-                        <TextField.Root
-                          value={patientForm.city}
-                          onChange={(e) => setPatientForm(prev => ({ ...prev, city: e.target.value }))}
-                          placeholder="City"
-                        />
-                      </Box>
-                      <Box>
-                        <Text size="2" weight="bold" mb="2">State</Text>
-                        <TextField.Root
-                          value={patientForm.state}
-                          onChange={(e) => setPatientForm(prev => ({ ...prev, state: e.target.value }))}
-                          placeholder="State"
-                        />
-                      </Box>
-                      <Box>
-                        <Text size="2" weight="bold" mb="2">Zip Code</Text>
-                        <TextField.Root
-                          value={patientForm.zip_code}
-                          onChange={(e) => setPatientForm(prev => ({ ...prev, zip_code: e.target.value }))}
-                          placeholder="12345"
-                        />
-                      </Box>
-                    </Grid>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Search Radius (miles)</Text>
-                      <Select.Root
-                        value={patientForm.search_radius.toString()}
-                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, search_radius: parseInt(value) }))}
-                      >
-                        <Select.Trigger />
-                        <Select.Content>
-                          <Select.Item value="5">5 miles</Select.Item>
-                          <Select.Item value="10">10 miles</Select.Item>
-                          <Select.Item value="15">15 miles</Select.Item>
-                          <Select.Item value="25">25 miles</Select.Item>
-                          <Select.Item value="50">50 miles</Select.Item>
-                          <Select.Item value="100">100 miles</Select.Item>
-                        </Select.Content>
-                      </Select.Root>
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Preferred Business Model</Text>
-                      <Select.Root
-                        value={patientForm.preferred_business_model}
-                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, preferred_business_model: value }))}
-                      >
-                        <Select.Trigger />
-                        <Select.Content>
-                          <Select.Item value="none">No Preference</Select.Item>
-                          <Select.Item value="cash">Cash-Based</Select.Item>
-                          <Select.Item value="insurance">Insurance-Based</Select.Item>
-                          <Select.Item value="hybrid">Hybrid</Select.Item>
-                        </Select.Content>
-                      </Select.Root>
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Insurance Type</Text>
-                      <Select.Root
-                        value={patientForm.insurance_type}
-                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, insurance_type: value }))}
-                      >
-                        <Select.Trigger />
-                        <Select.Content>
-                          <Select.Item value="none">No Insurance</Select.Item>
-                          <Select.Item value="BCBS">Blue Cross Blue Shield</Select.Item>
-                          <Select.Item value="Aetna">Aetna</Select.Item>
-                          <Select.Item value="Cigna">Cigna</Select.Item>
-                          <Select.Item value="UnitedHealthcare">UnitedHealthcare</Select.Item>
-                          <Select.Item value="Medicare">Medicare</Select.Item>
-                          <Select.Item value="Medicaid">Medicaid</Select.Item>
-                        </Select.Content>
-                      </Select.Root>
-                    </Box>
-
-                    <Box>
-                      <Text size="2" weight="bold" mb="2">Budget Range (Monthly)</Text>
-                      <Select.Root
-                        value={patientForm.budget_range}
-                        onValueChange={(value) => setPatientForm(prev => ({ ...prev, budget_range: value }))}
-                      >
-                        <Select.Trigger />
-                        <Select.Content>
-                          <Select.Item value="none">No Preference</Select.Item>
-                          <Select.Item value="under-50">Under $50</Select.Item>
-                          <Select.Item value="50-100">$50 - $100</Select.Item>
-                          <Select.Item value="100-150">$100 - $150</Select.Item>
-                          <Select.Item value="over-150">Over $150</Select.Item>
-                        </Select.Content>
-                      </Select.Root>
-                    </Box>
-                  </Flex>
-
-                  <Flex justify="end" gap="2">
-                    <Button variant="outline" onClick={() => {
-                      if (patientProfile) {
-                        setPatientForm({
-                          phone: patientProfile.phone || '',
-                          date_of_birth: patientProfile.date_of_birth || '',
-                          emergency_contact: patientProfile.emergency_contact || '',
-                          emergency_phone: patientProfile.emergency_phone || '',
-                          preferred_modalities: patientProfile.preferred_modalities || [],
-                          focus_areas: patientProfile.focus_areas || [],
-                          preferred_business_model: patientProfile.preferred_business_model || '',
-                          insurance_type: patientProfile.insurance_type || '',
-                          budget_range: patientProfile.budget_range || '',
-                          city: patientProfile.city || '',
-                          state: patientProfile.state || '',
-                          zip_code: patientProfile.zip_code || '',
-                          search_radius: patientProfile.search_radius || 25,
-                          preferred_days: patientProfile.preferred_days || [],
-                          preferred_times: patientProfile.preferred_times || [],
-                        });
-                      }
-                    }}>
-                      Reset
-                    </Button>
-                    <Button onClick={savePatientProfile} disabled={saving}>
-                      {saving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </Flex>
-                </Flex>
-              </Card>
-            </Tabs.Content>
-          )}
-        </Tabs.Root>
-      </Flex>
-    </Container>
+        <main className={styles.mainWrap}>
+          <div className={styles.mainCard}>
+            {showHero && <div className={styles.heroBar} aria-hidden />}
+            <div className={styles.mainInner}>{mainContent}</div>
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }

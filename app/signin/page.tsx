@@ -3,17 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Flex, Text, Button, Heading, Card, TextField, Box } from '@radix-ui/themes';
 import { supabase } from '@/app/lib/supabase';
-import { Container } from '@/app/components/Container';
+import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import styles from './page.module.css';
+
+type AccountTab = 'chiropractor' | 'patient';
 
 export default function SignInPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
+  const [accountTab, setAccountTab] = useState<AccountTab>('chiropractor');
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -23,14 +26,15 @@ export default function SignInPage() {
 
   const checkUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
-        // User is already signed in, redirect to account
         router.push('/account');
         return;
       }
-    } catch (error) {
-      console.error('Error checking user:', error);
+    } catch (err) {
+      console.error('Error checking user:', err);
     } finally {
       setLoading(false);
     }
@@ -42,99 +46,127 @@ export default function SignInPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      if (error) {
-        throw error;
+      if (signInError) {
+        throw signInError;
       }
 
-      // Success - redirect to account page
       router.push('/account');
-    } catch (error: any) {
-      console.error('Error signing in:', error);
-      setError(error.message || 'Failed to sign in. Please check your credentials and try again.');
+    } catch (err: unknown) {
+      console.error('Error signing in:', err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to sign in. Please check your credentials and try again.';
+      setError(message);
     } finally {
       setSigningIn(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  const signUpHref = accountTab === 'patient' ? '/signup-patient' : '/signup';
 
   if (loading) {
     return (
-      <Container className="page-with-header">
-        <Flex justify="center" align="center" style={{ minHeight: '50vh' }}>
-          <Text>Loading...</Text>
-        </Flex>
-      </Container>
+      <div className={styles.signinPage}>
+        <div className={styles.signinLoading}>Loading...</div>
+      </div>
     );
   }
 
   return (
-    <Container className="page-with-header">
-      <Flex direction="column" gap="6" py="9">
-        <Flex justify="center">
-          <Heading size="6">Sign In to Your Account</Heading>
-        </Flex>
+    <div className={styles.signinPage}>
+      <div className={styles.signinSplit}>
+        <div className={styles.signinMain}>
+          <h1 className={styles.signinTitle}>Sign in to your account</h1>
 
-        <Card style={{ maxWidth: '400px', margin: '0 auto' }}>
-          <form onSubmit={handleSignIn}>
-            <Flex direction="column" gap="4">
-              <Box>
-                <Text size="2" weight="bold" mb="2">Email</Text>
-                <TextField.Root
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter your email"
-                  type="email"
-                  required
-                />
-              </Box>
+          <div className={styles.signinCard}>
+            <div className={styles.signinTabs} role="tablist" aria-label="Account type">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={accountTab === 'chiropractor'}
+                className={`${styles.signinTab} ${accountTab === 'chiropractor' ? styles.signinTabActive : ''}`}
+                onClick={() => setAccountTab('chiropractor')}
+              >
+                Chiropractor
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={accountTab === 'patient'}
+                className={`${styles.signinTab} ${accountTab === 'patient' ? styles.signinTabActive : ''}`}
+                onClick={() => setAccountTab('patient')}
+              >
+                Patient
+              </button>
+            </div>
 
-              <Box>
-                <Text size="2" weight="bold" mb="2">Password</Text>
-                <TextField.Root
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  placeholder="Enter your password"
-                  type="password"
-                  required
-                />
-              </Box>
+            <form className={styles.signinForm} onSubmit={handleSignIn} noValidate>
+              <div className={styles.signinFields}>
+                <div className={styles.signinField}>
+                  <label className={styles.signinLabel} htmlFor="signin-email">
+                    Email
+                  </label>
+                  <input
+                    id="signin-email"
+                    className={styles.signinInput}
+                    value={formData.email}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="email@email.com"
+                    type="email"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
 
-              {error && (
-                <Box style={{ background: 'var(--red-3)', padding: 'var(--space-3)', border: '1px solid var(--red-6)' }}>
-                  <Text size="2" color="red">{error}</Text>
-                </Box>
-              )}
+                <div className={styles.signinField}>
+                  <label className={styles.signinLabel} htmlFor="signin-password">
+                    Password
+                  </label>
+                  <input
+                    id="signin-password"
+                    className={styles.signinInput}
+                    value={formData.password}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                    placeholder="Password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
+              </div>
 
-              <Button type="submit" disabled={signingIn} style={{ width: '100%' }}>
-                {signingIn ? 'Signing In...' : 'Sign In'}
-              </Button>
+              {error ? <div className={styles.signinError}>{error}</div> : null}
 
-              <Flex justify="center">
-                <Text size="2">
-                  Don't have an account?{' '}
-                  <Button variant="ghost" size="1" asChild>
-                    <Link href="/signup">Sign Up</Link>
-                  </Button>
-                </Text>
-              </Flex>
-            </Flex>
-          </form>
-        </Card>
+              <button type="submit" className={styles.signinSubmit} disabled={signingIn}>
+                {signingIn ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
 
-        <Flex justify="center">
-          <Button variant="ghost" asChild>
-            <Link href="/">← Back to Home</Link>
-          </Button>
-        </Flex>
-      </Flex>
-    </Container>
+            <p className={styles.signinCardFooter}>
+              Don&apos;t have an account yet?{' '}
+              <Link href={signUpHref} className={styles.signinInlineLink}>
+                Sign up
+              </Link>
+            </p>
+          </div>
+
+          <Link href="/" className={styles.signinBack}>
+            Back to home
+          </Link>
+        </div>
+
+        <div className={styles.signinAsideWrap}>
+          <div className={styles.signinAside}>
+            <FindMyChiroLogo variant="onDark" className={styles.signinLogoSvg} />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

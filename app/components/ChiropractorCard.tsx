@@ -66,7 +66,7 @@ export function ChiropractorCard({ chiropractor }: ChiropractorCardProps) {
         height: '100%',
         minHeight: 0,
         overflow: 'hidden',
-        padding: 'var(--space-5)',
+        padding: 'var(--profile-card-padding)',
         width: '100%',
       }}
     >

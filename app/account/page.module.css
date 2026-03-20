@@ -1,0 +1,503 @@
+/* Account / profile — Figma node 33:3459 */
+
+.shell {
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: var(--font-body);
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: min(900px, 100vh);
+}
+
+@media (min-width: 900px) {
+  .layout {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: max(900px, 100vh);
+  }
+}
+
+.sidebarWrap {
+  flex-shrink: 0;
+  padding: var(--space-4);
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 900px) {
+  .sidebarWrap {
+    width: 237px;
+    padding: var(--space-4);
+  }
+}
+
+.sidebar {
+  background: #1d1d1f;
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 280px;
+}
+
+@media (min-width: 900px) {
+  .sidebar {
+    min-height: calc(100vh - 32px);
+    max-height: calc(100vh - 32px);
+  }
+}
+
+.sidebarLogo {
+  width: 141px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.navItem {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 20px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.navItemActive {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.navItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding-top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sidebarLink {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+}
+
+.sidebarLink:hover {
+  color: #ffffff;
+}
+
+.signOutBtn {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.signOutBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mainWrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.mainCard {
+  flex: 1 1 auto;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.heroBar {
+  height: 100px;
+  width: 100%;
+  flex-shrink: 0;
+  background: #0072de;
+}
+
+.mainInner {
+  padding: 0 50px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-top: -50px;
+}
+
+@media (max-width: 767px) {
+  .mainInner {
+    padding: 0 var(--space-4) var(--space-6);
+  }
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 4px solid #ffffff;
+  box-shadow: var(--shadow-sm);
+  background: #e8e8e8;
+}
+
+.avatarFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 600;
+  color: #202020;
+}
+
+.welcomeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.welcomeTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: #000000;
+  line-height: 1.2;
+}
+
+.welcomeEmail {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  color: #000000;
+  opacity: 0.5;
+}
+
+.welcomeMeta {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 300;
+  color: #ada7a7;
+}
+
+.editBtn {
+  height: 44px;
+  padding: 0 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: #0072de;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 400;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.editBtn:hover {
+  background: #0066c7;
+}
+
+.editBtnMuted {
+  background: #f9f9f9;
+  color: #202020;
+  border: 1px solid #e8e8e8;
+}
+
+.editBtnMuted:hover {
+  background: #efefef;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px 32px;
+}
+
+@media (min-width: 640px) {
+  .fieldGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldLabel {
+  font-size: 16px;
+  font-weight: 400;
+  color: #000000;
+  opacity: 0.8;
+}
+
+.input,
+.select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: #f9f9f9;
+  font-size: 16px;
+  font-family: inherit;
+  color: #000000;
+}
+
+.input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.input:focus,
+.select:focus {
+  outline: 2px solid #0072de;
+  outline-offset: 0;
+}
+
+.selectWrap {
+  position: relative;
+}
+
+.selectChevron {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  opacity: 0.5;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.selectNative {
+  appearance: none;
+  padding-right: 48px;
+  cursor: pointer;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+  padding: 14px 20px;
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-3);
+  font-size: 18px;
+  font-weight: 500;
+  color: #000000;
+}
+
+.emailSection {
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.emailRow {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.emailIconWrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.emailIconBg {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e8f1fe;
+}
+
+.emailIcon {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  color: #0072de;
+}
+
+.emailTextBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 16px;
+  color: #000000;
+}
+
+.emailSub {
+  opacity: 0.5;
+  font-size: 16px;
+}
+
+.addEmailBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(65, 130, 249, 0.1);
+  color: #0072de;
+  font-size: 16px;
+  font-family: inherit;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  padding-top: var(--space-4);
+}
+
+.secondaryBtn {
+  height: 44px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid #e8e8e8;
+  background: #ffffff;
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.secondaryBtn:hover {
+  background: #f9f9f9;
+}
+
+.primaryBtn {
+  height: 44px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: #0072de;
+  color: #ffffff;
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: #0066c7;
+}
+
+.placeholderPanel {
+  padding: var(--space-6);
+  border-radius: var(--radius-sm);
+  background: #f9f9f9;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 15px;
+  color: #202020;
+}
+
+.hiddenFile {
+  display: none;
+}
+
+.avatarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.mutedNote {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: var(--space-2);
+}
+
+.loadingBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: var(--color-text-secondary);
+}

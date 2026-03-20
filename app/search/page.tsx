@@ -38,6 +38,25 @@ type RefineSearchPanelProps = {
   onPhilosophyChange: (philosophy: string, checked: boolean) => void;
 };
 
+function coalesceFilterValue(value: string | undefined): string {
+  return value && value !== '' ? value : 'any';
+}
+
+const BUSINESS_LABELS: Record<string, string> = {
+  any: 'Any',
+  cash: 'Cash-based',
+  insurance: 'Insurance-based',
+  hybrid: 'Hybrid',
+};
+
+const BUDGET_LABELS: Record<string, string> = {
+  any: 'Any',
+  'under-50': 'Under $50/month',
+  '50-100': '$50 – $100/month',
+  '100-150': '$100 – $150/month',
+  'over-150': 'Over $150/month',
+};
+
 function RefineSearchPanel({
   filters,
   setFilters,
@@ -49,141 +68,173 @@ function RefineSearchPanel({
   onFocusAreaChange,
   onPhilosophyChange,
 }: RefineSearchPanelProps) {
+  const businessValue = coalesceFilterValue(filters.preferredBusinessModel);
+  const insuranceValue = coalesceFilterValue(filters.insuranceType);
+  const budgetValue = coalesceFilterValue(filters.budgetRange);
+
   return (
     <Card className="search-refine-card">
       <Tabs.Root defaultValue="techniques" className="search-refine-tabs">
-        <Tabs.List>
-          <Tabs.Trigger value="techniques">Techniques</Tabs.Trigger>
-          <Tabs.Trigger value="specialties">Specialties</Tabs.Trigger>
-          <Tabs.Trigger value="philosophy">Philosophy</Tabs.Trigger>
-          <Tabs.Trigger value="payment">Payment</Tabs.Trigger>
-        </Tabs.List>
+        <Flex direction="column" gap="6">
+          <Tabs.List>
+            <Tabs.Trigger value="techniques">Techniques</Tabs.Trigger>
+            <Tabs.Trigger value="specialties">Specialties</Tabs.Trigger>
+            <Tabs.Trigger value="philosophy">Philosophy</Tabs.Trigger>
+            <Tabs.Trigger value="payment">Payment</Tabs.Trigger>
+          </Tabs.List>
 
-        <Box pt="4">
-          <Tabs.Content value="techniques">
-            <Flex direction="column" gap="3">
-              <Text size="2" weight="bold" style={{ color: '#202020' }}>
-                Preferred Techniques
-              </Text>
-              <Flex direction="column" gap="2">
-                {modalityOptions.map((modality) => (
-                  <Flex key={modality} gap="2" align="center">
-                    <Checkbox
-                      checked={filters.preferredModalities?.includes(modality) || false}
-                      onCheckedChange={(checked) => onModalityChange(modality, checked as boolean)}
-                    />
-                    <Text size="2" style={{ color: '#202020' }}>
-                      {modality}
-                    </Text>
-                  </Flex>
-                ))}
-              </Flex>
-            </Flex>
-          </Tabs.Content>
-
-          <Tabs.Content value="specialties">
-            <Flex direction="column" gap="3">
-              <Text size="2" weight="bold" style={{ color: '#202020' }}>
-                Specialties
-              </Text>
-              <Flex direction="column" gap="2">
-                {focusAreaOptions.map((area) => (
-                  <Flex key={area} gap="2" align="center">
-                    <Checkbox
-                      checked={filters.focusAreas?.includes(area) || false}
-                      onCheckedChange={(checked) => onFocusAreaChange(area, checked as boolean)}
-                    />
-                    <Text size="2" style={{ color: '#202020' }}>
-                      {area}
-                    </Text>
-                  </Flex>
-                ))}
-              </Flex>
-            </Flex>
-          </Tabs.Content>
-
-          <Tabs.Content value="philosophy">
-            <Flex direction="column" gap="3">
-              <Text size="2" weight="bold" style={{ color: '#202020' }}>
-                Philosophy & Approach
-              </Text>
-              <Flex direction="column" gap="2">
-                {philosophyOptions.map((philosophy) => (
-                  <Flex key={philosophy} gap="2" align="center">
-                    <Checkbox
-                      checked={filters.preferredPhilosophies?.includes(philosophy) || false}
-                      onCheckedChange={(checked) => onPhilosophyChange(philosophy, checked as boolean)}
-                    />
-                    <Text size="2" style={{ color: '#202020' }}>
-                      {philosophy}
-                    </Text>
-                  </Flex>
-                ))}
-              </Flex>
-            </Flex>
-          </Tabs.Content>
-
-          <Tabs.Content value="payment">
-            <Flex direction="column" gap="4">
-              <Box>
-                <Text size="2" weight="bold" mb="2" style={{ color: '#202020' }}>
-                  Business Model
+          <Box>
+            <Tabs.Content value="techniques">
+              <Flex direction="column" gap="3">
+                <Text size="2" weight="bold" style={{ color: '#202020', lineHeight: '20px' }}>
+                  Preferred Techniques
                 </Text>
-                <Select.Root
-                  value={filters.preferredBusinessModel || ''}
-                  onValueChange={(value) => setFilters((prev) => ({ ...prev, preferredBusinessModel: value }))}
-                >
-                  <Select.Trigger />
-                  <Select.Content>
-                    <Select.Item value="any">Any</Select.Item>
-                    <Select.Item value="cash">Cash-Based</Select.Item>
-                    <Select.Item value="insurance">Insurance-Based</Select.Item>
-                    <Select.Item value="hybrid">Hybrid</Select.Item>
-                  </Select.Content>
-                </Select.Root>
-              </Box>
+                <Flex direction="column" gap="2">
+                  {modalityOptions.map((modality) => (
+                    <Flex key={modality} gap="2" align="center">
+                      <Checkbox
+                        size="1"
+                        variant="surface"
+                        checked={filters.preferredModalities?.includes(modality) || false}
+                        onCheckedChange={(checked) => onModalityChange(modality, checked as boolean)}
+                      />
+                      <Text size="2" style={{ color: '#202020', lineHeight: '20px' }}>
+                        {modality}
+                      </Text>
+                    </Flex>
+                  ))}
+                </Flex>
+              </Flex>
+            </Tabs.Content>
 
-              <Box>
-                <Text size="2" weight="bold" mb="2" style={{ color: '#202020' }}>
-                  Insurance
+            <Tabs.Content value="specialties">
+              <Flex direction="column" gap="3">
+                <Text size="2" weight="bold" style={{ color: '#202020', lineHeight: '20px' }}>
+                  Specialties
                 </Text>
-                <Select.Root
-                  value={filters.insuranceType || ''}
-                  onValueChange={(value) => setFilters((prev) => ({ ...prev, insuranceType: value }))}
-                >
-                  <Select.Trigger />
-                  <Select.Content>
-                    <Select.Item value="any">Any</Select.Item>
-                    {insuranceOptions.map((insurance) => (
-                      <Select.Item key={insurance} value={insurance}>
-                        {insurance}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </Box>
+                <Flex direction="column" gap="2">
+                  {focusAreaOptions.map((area) => (
+                    <Flex key={area} gap="2" align="center">
+                      <Checkbox
+                        size="1"
+                        variant="surface"
+                        checked={filters.focusAreas?.includes(area) || false}
+                        onCheckedChange={(checked) => onFocusAreaChange(area, checked as boolean)}
+                      />
+                      <Text size="2" style={{ color: '#202020', lineHeight: '20px' }}>
+                        {area}
+                      </Text>
+                    </Flex>
+                  ))}
+                </Flex>
+              </Flex>
+            </Tabs.Content>
 
-              <Box>
-                <Text size="2" weight="bold" mb="2" style={{ color: '#202020' }}>
-                  Budget Range
+            <Tabs.Content value="philosophy">
+              <Flex direction="column" gap="3">
+                <Text size="2" weight="bold" style={{ color: '#202020', lineHeight: '20px' }}>
+                  Philosophy & Approach
                 </Text>
-                <Select.Root
-                  value={filters.budgetRange || ''}
-                  onValueChange={(value) => setFilters((prev) => ({ ...prev, budgetRange: value }))}
-                >
-                  <Select.Trigger />
-                  <Select.Content>
-                    <Select.Item value="any">Any</Select.Item>
-                    <Select.Item value="under-50">Under $50/month</Select.Item>
-                    <Select.Item value="50-100">$50 - $100/month</Select.Item>
-                    <Select.Item value="100-150">$100 - $150/month</Select.Item>
-                    <Select.Item value="over-150">Over $150/month</Select.Item>
-                  </Select.Content>
-                </Select.Root>
-              </Box>
-            </Flex>
-          </Tabs.Content>
-        </Box>
+                <Flex direction="column" gap="2">
+                  {philosophyOptions.map((philosophy) => (
+                    <Flex key={philosophy} gap="2" align="center">
+                      <Checkbox
+                        size="1"
+                        variant="surface"
+                        checked={filters.preferredPhilosophies?.includes(philosophy) || false}
+                        onCheckedChange={(checked) => onPhilosophyChange(philosophy, checked as boolean)}
+                      />
+                      <Text size="2" style={{ color: '#202020', lineHeight: '20px' }}>
+                        {philosophy}
+                      </Text>
+                    </Flex>
+                  ))}
+                </Flex>
+              </Flex>
+            </Tabs.Content>
+
+            <Tabs.Content value="payment">
+              <Flex direction="column" gap="4">
+                <Text size="2" weight="bold" style={{ color: '#202020', lineHeight: '20px' }}>
+                  Payment
+                </Text>
+                <Flex direction="column" gap="4">
+                  <Flex direction="column" gap="1">
+                    <Text size="2" style={{ color: '#202020', lineHeight: '20px', fontWeight: 400 }}>
+                      Business Model
+                    </Text>
+                    <Select.Root
+                      value={businessValue}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          preferredBusinessModel: value === 'any' ? '' : value,
+                        }))
+                      }
+                    >
+                      <Select.Trigger className="search-refine-select-trigger" variant="surface" />
+                      <Select.Content>
+                        <Select.Item value="any">Any</Select.Item>
+                        <Select.Item value="cash">{BUSINESS_LABELS.cash}</Select.Item>
+                        <Select.Item value="insurance">{BUSINESS_LABELS.insurance}</Select.Item>
+                        <Select.Item value="hybrid">{BUSINESS_LABELS.hybrid}</Select.Item>
+                      </Select.Content>
+                    </Select.Root>
+                  </Flex>
+
+                  <Flex direction="column" gap="1">
+                    <Text size="2" style={{ color: '#202020', lineHeight: '20px', fontWeight: 400 }}>
+                      Insurance
+                    </Text>
+                    <Select.Root
+                      value={insuranceValue}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          insuranceType: value === 'any' ? '' : value,
+                        }))
+                      }
+                    >
+                      <Select.Trigger className="search-refine-select-trigger" variant="surface" />
+                      <Select.Content>
+                        <Select.Item value="any">Any</Select.Item>
+                        {insuranceOptions.map((insurance) => (
+                          <Select.Item key={insurance} value={insurance}>
+                            {insurance}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  </Flex>
+
+                  <Flex direction="column" gap="1">
+                    <Text size="2" style={{ color: '#202020', lineHeight: '20px', fontWeight: 400 }}>
+                      Budget Range
+                    </Text>
+                    <Select.Root
+                      value={budgetValue}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          budgetRange: value === 'any' ? '' : value,
+                        }))
+                      }
+                    >
+                      <Select.Trigger className="search-refine-select-trigger" variant="surface" />
+                      <Select.Content>
+                        <Select.Item value="any">Any</Select.Item>
+                        <Select.Item value="under-50">{BUDGET_LABELS['under-50']}</Select.Item>
+                        <Select.Item value="50-100">{BUDGET_LABELS['50-100']}</Select.Item>
+                        <Select.Item value="100-150">{BUDGET_LABELS['100-150']}</Select.Item>
+                        <Select.Item value="over-150">{BUDGET_LABELS['over-150']}</Select.Item>
+                      </Select.Content>
+                    </Select.Root>
+                  </Flex>
+                </Flex>
+              </Flex>
+            </Tabs.Content>
+          </Box>
+        </Flex>
       </Tabs.Root>
     </Card>
   );
