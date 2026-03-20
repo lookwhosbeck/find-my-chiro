@@ -133,13 +133,17 @@
 .mainWrap {
   flex: 1 1 auto;
   min-width: 0;
+  /* Let this column size to its content so the document grows and html/body can scroll */
+  min-height: min-content;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
 }
 
 .mainCard {
-  flex: 1 1 auto;
+  /* Do not flex-grow inside the column — flex:1 + min-height:0 trapped tall pages at ~100vh */
+  flex: 0 0 auto;
+  width: 100%;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: var(--radius-xl);
@@ -147,9 +151,7 @@
   flex-direction: column;
   /* Figma 35:4424 — space between hero and content */
   gap: 32px;
-  /* Document scrolls; do not clip long forms (overflow:hidden + flex min-height broke page scroll) */
   overflow: visible;
-  min-height: 0;
 }
 
 .heroBar {
