@@ -1,4 +1,119 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseClient } from './supabase-client';
+
+/** Signup form uses BCBS; DB seed uses full carrier name */
+const SIGNUP_INSURANCE_TO_DB_NAME: Record<string, string> = {
+  BCBS: 'Blue Cross Blue Shield',
+  Aetna: 'Aetna',
+  Cigna: 'Cigna',
+  UnitedHealthcare: 'UnitedHealthcare',
+  Medicare: 'Medicare',
+  Medicaid: 'Medicaid',
+};
+
+function mapSignupBusinessModelToPaymentModelName(raw: string): string | null {
+  const k = raw?.toLowerCase().trim();
+  if (k === 'cash') return 'Cash';
+  if (k === 'insurance') return 'Insurance';
+  if (k === 'hybrid') return 'Hybrid';
+  if (raw === 'Cash' || raw === 'Insurance' || raw === 'Hybrid') return raw;
+  return null;
+}
+
+/**
+ * Inserts junction rows for the new chiropractor (same tables as account Specialties save).
+ */
+async function insertChiropractorJunctionSelections(
+  supabase: SupabaseClient,
+  chiropractorId: string,
+  data: SignUpData,
+): Promise<{ error: Error | null }> {
+  const paymentName = mapSignupBusinessModelToPaymentModelName(data.businessModel);
+  const paymentNames = paymentName ? [paymentName] : [];
+
+  const insuranceNames = data.insurances.map((label) => SIGNUP_INSURANCE_TO_DB_NAME[label] ?? label);
+
+  const specs: [string, string, string, string[]][] = [
+    ['chiropractor_modalities', 'modalities', 'modality_id', data.modalities],
+    ['chiropractor_focus_areas', 'focus_areas', 'focus_area_id', data.focusAreas],
+    ['chiropractor_payment_models', 'payment_models', 'payment_model_id', paymentNames],
+    ['chiropractor_insurances', 'insurances', 'insurance_id', insuranceNames],
+  ];
+
+  for (const [table, refTable, fkCol, names] of specs) {
+    if (!names.length) continue;
+    const { data: rows, error: refErr } = await supabase.from(refTable).select('id,name');
+    if (refErr) return { error: new Error(refErr.message) };
+    const ids = names
+      .map((n) => rows?.find((r: { name: string }) => r.name === n)?.id)
+      .filter((id): id is string => Boolean(id));
+    if (!ids.length) continue;
+    const payload = ids.map((id) => ({ chiropractor_id: chiropractorId, [fkCol]: id }));
+    const { error: insErr } = await supabase.from(table).insert(payload);
+    if (insErr) return { error: new Error(insErr.message) };
+  }
+
+  return { error: null };
+}
+
+function hasSignupClinicLocationData(data: SignUpData): boolean {
+  return !!(
+    data.clinicName?.trim() ||
+    data.address?.trim() ||
+    data.city?.trim() ||
+    data.state?.trim() ||
+    data.zip?.trim()
+  );
+}
+
+/**
+ * Same pattern as account practice save: insert organization, then link via chiropractors.organization_id.
+ * Runs after the chiropractor row exists so RLS and FK behavior match a logged-in save.
+ */
+async function attachClinicOrganizationFromSignup(
+  supabase: SupabaseClient,
+  userId: string,
+  data: SignUpData,
+): Promise<void> {
+  if (!hasSignupClinicLocationData(data)) return;
+
+  const orgPayload = {
+    name: data.clinicName?.trim() || 'My practice',
+    address_line_1: data.address?.trim() || null,
+    city: data.city?.trim() || null,
+    state: data.state?.trim() || null,
+    zip_code: data.zip?.trim() || null,
+    website: data.website?.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: insertedRows, error: orgErr } = await supabase
+    .from('organizations')
+    .insert(orgPayload)
+    .select('id');
+
+  if (orgErr) {
+    console.error('Organization creation during signup:', orgErr);
+    return;
+  }
+
+  const newId = insertedRows?.[0]?.id as string | undefined;
+  if (!newId) {
+    console.error(
+      'Organization insert returned no row id — check RLS policies allow SELECT on new organization rows after INSERT.',
+    );
+    return;
+  }
+
+  const { error: linkErr } = await supabase
+    .from('chiropractors')
+    .update({ organization_id: newId, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+
+  if (linkErr) {
+    console.error('Could not link clinic organization to chiropractor:', linkErr);
+  }
+}
 
 export interface SignUpData {
   // Step 1: Account
@@ -118,6 +233,13 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
       return { success: false, error: 'Failed to create user account. Please try again.' };
     }
 
+    if (authData.session) {
+      await supabase.auth.setSession({
+        access_token: authData.session.access_token,
+        refresh_token: authData.session.refresh_token,
+      });
+    }
+
     // Step 2: Create/update profile record (basic user info)
     // Note: The trigger may have already created the profile, so we use upsert
     const { error: profileError } = await supabase
@@ -138,8 +260,7 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
       // Continue - profile might not be critical
     }
 
-    // Step 3: Create chiropractor record with all data
-    // Only insert fields that actually exist in the database schema
+    // Step 3: Create chiropractor record (clinic org is attached after insert — see attachClinicOrganizationFromSignup)
     const chiropractorData = {
       id: userId,
       bio: data.bio || null,
@@ -196,6 +317,13 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
         error: errorMessage
       };
     }
+
+    const { error: junctionError } = await insertChiropractorJunctionSelections(supabase, userId, data);
+    if (junctionError) {
+      console.error('Could not save signup specialties (modalities, focus areas, payment, insurance):', junctionError);
+    }
+
+    await attachClinicOrganizationFromSignup(supabase, userId, data);
 
     return { success: true, userId };
   } catch (error: any) {
