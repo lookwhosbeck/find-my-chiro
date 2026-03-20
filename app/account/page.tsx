@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Checkbox } from '@radix-ui/themes';
@@ -25,13 +25,13 @@ type NavKey = 'profile' | 'practice' | 'specialties' | 'preferences' | 'referral
 function accountPageTitle(nav: NavKey): string {
   switch (nav) {
     case 'profile':
-      return 'Your profile';
+      return 'Your Profile';
     case 'practice':
-      return 'Your practice';
+      return 'Your Practice';
     case 'specialties':
       return 'Specialties';
     case 'preferences':
-      return 'Your preferences';
+      return 'Your Preferences';
     case 'referrals':
       return 'Referrals';
     case 'messages':
@@ -93,7 +93,9 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeNav, setActiveNav] = useState<NavKey>('profile');
-  const [profileEditing, setProfileEditing] = useState(true);
+  const [profileEditing, setProfileEditing] = useState(false);
+  const [practiceEditing, setPracticeEditing] = useState(false);
+  const [preferencesEditing, setPreferencesEditing] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [chiroModalityNames, setChiroModalityNames] = useState<string[]>([]);
@@ -144,6 +146,20 @@ export default function AccountPage() {
     preferred_days: [] as string[],
     preferred_times: [] as string[],
   });
+
+  const practiceSnapshotRef = useRef<{
+    org: typeof orgForm;
+    chiro: typeof chiropractorForm;
+  } | null>(null);
+  const preferencesSnapshotRef = useRef<typeof patientForm | null>(null);
+
+  useEffect(() => {
+    setProfileEditing(false);
+    setPracticeEditing(false);
+    setPreferencesEditing(false);
+    practiceSnapshotRef.current = null;
+    preferencesSnapshotRef.current = null;
+  }, [activeNav]);
 
   const loadChiroAccountData = useCallback(async (userId: string) => {
     const pickName = (rel: unknown): string | undefined => {
@@ -504,6 +520,8 @@ export default function AccountPage() {
       if (error) throw error;
 
       setChiropractorProfile((prev) => (prev ? { ...prev, ...updateData } : (updateData as ChiropractorProfile)));
+      practiceSnapshotRef.current = null;
+      setPracticeEditing(false);
     } catch (e) {
       console.error(e);
       alert('Could not update practice profile.');
@@ -601,6 +619,8 @@ export default function AccountPage() {
       if (error) throw error;
 
       setPatientProfile((prev) => (prev ? { ...prev, ...updateData } : (updateData as PatientProfile)));
+      preferencesSnapshotRef.current = null;
+      setPreferencesEditing(false);
     } catch (e) {
       console.error(e);
       alert('Could not update preferences.');
@@ -654,18 +674,88 @@ export default function AccountPage() {
     '?';
   const initials = initialsRaw.toUpperCase();
 
-  const memberSince = new Date(profile.created_at).toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-
   const emailUpdated = new Date(profile.updated_at).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
+
+  const toolbarEditDisabled =
+    activeNav === 'referrals' || activeNav === 'messages' || activeNav === 'specialties';
+
+  const toolbarSaveDisabled =
+    saving ||
+    activeNav === 'referrals' ||
+    activeNav === 'messages' ||
+    (activeNav === 'profile' && !profileEditing) ||
+    (activeNav === 'practice' && (!isChiro || !practiceEditing)) ||
+    (activeNav === 'preferences' && (!isPatient || !preferencesEditing));
+
+  const handleToolbarEdit = () => {
+    if (toolbarEditDisabled) return;
+    if (activeNav === 'profile') {
+      if (profileEditing) {
+        setProfileForm({
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          email: profile.email || '',
+        });
+        setProfileEditing(false);
+      } else {
+        setProfileEditing(true);
+      }
+      return;
+    }
+    if (activeNav === 'practice' && isChiro) {
+      if (practiceEditing) {
+        const snap = practiceSnapshotRef.current;
+        if (snap) {
+          setOrgForm(snap.org);
+          setChiropractorForm(snap.chiro);
+        }
+        practiceSnapshotRef.current = null;
+        setPracticeEditing(false);
+      } else {
+        practiceSnapshotRef.current = {
+          org: { ...orgForm },
+          chiro: { ...chiropractorForm },
+        };
+        setPracticeEditing(true);
+      }
+      return;
+    }
+    if (activeNav === 'preferences' && isPatient) {
+      if (preferencesEditing) {
+        if (preferencesSnapshotRef.current) {
+          setPatientForm(preferencesSnapshotRef.current);
+        }
+        preferencesSnapshotRef.current = null;
+        setPreferencesEditing(false);
+      } else {
+        preferencesSnapshotRef.current = { ...patientForm };
+        setPreferencesEditing(true);
+      }
+    }
+  };
+
+  const handleToolbarSave = () => {
+    switch (activeNav) {
+      case 'profile':
+        void saveProfile();
+        break;
+      case 'practice':
+        if (isChiro) void saveChiropractorProfile();
+        break;
+      case 'specialties':
+        void saveChiroSpecialties();
+        break;
+      case 'preferences':
+        if (isPatient) void savePatientProfile();
+        break;
+      default:
+        break;
+    }
+  };
 
   const openAvatarPicker = () => {
     if (uploadingAvatar) return;
@@ -674,48 +764,6 @@ export default function AccountPage() {
 
   const renderProfilePanel = () => (
     <>
-      <div className={styles.profileAvatarRow}>
-        <button
-          type="button"
-          className={styles.avatarButton}
-          onClick={openAvatarPicker}
-          disabled={uploadingAvatar}
-          aria-label="Change profile photo"
-          title="Change profile photo"
-        >
-          {profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className={styles.avatar} src={profile.avatar_url} alt="" width={100} height={100} />
-          ) : (
-            <span className={styles.avatarFallback}>{initials}</span>
-          )}
-        </button>
-        <div className={styles.profileHeaderTextCol}>
-          <div className={styles.profileHeaderTopRow}>
-            <div className={styles.welcomeBlock}>
-              <p className={styles.welcomeTitle}>Welcome, {displayName}</p>
-              <p className={styles.welcomeEmail}>{profileForm.email}</p>
-              <p className={styles.welcomeMeta}>Member since {memberSince}</p>
-            </div>
-            <button
-              type="button"
-              className={profileEditing ? `${styles.editBtn} ${styles.editBtnMuted}` : styles.editBtn}
-              onClick={() => setProfileEditing((e) => !e)}
-            >
-              {profileEditing ? 'Done' : 'Edit'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <input
-        id="account-avatar-input"
-        type="file"
-        accept="image/*"
-        className={styles.hiddenFile}
-        onChange={handleAvatarUpload}
-        disabled={uploadingAvatar}
-      />
       {profileEditing && (
         <div className={styles.avatarActions}>
           <button type="button" className={styles.secondaryBtn} onClick={openAvatarPicker} disabled={uploadingAvatar}>
@@ -728,7 +776,7 @@ export default function AccountPage() {
           )}
         </div>
       )}
-      <p className={styles.mutedNote}>Click your photo to upload. JPG, PNG or GIF. Max 5MB.</p>
+      <p className={styles.mutedNote}>Click your photo in the header to upload. JPG, PNG or GIF. Max 5MB.</p>
 
       <div className={styles.fieldGrid}>
         <div className={styles.field}>
@@ -805,15 +853,14 @@ export default function AccountPage() {
           >
             Reset
           </button>
-          <button type="button" className={styles.primaryBtn} onClick={saveProfile} disabled={saving}>
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
         </div>
       )}
     </>
   );
 
-  const renderPracticePanel = () => (
+  const renderPracticePanel = () => {
+    const practiceLocked = !practiceEditing;
+    return (
     <>
       <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
         Practice &amp; location
@@ -831,6 +878,7 @@ export default function AccountPage() {
             className={styles.input}
             value={orgForm.name}
             onChange={(e) => setOrgForm((p) => ({ ...p, name: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="Clinic name"
           />
         </div>
@@ -843,6 +891,7 @@ export default function AccountPage() {
             className={styles.input}
             value={orgForm.address_line_1}
             onChange={(e) => setOrgForm((p) => ({ ...p, address_line_1: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="123 Main St"
           />
         </div>
@@ -855,6 +904,7 @@ export default function AccountPage() {
             className={styles.input}
             value={orgForm.city}
             onChange={(e) => setOrgForm((p) => ({ ...p, city: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="City"
           />
         </div>
@@ -867,6 +917,7 @@ export default function AccountPage() {
             className={styles.input}
             value={orgForm.state}
             onChange={(e) => setOrgForm((p) => ({ ...p, state: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="ST"
           />
         </div>
@@ -879,6 +930,7 @@ export default function AccountPage() {
             className={styles.input}
             value={orgForm.zip_code}
             onChange={(e) => setOrgForm((p) => ({ ...p, zip_code: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="12345"
           />
         </div>
@@ -891,6 +943,7 @@ export default function AccountPage() {
             className={styles.input}
             value={orgForm.phone}
             onChange={(e) => setOrgForm((p) => ({ ...p, phone: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="Phone"
           />
         </div>
@@ -907,6 +960,7 @@ export default function AccountPage() {
             className={`${styles.input} ${styles.textarea}`}
             value={chiropractorForm.bio}
             onChange={(e) => setChiropractorForm((p) => ({ ...p, bio: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="Tell patients about your experience and approach…"
           />
         </div>
@@ -919,6 +973,7 @@ export default function AccountPage() {
             className={styles.input}
             value={chiropractorForm.chiropractic_college}
             onChange={(e) => setChiropractorForm((p) => ({ ...p, chiropractic_college: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="College name"
           />
         </div>
@@ -932,6 +987,7 @@ export default function AccountPage() {
             type="number"
             value={chiropractorForm.graduation_year}
             onChange={(e) => setChiropractorForm((p) => ({ ...p, graduation_year: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="e.g. 2020"
           />
         </div>
@@ -944,6 +1000,7 @@ export default function AccountPage() {
             className={styles.input}
             value={chiropractorForm.license_number}
             onChange={(e) => setChiropractorForm((p) => ({ ...p, license_number: e.target.value }))}
+            disabled={practiceLocked}
             placeholder="License number"
           />
         </div>
@@ -951,6 +1008,7 @@ export default function AccountPage() {
           <label className={styles.checkboxRow}>
             <Checkbox
               checked={chiropractorForm.accepting_new_patients}
+              disabled={practiceLocked}
               onCheckedChange={(v) =>
                 setChiropractorForm((p) => ({ ...p, accepting_new_patients: v === true }))
               }
@@ -959,30 +1017,34 @@ export default function AccountPage() {
           </label>
         </div>
       </div>
-      <div className={styles.actionsRow}>
-        <button
-          type="button"
-          className={styles.secondaryBtn}
-          onClick={() => {
-            if (chiropractorProfile) {
-              setChiropractorForm({
-                bio: chiropractorProfile.bio || '',
-                chiropractic_college: chiropractorProfile.chiropractic_college || '',
-                graduation_year: chiropractorProfile.graduation_year?.toString() || '',
-                license_number: chiropractorProfile.license_number || '',
-                accepting_new_patients: chiropractorProfile.accepting_new_patients ?? true,
-              });
-            }
-          }}
-        >
-          Reset
-        </button>
-        <button type="button" className={styles.primaryBtn} onClick={saveChiropractorProfile} disabled={saving}>
-          {saving ? 'Saving…' : 'Save changes'}
-        </button>
-      </div>
+      {practiceEditing && (
+        <div className={styles.actionsRow}>
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            onClick={() => {
+              const snap = practiceSnapshotRef.current;
+              if (snap) {
+                setOrgForm(snap.org);
+                setChiropractorForm(snap.chiro);
+              } else if (chiropractorProfile) {
+                setChiropractorForm({
+                  bio: chiropractorProfile.bio || '',
+                  chiropractic_college: chiropractorProfile.chiropractic_college || '',
+                  graduation_year: chiropractorProfile.graduation_year?.toString() || '',
+                  license_number: chiropractorProfile.license_number || '',
+                  accepting_new_patients: chiropractorProfile.accepting_new_patients ?? true,
+                });
+              }
+            }}
+          >
+            Reset
+          </button>
+        </div>
+      )}
     </>
-  );
+    );
+  };
 
   const renderSpecialtiesPanel = () => {
     const column = (title: string, body: ReactNode) => (
@@ -1075,16 +1137,13 @@ export default function AccountPage() {
             </div>,
           )}
         </div>
-        <div className={styles.actionsRow}>
-          <button type="button" className={styles.primaryBtn} onClick={saveChiroSpecialties} disabled={saving}>
-            {saving ? 'Saving…' : 'Save specialties'}
-          </button>
-        </div>
       </>
     );
   };
 
-  const renderPreferencesPanel = () => (
+  const renderPreferencesPanel = () => {
+    const prefsLocked = !preferencesEditing;
+    return (
     <>
       <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
         Contact &amp; personal
@@ -1096,6 +1155,7 @@ export default function AccountPage() {
             className={styles.input}
             value={patientForm.phone}
             onChange={(e) => setPatientForm((p) => ({ ...p, phone: e.target.value }))}
+            disabled={prefsLocked}
             placeholder="Phone number"
           />
         </div>
@@ -1106,6 +1166,7 @@ export default function AccountPage() {
             type="date"
             value={patientForm.date_of_birth}
             onChange={(e) => setPatientForm((p) => ({ ...p, date_of_birth: e.target.value }))}
+            disabled={prefsLocked}
           />
         </div>
         <div className={styles.field}>
@@ -1114,6 +1175,7 @@ export default function AccountPage() {
             className={styles.input}
             value={patientForm.emergency_contact}
             onChange={(e) => setPatientForm((p) => ({ ...p, emergency_contact: e.target.value }))}
+            disabled={prefsLocked}
             placeholder="Name"
           />
         </div>
@@ -1123,6 +1185,7 @@ export default function AccountPage() {
             className={styles.input}
             value={patientForm.emergency_phone}
             onChange={(e) => setPatientForm((p) => ({ ...p, emergency_phone: e.target.value }))}
+            disabled={prefsLocked}
             placeholder="Phone"
           />
         </div>
@@ -1136,6 +1199,7 @@ export default function AccountPage() {
             className={styles.input}
             value={patientForm.city}
             onChange={(e) => setPatientForm((p) => ({ ...p, city: e.target.value }))}
+            disabled={prefsLocked}
             placeholder="City"
           />
         </div>
@@ -1145,6 +1209,7 @@ export default function AccountPage() {
             className={styles.input}
             value={patientForm.state}
             onChange={(e) => setPatientForm((p) => ({ ...p, state: e.target.value }))}
+            disabled={prefsLocked}
             placeholder="State"
           />
         </div>
@@ -1154,6 +1219,7 @@ export default function AccountPage() {
             className={styles.input}
             value={patientForm.zip_code}
             onChange={(e) => setPatientForm((p) => ({ ...p, zip_code: e.target.value }))}
+            disabled={prefsLocked}
             placeholder="ZIP"
           />
         </div>
@@ -1164,6 +1230,7 @@ export default function AccountPage() {
             <select
               className={`${styles.select} ${styles.selectNative}`}
               value={patientForm.search_radius}
+              disabled={prefsLocked}
               onChange={(e) =>
                 setPatientForm((p) => ({ ...p, search_radius: parseInt(e.target.value, 10) }))
               }
@@ -1184,6 +1251,7 @@ export default function AccountPage() {
           <label key={m} className={styles.checkboxRow}>
             <Checkbox
               checked={patientForm.preferred_modalities.includes(m)}
+              disabled={prefsLocked}
               onCheckedChange={() => togglePatientArr('preferred_modalities', m)}
             />
             {m}
@@ -1197,6 +1265,7 @@ export default function AccountPage() {
           <label key={m} className={styles.checkboxRow}>
             <Checkbox
               checked={patientForm.focus_areas.includes(m)}
+              disabled={prefsLocked}
               onCheckedChange={() => togglePatientArr('focus_areas', m)}
             />
             {m}
@@ -1213,6 +1282,7 @@ export default function AccountPage() {
             <select
               className={`${styles.select} ${styles.selectNative}`}
               value={patientForm.preferred_business_model}
+              disabled={prefsLocked}
               onChange={(e) => setPatientForm((p) => ({ ...p, preferred_business_model: e.target.value }))}
             >
               <option value="">No preference</option>
@@ -1229,6 +1299,7 @@ export default function AccountPage() {
             <select
               className={`${styles.select} ${styles.selectNative}`}
               value={patientForm.insurance_type}
+              disabled={prefsLocked}
               onChange={(e) => setPatientForm((p) => ({ ...p, insurance_type: e.target.value }))}
             >
               <option value="">Select…</option>
@@ -1249,6 +1320,7 @@ export default function AccountPage() {
             <select
               className={`${styles.select} ${styles.selectNative}`}
               value={patientForm.budget_range}
+              disabled={prefsLocked}
               onChange={(e) => setPatientForm((p) => ({ ...p, budget_range: e.target.value }))}
             >
               <option value="">No preference</option>
@@ -1267,6 +1339,7 @@ export default function AccountPage() {
           <label key={d} className={styles.checkboxRow}>
             <Checkbox
               checked={patientForm.preferred_days.includes(d)}
+              disabled={prefsLocked}
               onCheckedChange={() => togglePatientArr('preferred_days', d)}
             />
             {d}
@@ -1278,6 +1351,7 @@ export default function AccountPage() {
           <label key={t} className={styles.checkboxRow}>
             <Checkbox
               checked={patientForm.preferred_times.includes(t)}
+              disabled={prefsLocked}
               onCheckedChange={() => togglePatientArr('preferred_times', t)}
             />
             {t}
@@ -1285,40 +1359,42 @@ export default function AccountPage() {
         ))}
       </div>
 
-      <div className={styles.actionsRow}>
-        <button
-          type="button"
-          className={styles.secondaryBtn}
-          onClick={() => {
-            if (patientProfile) {
-              setPatientForm({
-                phone: patientProfile.phone || '',
-                date_of_birth: patientProfile.date_of_birth?.slice(0, 10) || '',
-                emergency_contact: patientProfile.emergency_contact || '',
-                emergency_phone: patientProfile.emergency_phone || '',
-                preferred_modalities: patientProfile.preferred_modalities || [],
-                focus_areas: patientProfile.focus_areas || [],
-                preferred_business_model: patientProfile.preferred_business_model || '',
-                insurance_type: patientProfile.insurance_type || '',
-                budget_range: patientProfile.budget_range || '',
-                city: patientProfile.city || '',
-                state: patientProfile.state || '',
-                zip_code: patientProfile.zip_code || '',
-                search_radius: patientProfile.search_radius || 25,
-                preferred_days: patientProfile.preferred_days || [],
-                preferred_times: patientProfile.preferred_times || [],
-              });
-            }
-          }}
-        >
-          Reset
-        </button>
-        <button type="button" className={styles.primaryBtn} onClick={savePatientProfile} disabled={saving}>
-          {saving ? 'Saving…' : 'Save changes'}
-        </button>
-      </div>
+      {preferencesEditing && (
+        <div className={styles.actionsRow}>
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            onClick={() => {
+              if (preferencesSnapshotRef.current) {
+                setPatientForm(preferencesSnapshotRef.current);
+              } else if (patientProfile) {
+                setPatientForm({
+                  phone: patientProfile.phone || '',
+                  date_of_birth: patientProfile.date_of_birth?.slice(0, 10) || '',
+                  emergency_contact: patientProfile.emergency_contact || '',
+                  emergency_phone: patientProfile.emergency_phone || '',
+                  preferred_modalities: patientProfile.preferred_modalities || [],
+                  focus_areas: patientProfile.focus_areas || [],
+                  preferred_business_model: patientProfile.preferred_business_model || '',
+                  insurance_type: patientProfile.insurance_type || '',
+                  budget_range: patientProfile.budget_range || '',
+                  city: patientProfile.city || '',
+                  state: patientProfile.state || '',
+                  zip_code: patientProfile.zip_code || '',
+                  search_radius: patientProfile.search_radius || 25,
+                  preferred_days: patientProfile.preferred_days || [],
+                  preferred_times: patientProfile.preferred_times || [],
+                });
+              }
+            }}
+          >
+            Reset
+          </button>
+        </div>
+      )}
     </>
-  );
+    );
+  };
 
   const renderPlaceholder = () => (
     <div className={styles.placeholderPanel}>This section is coming soon.</div>
@@ -1340,8 +1416,6 @@ export default function AccountPage() {
   } else {
     mainContent = renderProfilePanel();
   }
-
-  const showHero = true;
 
   return (
     <div className={styles.shell}>
@@ -1377,10 +1451,58 @@ export default function AccountPage() {
 
         <main className={styles.mainWrap}>
           <div className={styles.mainCard}>
-            {showHero && <div className={styles.heroBar} aria-hidden />}
+            <div className={styles.accountHeroBar}>
+              <button
+                type="button"
+                className={styles.heroAvatarBtn}
+                onClick={openAvatarPicker}
+                disabled={uploadingAvatar}
+                aria-label="Change profile photo"
+                title="Change profile photo"
+              >
+                {profile.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className={styles.heroAvatarImg} src={profile.avatar_url} alt="" width={56} height={56} />
+                ) : (
+                  <span className={styles.heroAvatarFallback}>{initials}</span>
+                )}
+              </button>
+              <div className={styles.heroWelcome}>
+                <p className={styles.heroWelcomeName}>Welcome, {displayName}</p>
+                <p className={styles.heroWelcomeEmail}>{profileForm.email || profile.email}</p>
+              </div>
+            </div>
+            <input
+              id="account-avatar-input"
+              type="file"
+              accept="image/*"
+              className={styles.hiddenFile}
+              onChange={handleAvatarUpload}
+              disabled={uploadingAvatar}
+            />
             <div className={styles.mainInner}>
               <div className={styles.mainScroll}>
-                <h1 className={styles.pageSectionTitle}>{accountPageTitle(activeNav)}</h1>
+                <div className={styles.accountTitleRow}>
+                  <h1 className={styles.pageSectionTitle}>{accountPageTitle(activeNav)}</h1>
+                  <div className={styles.accountToolbar} role="group" aria-label="Section actions">
+                    <button
+                      type="button"
+                      className={styles.toolbarBtnEdit}
+                      onClick={handleToolbarEdit}
+                      disabled={toolbarEditDisabled}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.toolbarBtnSave}
+                      onClick={handleToolbarSave}
+                      disabled={toolbarSaveDisabled}
+                    >
+                      {saving ? 'Saving…' : 'Save'}
+                    </button>
+                  </div>
+                </div>
                 <div className={styles.pageSectionBody}>{mainContent}</div>
               </div>
             </div>

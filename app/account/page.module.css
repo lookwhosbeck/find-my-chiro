@@ -164,13 +164,100 @@
   overflow: hidden;
 }
 
-.heroBar {
-  height: 100px;
+/* Figma 34:4151 — blue bar: avatar + welcome + email only */
+.accountHeroBar {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 100px;
   width: 100%;
   flex-shrink: 0;
+  padding: 10px 50px;
   background: #0072de;
-  /* Match card top radius now that .mainCard no longer uses overflow:hidden */
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+@media (max-width: 767px) {
+  .accountHeroBar {
+    padding: 10px var(--space-4);
+  }
+}
+
+.heroAvatarBtn {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.heroAvatarBtn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.heroAvatarBtn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.heroAvatarBtn:disabled {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.heroAvatarImg {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+}
+
+.heroAvatarFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.heroWelcome {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.heroWelcomeName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #ffffff;
+  font-family: var(--font-body);
+}
+
+.heroWelcomeEmail {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: #ffffff;
+  opacity: 0.5;
+  font-family: var(--font-body);
 }
 
 .mainInner {
@@ -187,7 +274,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  /* Figma 34:4151 — space between title row and section body */
+  gap: 48px;
   padding: 0 50px 48px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -210,6 +298,79 @@
   letter-spacing: -0.02em;
   color: #000000;
   font-family: var(--font-body);
+}
+
+/* Figma 34:4154–36:4838 — page title + Edit / Save */
+.accountTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.accountToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  width: 237px;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.toolbarBtnEdit,
+.toolbarBtnSave {
+  box-sizing: border-box;
+  min-width: 116px;
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-align: center;
+}
+
+.toolbarBtnEdit {
+  background: #f3f3f3;
+  color: #202020;
+}
+
+.toolbarBtnEdit:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+.toolbarBtnSave {
+  background: #0072de;
+  color: #ffffff;
+}
+
+.toolbarBtnSave:hover:not(:disabled) {
+  background: #0066c7;
+}
+
+.toolbarBtnEdit:disabled,
+.toolbarBtnSave:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .accountToolbar {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .toolbarBtnEdit,
+  .toolbarBtnSave {
+    min-width: 0;
+  }
 }
 
 .pageSectionBody {
@@ -275,144 +436,6 @@
   font-family: inherit;
   color: #202020;
   cursor: pointer;
-}
-
-/* Avatar overlaps hero seam — keep net overlap inside .mainScroll so wheel scroll works */
-.profileAvatarRow {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-5);
-  margin-top: -48px;
-  margin-bottom: var(--space-2);
-  position: relative;
-  z-index: 1;
-}
-
-@media (max-width: 767px) {
-  .profileAvatarRow {
-    margin-top: -32px;
-  }
-}
-
-.profileHeaderTextCol {
-  flex: 1;
-  min-width: 0;
-  padding-top: 0;
-}
-
-.profileHeaderTopRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-
-.avatarButton {
-  flex-shrink: 0;
-  width: 100px;
-  height: 100px;
-  padding: 0;
-  border: 4px solid #ffffff;
-  border-radius: 50%;
-  box-shadow: var(--shadow-sm);
-  background: #e8e8e8;
-  cursor: pointer;
-  overflow: hidden;
-  position: relative;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.avatarButton:hover:not(:disabled) {
-  transform: scale(1.02);
-  box-shadow: var(--shadow-md);
-}
-
-.avatarButton:focus-visible {
-  outline: 2px solid #0072de;
-  outline-offset: 3px;
-}
-
-.avatarButton:disabled {
-  cursor: wait;
-  opacity: 0.85;
-}
-
-.avatar {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  display: block;
-}
-
-.avatarFallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 36px;
-  font-weight: 600;
-  color: #202020;
-}
-
-.welcomeBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.welcomeTitle {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 500;
-  color: #000000;
-  line-height: 1.2;
-}
-
-.welcomeEmail {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 400;
-  color: #000000;
-  opacity: 0.5;
-}
-
-.welcomeMeta {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 300;
-  color: #ada7a7;
-}
-
-.editBtn {
-  height: 44px;
-  padding: 0 32px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: #0072de;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 400;
-  font-family: inherit;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.editBtn:hover {
-  background: #0066c7;
-}
-
-.editBtnMuted {
-  background: #f9f9f9;
-  color: #202020;
-  border: 1px solid #e8e8e8;
-}
-
-.editBtnMuted:hover {
-  background: #efefef;
 }
 
 .fieldGrid {
