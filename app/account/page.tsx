@@ -13,8 +13,33 @@ import {
   FOCUS_AREA_OPTIONS,
   PREFERRED_DAY_OPTIONS,
   PREFERRED_TIME_OPTIONS,
+  PHILOSOPHY_OPTIONS,
+  PAYMENT_MODEL_OPTIONS,
+  CHIRO_INSURANCE_OPTIONS,
+  CHIRO_BUDGET_RANGE_OPTIONS,
 } from './constants';
 import styles from './page.module.css';
+
+type NavKey = 'profile' | 'practice' | 'specialties' | 'preferences' | 'referrals' | 'messages';
+
+function accountPageTitle(nav: NavKey): string {
+  switch (nav) {
+    case 'profile':
+      return 'Your profile';
+    case 'practice':
+      return 'Your practice';
+    case 'specialties':
+      return 'Specialties';
+    case 'preferences':
+      return 'Your preferences';
+    case 'referrals':
+      return 'Referrals';
+    case 'messages':
+      return 'Messages';
+    default:
+      return '';
+  }
+}
 
 interface UserProfile {
   id: string;
@@ -34,6 +59,8 @@ interface ChiropractorProfile {
   graduation_year?: number;
   license_number?: string;
   accepting_new_patients?: boolean;
+  organization_id?: string | null;
+  budget_range?: string | null;
   updated_at: string;
 }
 
@@ -57,8 +84,6 @@ interface PatientProfile {
   updated_at: string;
 }
 
-type NavKey = 'profile' | 'practice' | 'specialties' | 'preferences' | 'referrals' | 'messages';
-
 export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
@@ -73,6 +98,20 @@ export default function AccountPage() {
 
   const [chiroModalityNames, setChiroModalityNames] = useState<string[]>([]);
   const [chiroFocusNames, setChiroFocusNames] = useState<string[]>([]);
+  const [chiroPhilosophyNames, setChiroPhilosophyNames] = useState<string[]>([]);
+  const [chiroPaymentNames, setChiroPaymentNames] = useState<string[]>([]);
+  const [chiroInsuranceNames, setChiroInsuranceNames] = useState<string[]>([]);
+  const [chiroBudgetRange, setChiroBudgetRange] = useState('');
+
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [orgForm, setOrgForm] = useState({
+    name: '',
+    address_line_1: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    phone: '',
+  });
 
   const [profileForm, setProfileForm] = useState({
     first_name: '',
@@ -106,25 +145,46 @@ export default function AccountPage() {
     preferred_times: [] as string[],
   });
 
-  const loadChiroSpecialties = useCallback(async (userId: string) => {
+  const loadChiroAccountData = useCallback(async (userId: string) => {
+    const pickName = (rel: unknown): string | undefined => {
+      if (rel == null) return undefined;
+      if (Array.isArray(rel)) return (rel[0] as { name?: string })?.name;
+      return (rel as { name?: string }).name;
+    };
+
     try {
-      const [mods, focus] = await Promise.all([
+      const [mods, focus, phil, pay] = await Promise.all([
         supabase.from('chiropractor_modalities').select('modalities(name)').eq('chiropractor_id', userId),
         supabase.from('chiropractor_focus_areas').select('focus_areas(name)').eq('chiropractor_id', userId),
+        supabase.from('chiropractor_philosophies').select('philosophies(name)').eq('chiropractor_id', userId),
+        supabase.from('chiropractor_payment_models').select('payment_models(name)').eq('chiropractor_id', userId),
       ]);
-      const pickName = (rel: unknown): string | undefined => {
-        if (rel == null) return undefined;
-        if (Array.isArray(rel)) return (rel[0] as { name?: string })?.name;
-        return (rel as { name?: string }).name;
-      };
+
       const mn = mods.data?.map((r) => pickName((r as { modalities?: unknown }).modalities)).filter(Boolean) || [];
-      const fn =
-        focus.data?.map((r) => pickName((r as { focus_areas?: unknown }).focus_areas)).filter(Boolean) || [];
+      const fn = focus.data?.map((r) => pickName((r as { focus_areas?: unknown }).focus_areas)).filter(Boolean) || [];
+      const pn = phil.data?.map((r) => pickName((r as { philosophies?: unknown }).philosophies)).filter(Boolean) || [];
+      const pym = pay.data?.map((r) => pickName((r as { payment_models?: unknown }).payment_models)).filter(Boolean) || [];
+
       setChiroModalityNames(mn as string[]);
       setChiroFocusNames(fn as string[]);
+      setChiroPhilosophyNames(pn as string[]);
+      setChiroPaymentNames(pym as string[]);
+
+      const ins = await supabase.from('chiropractor_insurances').select('insurances(name)').eq('chiropractor_id', userId);
+      if (!ins.error && ins.data) {
+        const names = ins.data
+          .map((r) => pickName((r as { insurances?: unknown }).insurances))
+          .filter(Boolean) as string[];
+        setChiroInsuranceNames(names);
+      } else {
+        setChiroInsuranceNames([]);
+      }
     } catch {
       setChiroModalityNames([]);
       setChiroFocusNames([]);
+      setChiroPhilosophyNames([]);
+      setChiroPaymentNames([]);
+      setChiroInsuranceNames([]);
     }
   }, []);
 
@@ -136,6 +196,24 @@ export default function AccountPage() {
 
   const toggleChiroFocus = (name: string) => {
     setChiroFocusNames((prev) =>
+      prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name],
+    );
+  };
+
+  const toggleChiroPhilosophy = (name: string) => {
+    setChiroPhilosophyNames((prev) =>
+      prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name],
+    );
+  };
+
+  const toggleChiroPayment = (name: string) => {
+    setChiroPaymentNames((prev) =>
+      prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name],
+    );
+  };
+
+  const toggleChiroInsurance = (name: string) => {
+    setChiroInsuranceNames((prev) =>
       prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name],
     );
   };
@@ -190,20 +268,79 @@ export default function AccountPage() {
       if (profileData.role === 'chiropractor') {
         const { data: chiroData, error: chiroError } = await supabase
           .from('chiropractors')
-          .select('*')
+          .select(
+            `*,
+            organizations ( id, name, address_line_1, city, state, zip_code, phone )`,
+          )
           .eq('id', authUser.id)
           .single();
 
         if (!chiroError && chiroData) {
-          setChiropractorProfile(chiroData as ChiropractorProfile);
+          type OrgRow = {
+            id: string;
+            name?: string | null;
+            address_line_1?: string | null;
+            city?: string | null;
+            state?: string | null;
+            zip_code?: string | null;
+            phone?: string | null;
+          };
+          const row = chiroData as ChiropractorProfile & {
+            organizations?: OrgRow | null;
+            budget_range?: string | null;
+          };
+
+          setChiropractorProfile(row);
           setChiropractorForm({
-            bio: chiroData.bio || '',
-            chiropractic_college: chiroData.chiropractic_college || '',
-            graduation_year: chiroData.graduation_year?.toString() || '',
-            license_number: chiroData.license_number || '',
-            accepting_new_patients: chiroData.accepting_new_patients ?? true,
+            bio: row.bio || '',
+            chiropractic_college: row.chiropractic_college || '',
+            graduation_year: row.graduation_year?.toString() || '',
+            license_number: row.license_number || '',
+            accepting_new_patients: row.accepting_new_patients ?? true,
           });
-          await loadChiroSpecialties(authUser.id);
+          setChiroBudgetRange(row.budget_range || '');
+
+          const org = row.organizations;
+          if (org) {
+            setOrganizationId(org.id);
+            setOrgForm({
+              name: org.name || '',
+              address_line_1: org.address_line_1 || '',
+              city: org.city || '',
+              state: org.state || '',
+              zip_code: org.zip_code || '',
+              phone: org.phone || '',
+            });
+          } else if (row.organization_id) {
+            setOrganizationId(row.organization_id);
+            const { data: orgOnly } = await supabase
+              .from('organizations')
+              .select('id, name, address_line_1, city, state, zip_code, phone')
+              .eq('id', row.organization_id)
+              .single();
+            if (orgOnly) {
+              setOrgForm({
+                name: orgOnly.name || '',
+                address_line_1: orgOnly.address_line_1 || '',
+                city: orgOnly.city || '',
+                state: orgOnly.state || '',
+                zip_code: orgOnly.zip_code || '',
+                phone: orgOnly.phone || '',
+              });
+            }
+          } else {
+            setOrganizationId(null);
+            setOrgForm({
+              name: '',
+              address_line_1: '',
+              city: '',
+              state: '',
+              zip_code: '',
+              phone: '',
+            });
+          }
+
+          await loadChiroAccountData(authUser.id);
         }
       }
 
@@ -327,8 +464,34 @@ export default function AccountPage() {
     if (!user) return;
     setSaving(true);
     try {
+      const orgBase = {
+        name: orgForm.name.trim() || 'My practice',
+        address_line_1: orgForm.address_line_1.trim() || null,
+        city: orgForm.city.trim() || null,
+        state: orgForm.state.trim() || null,
+        zip_code: orgForm.zip_code.trim() || null,
+        phone: orgForm.phone.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      let oid = organizationId;
+      if (oid) {
+        const { error: orgErr } = await supabase.from('organizations').update(orgBase).eq('id', oid);
+        if (orgErr) throw orgErr;
+      } else {
+        const { data: inserted, error: insErr } = await supabase
+          .from('organizations')
+          .insert({ ...orgBase, website: null })
+          .select('id')
+          .single();
+        if (insErr) throw insErr;
+        oid = inserted.id;
+        setOrganizationId(oid);
+      }
+
       const updateData = {
         id: user.id,
+        organization_id: oid,
         bio: chiropractorForm.bio,
         chiropractic_college: chiropractorForm.chiropractic_college,
         graduation_year: chiropractorForm.graduation_year ? parseInt(chiropractorForm.graduation_year, 10) : null,
@@ -354,9 +517,9 @@ export default function AccountPage() {
     setSaving(true);
     try {
       const sync = async (
-        table: 'chiropractor_modalities' | 'chiropractor_focus_areas',
-        refTable: 'modalities' | 'focus_areas',
-        fk: 'modality_id' | 'focus_area_id',
+        table: string,
+        refTable: string,
+        fk: string,
         names: string[],
       ) => {
         const { data: rows, error: refErr } = await supabase.from(refTable).select('id,name');
@@ -379,6 +542,29 @@ export default function AccountPage() {
 
       await sync('chiropractor_modalities', 'modalities', 'modality_id', chiroModalityNames);
       await sync('chiropractor_focus_areas', 'focus_areas', 'focus_area_id', chiroFocusNames);
+      await sync('chiropractor_philosophies', 'philosophies', 'philosophy_id', chiroPhilosophyNames);
+      await sync('chiropractor_payment_models', 'payment_models', 'payment_model_id', chiroPaymentNames);
+
+      try {
+        await sync('chiropractor_insurances', 'insurances', 'insurance_id', chiroInsuranceNames);
+      } catch (insErr) {
+        console.warn(
+          'chiropractor_insurances not saved (add table via supabase/optional-chiropractor-profile-extras.sql):',
+          insErr,
+        );
+      }
+
+      const budgetPayload = {
+        id: user.id,
+        budget_range: chiroBudgetRange.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+      const { error: bErr } = await supabase.from('chiropractors').update(budgetPayload).eq('id', user.id);
+      if (bErr) {
+        console.warn(budgetPayload, bErr);
+      } else {
+        setChiropractorProfile((prev) => (prev ? { ...prev, budget_range: budgetPayload.budget_range ?? undefined } : prev));
+      }
     } catch (e) {
       console.error(e);
       alert('Could not update specialties. Your database may use different table names or permissions.');
@@ -488,7 +674,7 @@ export default function AccountPage() {
 
   const renderProfilePanel = () => (
     <>
-      <div className={styles.profileHeaderOverlap}>
+      <div className={styles.profileAvatarRow}>
         <button
           type="button"
           className={styles.avatarButton}
@@ -630,8 +816,87 @@ export default function AccountPage() {
   const renderPracticePanel = () => (
     <>
       <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
-        Your practice
+        Practice &amp; location
       </h3>
+      <p className={styles.mutedNote} style={{ marginTop: 0 }}>
+        Address and ZIP power search and distance matching for patients.
+      </p>
+      <div className={styles.fieldGrid}>
+        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+          <label className={styles.fieldLabel} htmlFor="org-name">
+            Practice / clinic name
+          </label>
+          <input
+            id="org-name"
+            className={styles.input}
+            value={orgForm.name}
+            onChange={(e) => setOrgForm((p) => ({ ...p, name: e.target.value }))}
+            placeholder="Clinic name"
+          />
+        </div>
+        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+          <label className={styles.fieldLabel} htmlFor="org-street">
+            Street address
+          </label>
+          <input
+            id="org-street"
+            className={styles.input}
+            value={orgForm.address_line_1}
+            onChange={(e) => setOrgForm((p) => ({ ...p, address_line_1: e.target.value }))}
+            placeholder="123 Main St"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="org-city">
+            City
+          </label>
+          <input
+            id="org-city"
+            className={styles.input}
+            value={orgForm.city}
+            onChange={(e) => setOrgForm((p) => ({ ...p, city: e.target.value }))}
+            placeholder="City"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="org-state">
+            State
+          </label>
+          <input
+            id="org-state"
+            className={styles.input}
+            value={orgForm.state}
+            onChange={(e) => setOrgForm((p) => ({ ...p, state: e.target.value }))}
+            placeholder="ST"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="org-zip">
+            ZIP code
+          </label>
+          <input
+            id="org-zip"
+            className={styles.input}
+            value={orgForm.zip_code}
+            onChange={(e) => setOrgForm((p) => ({ ...p, zip_code: e.target.value }))}
+            placeholder="12345"
+          />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="org-phone">
+            Practice phone
+          </label>
+          <input
+            id="org-phone"
+            className={styles.input}
+            value={orgForm.phone}
+            onChange={(e) => setOrgForm((p) => ({ ...p, phone: e.target.value }))}
+            placeholder="Phone"
+          />
+        </div>
+      </div>
+
+      <h3 className={styles.sectionTitle}>Professional profile</h3>
       <div className={styles.fieldGrid}>
         <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
           <label className={styles.fieldLabel} htmlFor="ch-bio">
@@ -719,35 +984,105 @@ export default function AccountPage() {
     </>
   );
 
-  const renderSpecialtiesPanel = () => (
-    <>
-      <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
-        Techniques &amp; modalities
-      </h3>
-      <div className={styles.checkboxGrid}>
-        {MODALITY_OPTIONS.map((m) => (
-          <label key={m} className={styles.checkboxRow}>
-            <Checkbox checked={chiroModalityNames.includes(m)} onCheckedChange={() => toggleChiroMod(m)} />
-            {m}
-          </label>
-        ))}
+  const renderSpecialtiesPanel = () => {
+    const column = (title: string, body: ReactNode) => (
+      <div className={styles.specialtyColumn}>
+        <h4 className={styles.specialtyColumnTitle}>{title}</h4>
+        {body}
       </div>
-      <h3 className={styles.sectionTitle}>Focus areas</h3>
-      <div className={styles.checkboxGrid}>
-        {FOCUS_AREA_OPTIONS.map((m) => (
-          <label key={m} className={styles.checkboxRow}>
-            <Checkbox checked={chiroFocusNames.includes(m)} onCheckedChange={() => toggleChiroFocus(m)} />
-            {m}
-          </label>
-        ))}
-      </div>
-      <div className={styles.actionsRow}>
-        <button type="button" className={styles.primaryBtn} onClick={saveChiroSpecialties} disabled={saving}>
-          {saving ? 'Saving…' : 'Save specialties'}
-        </button>
-      </div>
-    </>
-  );
+    );
+
+    return (
+      <>
+        <div className={styles.specialtiesGrid}>
+          {column(
+            'Techniques',
+            <div className={styles.specialtyOptionList}>
+              {MODALITY_OPTIONS.map((m) => (
+                <label key={m} className={styles.specialtyOptionRow}>
+                  <Checkbox checked={chiroModalityNames.includes(m)} onCheckedChange={() => toggleChiroMod(m)} />
+                  {m}
+                </label>
+              ))}
+            </div>,
+          )}
+          {column(
+            'Specialties',
+            <div className={styles.specialtyOptionList}>
+              {FOCUS_AREA_OPTIONS.map((m) => (
+                <label key={m} className={styles.specialtyOptionRow}>
+                  <Checkbox checked={chiroFocusNames.includes(m)} onCheckedChange={() => toggleChiroFocus(m)} />
+                  {m}
+                </label>
+              ))}
+            </div>,
+          )}
+          {column(
+            'Philosophy',
+            <div className={styles.specialtyOptionList}>
+              {PHILOSOPHY_OPTIONS.map((m) => (
+                <label key={m} className={styles.specialtyOptionRow}>
+                  <Checkbox
+                    checked={chiroPhilosophyNames.includes(m)}
+                    onCheckedChange={() => toggleChiroPhilosophy(m)}
+                  />
+                  {m}
+                </label>
+              ))}
+            </div>,
+          )}
+          {column(
+            'Business model',
+            <div className={styles.specialtyOptionList}>
+              {PAYMENT_MODEL_OPTIONS.map((m) => (
+                <label key={m} className={styles.specialtyOptionRow}>
+                  <Checkbox checked={chiroPaymentNames.includes(m)} onCheckedChange={() => toggleChiroPayment(m)} />
+                  {m}
+                </label>
+              ))}
+            </div>,
+          )}
+          {column(
+            'Insurance',
+            <div className={styles.specialtyOptionList}>
+              {CHIRO_INSURANCE_OPTIONS.map((m) => (
+                <label key={m} className={styles.specialtyOptionRow}>
+                  <Checkbox
+                    checked={chiroInsuranceNames.includes(m)}
+                    onCheckedChange={() => toggleChiroInsurance(m)}
+                  />
+                  {m}
+                </label>
+              ))}
+            </div>,
+          )}
+          {column(
+            'Budget range',
+            <div className={styles.selectWrap}>
+              <span className={styles.selectChevron} />
+              <select
+                className={`${styles.specialtyBudgetSelect} ${styles.selectNative}`}
+                value={chiroBudgetRange}
+                onChange={(e) => setChiroBudgetRange(e.target.value)}
+                aria-label="Budget range"
+              >
+                {CHIRO_BUDGET_RANGE_OPTIONS.map((o) => (
+                  <option key={o.value || 'none'} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>,
+          )}
+        </div>
+        <div className={styles.actionsRow}>
+          <button type="button" className={styles.primaryBtn} onClick={saveChiroSpecialties} disabled={saving}>
+            {saving ? 'Saving…' : 'Save specialties'}
+          </button>
+        </div>
+      </>
+    );
+  };
 
   const renderPreferencesPanel = () => (
     <>
@@ -985,11 +1320,8 @@ export default function AccountPage() {
     </>
   );
 
-  const renderPlaceholder = (title: string) => (
-    <div>
-      <h3 className={styles.sectionTitle}>{title}</h3>
-      <div className={styles.placeholderPanel}>This section is coming soon.</div>
-    </div>
+  const renderPlaceholder = () => (
+    <div className={styles.placeholderPanel}>This section is coming soon.</div>
   );
 
   let mainContent: ReactNode = null;
@@ -1002,9 +1334,9 @@ export default function AccountPage() {
   } else if (activeNav === 'preferences' && isPatient) {
     mainContent = renderPreferencesPanel();
   } else if (activeNav === 'referrals') {
-    mainContent = renderPlaceholder('Referrals');
+    mainContent = renderPlaceholder();
   } else if (activeNav === 'messages') {
-    mainContent = renderPlaceholder('Messages');
+    mainContent = renderPlaceholder();
   } else {
     mainContent = renderProfilePanel();
   }
@@ -1046,7 +1378,10 @@ export default function AccountPage() {
         <main className={styles.mainWrap}>
           <div className={styles.mainCard}>
             {showHero && <div className={styles.heroBar} aria-hidden />}
-            <div className={styles.mainInner}>{mainContent}</div>
+            <div className={styles.mainInner}>
+              <h1 className={styles.pageSectionTitle}>{accountPageTitle(activeNav)}</h1>
+              <div className={styles.pageSectionBody}>{mainContent}</div>
+            </div>
           </div>
         </main>
       </div>
