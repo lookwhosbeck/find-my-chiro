@@ -89,6 +89,8 @@ export function Header({ embedded = false }: HeaderProps) {
       style={{
         ...positionStyles,
         zIndex: 1000,
+        borderRadius: '999px',
+        overflow: 'hidden',
       }}
     >
       <Box className={`header-container ${styles.headerBar}`}>
