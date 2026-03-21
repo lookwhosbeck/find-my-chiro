@@ -102,9 +102,48 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-.navItem:disabled {
-  opacity: 0.45;
+/* Figma node 33:3489 — divider + muted “coming soon” row items */
+.navComingSoonDivider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 20px;
+}
+
+.navComingSoonLine {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 1px;
+}
+
+.navComingSoonLabel {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 300;
+  line-height: 20px;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+.navItemComingSoon,
+.navItemComingSoon:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.navItemComingSoon:hover {
+  background: transparent;
+}
+
+.navComingSoonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .sidebarFooter {

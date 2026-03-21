@@ -32,7 +32,21 @@ function supabaseErrorMessage(err: unknown): string {
   return String(err);
 }
 
-type NavKey = 'profile' | 'practice' | 'specialties' | 'preferences' | 'referrals' | 'messages';
+type NavKey =
+  | 'profile'
+  | 'practice'
+  | 'specialties'
+  | 'preferences'
+  | 'referrals'
+  | 'messages'
+  | 'favorites'
+  | 'groups';
+
+const COMING_SOON_NAV_KEYS: NavKey[] = ['referrals', 'messages', 'favorites', 'groups'];
+
+function isComingSoonNavKey(k: NavKey): boolean {
+  return COMING_SOON_NAV_KEYS.includes(k);
+}
 
 function accountPageTitle(nav: NavKey): string {
   switch (nav) {
@@ -48,6 +62,10 @@ function accountPageTitle(nav: NavKey): string {
       return 'Referrals';
     case 'messages':
       return 'Messages';
+    case 'favorites':
+      return 'Favorites';
+    case 'groups':
+      return 'Groups';
     default:
       return '';
   }
@@ -683,22 +701,25 @@ export default function AccountPage() {
   const isChiro = profile.role === 'chiropractor';
   const isPatient = profile.role === 'patient';
 
-  const chiroNav: { key: NavKey; label: string; disabled?: boolean }[] = [
+  const chiroNavAvailable: { key: NavKey; label: string }[] = [
     { key: 'practice', label: 'Your practice' },
     { key: 'profile', label: 'Your profile' },
     { key: 'specialties', label: 'Specialties' },
-    { key: 'referrals', label: 'Referrals', disabled: true },
-    { key: 'messages', label: 'Messages', disabled: true },
   ];
 
-  const patientNav: { key: NavKey; label: string; disabled?: boolean }[] = [
+  const patientNavAvailable: { key: NavKey; label: string }[] = [
     { key: 'profile', label: 'Your profile' },
     { key: 'preferences', label: 'Your preferences' },
-    { key: 'referrals', label: 'Referrals', disabled: true },
-    { key: 'messages', label: 'Messages', disabled: true },
   ];
 
-  const navItems = isChiro ? chiroNav : patientNav;
+  const navComingSoon: { key: NavKey; label: string }[] = [
+    { key: 'referrals', label: 'Referrals' },
+    { key: 'messages', label: 'Messages' },
+    { key: 'favorites', label: 'Favorites' },
+    { key: 'groups', label: 'Groups' },
+  ];
+
+  const navAvailable = isChiro ? chiroNavAvailable : patientNavAvailable;
 
   const displayName =
     [profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'there';
@@ -715,13 +736,11 @@ export default function AccountPage() {
     year: 'numeric',
   });
 
-  const toolbarEditDisabled =
-    activeNav === 'referrals' || activeNav === 'messages' || activeNav === 'specialties';
+  const toolbarEditDisabled = isComingSoonNavKey(activeNav) || activeNav === 'specialties';
 
   const toolbarSaveDisabled =
     saving ||
-    activeNav === 'referrals' ||
-    activeNav === 'messages' ||
+    isComingSoonNavKey(activeNav) ||
     (activeNav === 'profile' && !profileEditing) ||
     (activeNav === 'practice' && (!isChiro || !practiceEditing)) ||
     (activeNav === 'preferences' && (!isPatient || !preferencesEditing));
@@ -1440,9 +1459,7 @@ export default function AccountPage() {
     mainContent = renderSpecialtiesPanel();
   } else if (activeNav === 'preferences' && isPatient) {
     mainContent = renderPreferencesPanel();
-  } else if (activeNav === 'referrals') {
-    mainContent = renderPlaceholder();
-  } else if (activeNav === 'messages') {
+  } else if (isComingSoonNavKey(activeNav)) {
     mainContent = renderPlaceholder();
   } else {
     mainContent = renderProfilePanel();
@@ -1457,17 +1474,34 @@ export default function AccountPage() {
               <FindMyChiroLogo variant="onDark" className={styles.sidebarLogo} />
             </Link>
             <nav className={styles.nav} aria-label="Account sections">
-              {navItems.map((item) => (
+              {navAvailable.map((item) => (
                 <button
                   key={item.key}
                   type="button"
                   className={`${styles.navItem} ${activeNav === item.key ? styles.navItemActive : ''}`}
-                  onClick={() => !item.disabled && setActiveNav(item.key)}
-                  disabled={item.disabled}
+                  onClick={() => setActiveNav(item.key)}
                 >
                   {item.label}
                 </button>
               ))}
+              <div className={styles.navComingSoonDivider} role="presentation">
+                <span className={styles.navComingSoonLine} aria-hidden />
+                <span className={styles.navComingSoonLabel}>Coming soon!</span>
+                <span className={styles.navComingSoonLine} aria-hidden />
+              </div>
+              <div className={styles.navComingSoonList} role="group" aria-label="Coming soon">
+                {navComingSoon.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`${styles.navItem} ${styles.navItemComingSoon}`}
+                    disabled
+                    aria-disabled="true"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </nav>
             <div className={styles.sidebarFooter}>
               <Link href="/" className={styles.sidebarLink}>
