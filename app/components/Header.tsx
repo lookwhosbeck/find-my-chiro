@@ -78,7 +78,8 @@ export function Header({ embedded = false }: HeaderProps) {
         top: 'var(--space-6)',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '100%',
+        /* Viewport inset so the pill’s rounded ends stay visible (not clipped at screen edges) */
+        width: 'min(748px, calc(100vw - 32px))',
         maxWidth: '748px',
       };
 
@@ -88,8 +89,6 @@ export function Header({ embedded = false }: HeaderProps) {
       style={{
         ...positionStyles,
         zIndex: 1000,
-        borderRadius: '999px',
-        overflow: 'hidden',
       }}
     >
       <Box className={`header-container ${styles.headerBar}`}>

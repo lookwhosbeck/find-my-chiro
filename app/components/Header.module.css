@@ -1,7 +1,10 @@
 .headerShell {
   box-sizing: border-box;
-  padding-left: max(12px, env(safe-area-inset-left, 0px));
-  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
 .logoLink {
@@ -32,6 +35,10 @@
   box-shadow: 0 2px 12px 2px rgba(0, 0, 0, 0.1);
   padding: 6px 12px;
   border-radius: 26px;
+  width: 100%;
+  min-width: 0;
+  /* Clip row content to the pill; outer <header> stays overflow-visible so curves aren’t clipped */
+  overflow: hidden;
 }
 
 @media (min-width: 768px) {
@@ -43,6 +50,8 @@
 .headerRow {
   height: 48px;
   min-height: 48px;
+  min-width: 0;
+  width: 100%;
 }
 
 @media (min-width: 768px) {
