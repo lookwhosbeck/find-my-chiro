@@ -33,7 +33,10 @@ export async function uploadAvatar(file: File, userId: string): Promise<string |
       });
 
     if (error) {
-      console.error('Error uploading avatar:', error);
+      console.error(
+        `Error uploading avatar (bucket: "${SUPABASE_AVATAR_BUCKET}"): `,
+        error
+      );
       throw error;
     }
 
