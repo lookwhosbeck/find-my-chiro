@@ -151,6 +151,8 @@
   font-size: 16px;
   line-height: 24px;
   font-family: var(--font-body);
+  /* 1px “frame” between pill edge and headshot (top, left, bottom); right padding for label */
+  padding: 1px 14px 1px 1px !important;
 }
 
 .myAccountCtaLabel {
@@ -167,7 +169,7 @@
   gap: 10px;
   width: 100%;
   box-sizing: border-box;
-  padding: 10px 16px;
+  padding: 1px 16px 1px 1px !important;
   text-decoration: none;
   color: #ffffff;
   font-weight: 500;

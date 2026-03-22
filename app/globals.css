@@ -414,6 +414,29 @@ header.fmc-site-header .join-network-button,
   border-radius: 154px !important;
 }
 
+/* Black pill CTAs (Join Network, My Account): blue fill on hover, white text — no link-blue */
+.fmc-black-pill-cta:hover,
+.fmc-black-pill-cta:hover:link,
+.fmc-black-pill-cta:hover:visited,
+.fmc-black-pill-cta:focus-visible {
+  background: var(--color-accent) !important;
+  color: #ffffff !important;
+}
+
+.fmc-black-pill-cta:hover span,
+.fmc-black-pill-cta:focus-visible span {
+  color: #ffffff !important;
+}
+
+/* Beat Radix Themes solid-button / link hover color */
+.radix-themes .fmc-black-pill-cta.rt-Button:hover,
+.radix-themes a.fmc-black-pill-cta:hover,
+.radix-themes .fmc-black-pill-cta.rt-Button:focus-visible,
+.radix-themes a.fmc-black-pill-cta:focus-visible {
+  background: var(--color-accent) !important;
+  color: #ffffff !important;
+}
+
 /* Footer container */
 .footer-container {
   border-radius: var(--radius-xl) !important;

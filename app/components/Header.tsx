@@ -137,7 +137,12 @@ export function Header({ embedded = false }: HeaderProps) {
                 <button type="button" className={styles.navTextButton} onClick={handleSignOut}>
                   Sign Out
                 </button>
-                <Button size="2" variant="solid" asChild className={`join-network-button ${styles.joinCta}`}>
+                <Button
+                  size="2"
+                  variant="solid"
+                  asChild
+                  className={`join-network-button fmc-black-pill-cta ${styles.joinCta}`}
+                >
                   <Link href="/account" className={styles.myAccountCtaLink} aria-label="My account">
                     <UserAvatar
                       avatarUrl={profile?.avatar_url}
@@ -158,7 +163,7 @@ export function Header({ embedded = false }: HeaderProps) {
                 <Link href="/signin" className={styles.navTextLink}>
                   Log in
                 </Link>
-                <Button size="2" variant="solid" asChild className={`join-network-button ${styles.joinCta}`}>
+                <Button size="2" variant="solid" asChild className={`join-network-button fmc-black-pill-cta ${styles.joinCta}`}>
                   <Link href="/signup">Join Network</Link>
                 </Button>
               </>
@@ -231,7 +236,7 @@ export function Header({ embedded = false }: HeaderProps) {
                 <div className={styles.mobileFlyoutDivider} />
                 {user ? (
                   <div className={styles.mobileFlyoutActions}>
-                    <Button size="2" variant="solid" asChild className={styles.mobileJoinCta}>
+                    <Button size="2" variant="solid" asChild className={`join-network-button fmc-black-pill-cta ${styles.mobileJoinCta}`}>
                       <Link
                         href="/account"
                         className={styles.mobileMyAccountCtaLink}
@@ -256,7 +261,7 @@ export function Header({ embedded = false }: HeaderProps) {
                   </div>
                 ) : (
                   <div className={styles.mobileFlyoutActions}>
-                    <Button size="2" variant="solid" asChild className={styles.mobileJoinCta}>
+                    <Button size="2" variant="solid" asChild className={`join-network-button fmc-black-pill-cta ${styles.mobileJoinCta}`}>
                       <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
                         Join Network
                       </Link>
