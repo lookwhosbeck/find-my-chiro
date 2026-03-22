@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
+import { SUPABASE_AVATAR_BUCKET } from './avatar-storage';
 
 /**
- * Upload an avatar image to Supabase Storage
+ * Upload an avatar image to Supabase Storage (see {@link SUPABASE_AVATAR_BUCKET}).
  * @param file - The image file to upload
  * @param userId - The user ID (will be used as folder name)
  * @returns The public URL of the uploaded avatar, or null if upload failed
@@ -25,7 +26,7 @@ export async function uploadAvatar(file: File, userId: string): Promise<string |
 
     // Upload file to Supabase Storage
     const { data, error } = await supabase.storage
-      .from('avatars')
+      .from(SUPABASE_AVATAR_BUCKET)
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: true // Replace existing file if it exists
@@ -38,7 +39,7 @@ export async function uploadAvatar(file: File, userId: string): Promise<string |
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('avatars')
+      .from(SUPABASE_AVATAR_BUCKET)
       .getPublicUrl(data.path);
 
     return urlData.publicUrl;
@@ -57,7 +58,7 @@ export async function deleteAvatar(userId: string): Promise<boolean> {
   try {
     // List all files in the user's folder
     const { data: files, error: listError } = await supabase.storage
-      .from('avatars')
+      .from(SUPABASE_AVATAR_BUCKET)
       .list(userId);
 
     if (listError) {
@@ -69,7 +70,7 @@ export async function deleteAvatar(userId: string): Promise<boolean> {
     if (files && files.length > 0) {
       const filePaths = files.map(file => `${userId}/${file.name}`);
       const { error: deleteError } = await supabase.storage
-        .from('avatars')
+        .from(SUPABASE_AVATAR_BUCKET)
         .remove(filePaths);
 
       if (deleteError) {
