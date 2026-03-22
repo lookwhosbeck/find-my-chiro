@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ProximitySearchBar } from './components/ProximitySearchBar';
@@ -29,23 +30,38 @@ export default async function Home() {
     <div className={styles.page}>
       <div className={styles.heroOuter}>
         <div className={styles.heroPanel}>
-          <Header embedded />
-          <div className={styles.heroContent}>
-            <h1 className={styles.heroTitle}>
-              Find a chiropractor who
-              <br />
-              aligns with you.
-            </h1>
-            <ProximitySearchBar variant="onDark" />
-            <div className={styles.signupRow}>
-              <Link href="/signup-patient" className={styles.signupLink}>
-                Patient Signup
-                <ArrowUpRight />
-              </Link>
-              <Link href="/signup" className={styles.signupLink}>
-                Chiropractor Signup
-                <ArrowUpRight />
-              </Link>
+          <div className={styles.heroPanelStack} aria-hidden="true">
+            <div className={styles.heroPanelSolid} />
+            <div className={styles.heroPanelPhoto}>
+              <Image
+                src="/hero/home-hero-bg.jpg"
+                alt=""
+                fill
+                className={styles.heroPanelPhotoImg}
+                sizes="(max-width: 1200px) 100vw, 1200px"
+                priority
+              />
+            </div>
+          </div>
+          <div className={styles.heroPanelForeground}>
+            <Header embedded />
+            <div className={styles.heroContent}>
+              <h1 className={styles.heroTitle}>
+                Find a chiropractor who
+                <br />
+                aligns with you.
+              </h1>
+              <ProximitySearchBar variant="onDark" />
+              <div className={styles.signupRow}>
+                <Link href="/signup-patient" className={styles.signupLink}>
+                  Patient Signup
+                  <ArrowUpRight />
+                </Link>
+                <Link href="/signup" className={styles.signupLink}>
+                  Chiropractor Signup
+                  <ArrowUpRight />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
