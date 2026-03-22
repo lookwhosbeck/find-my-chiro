@@ -389,8 +389,8 @@ button.fmc-proximity-submit {
 }
 
 /* Main nav pill — class on app/components/Header.tsx <header> */
-.fmc-site-header {
-  border-radius: var(--radius-full) !important;
+header.fmc-site-header {
+  border-radius: var(--radius-full, 9999px) !important;
 }
 
 /* Header navigation buttons should be fully rounded */
