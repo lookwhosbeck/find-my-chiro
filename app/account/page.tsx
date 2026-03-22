@@ -7,7 +7,9 @@ import { Checkbox } from '@radix-ui/themes';
 import { EnvelopeClosedIcon } from '@radix-ui/react-icons';
 import { supabase } from '@/app/lib/supabase';
 import { uploadAvatar, deleteAvatar, updateProfileAvatarUrl } from '@/app/lib/avatar-upload';
+import { dispatchProfileUpdated } from '@/app/lib/profile-events';
 import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import { UserAvatar } from '@/app/components/UserAvatar';
 import {
   MODALITY_OPTIONS,
   FOCUS_AREA_OPTIONS,
@@ -450,6 +452,7 @@ export default function AccountPage() {
       setProfile((prev) =>
         prev ? { ...prev, avatar_url: avatarUrl, updated_at: new Date().toISOString() } : null,
       );
+      dispatchProfileUpdated();
     } catch (e) {
       console.error(e);
       alert('Error uploading avatar. Please try again.');
@@ -469,6 +472,7 @@ export default function AccountPage() {
       setProfile((prev) =>
         prev ? { ...prev, avatar_url: undefined, updated_at: new Date().toISOString() } : null,
       );
+      dispatchProfileUpdated();
     } catch (e) {
       console.error(e);
       alert('Error removing avatar.');
@@ -723,12 +727,6 @@ export default function AccountPage() {
 
   const displayName =
     [profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'there';
-
-  const initialsRaw =
-    `${profileForm.first_name?.[0] || ''}${profileForm.last_name?.[0] || ''}`.trim() ||
-    profileForm.email?.[0] ||
-    '?';
-  const initials = initialsRaw.toUpperCase();
 
   const emailUpdated = new Date(profile.updated_at).toLocaleDateString(undefined, {
     month: 'short',
@@ -1525,12 +1523,16 @@ export default function AccountPage() {
                 aria-label="Change profile photo"
                 title="Change profile photo"
               >
-                {profile.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className={styles.heroAvatarImg} src={profile.avatar_url} alt="" width={56} height={56} />
-                ) : (
-                  <span className={styles.heroAvatarFallback}>{initials}</span>
-                )}
+                <UserAvatar
+                  avatarUrl={profile.avatar_url}
+                  firstName={profileForm.first_name}
+                  lastName={profileForm.last_name}
+                  email={profileForm.email || profile.email}
+                  size={56}
+                  variant="roundedSquare"
+                  fallbackTone="accountHero"
+                  alt=""
+                />
               </button>
               <div className={styles.heroWelcome}>
                 <p className={styles.heroWelcomeName}>Welcome, {displayName}</p>

@@ -1,13 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
+import { PROFILE_UPDATED_EVENT } from '@/app/lib/profile-events';
 import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import { UserAvatar } from '@/app/components/UserAvatar';
 import styles from './Header.module.css';
+
+type HeaderProfile = {
+  avatar_url?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+};
 
 type HeaderProps = {
   /** When true, header sits in normal flow (e.g. inside the search hero) instead of floating absolutely. */
@@ -15,14 +24,60 @@ type HeaderProps = {
 };
 
 export function Header({ embedded = false }: HeaderProps) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [profile, setProfile] = useState<HeaderProfile | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const loadProfile = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('avatar_url, first_name, last_name, email')
+      .eq('id', userId)
+      .maybeSingle();
+    setProfile(data as HeaderProfile | null);
+  }, []);
 
   useEffect(() => {
-    checkUser();
-  }, []);
+    const init = async () => {
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser();
+      setUser(u ? { id: u.id } : null);
+      if (u) await loadProfile(u.id);
+      else setProfile(null);
+    };
+    init();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user;
+      setUser(u ? { id: u.id } : null);
+      if (u) await loadProfile(u.id);
+      else setProfile(null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [loadProfile]);
+
+  useEffect(() => {
+    const onProfileEvent = async () => {
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser();
+      if (u) await loadProfile(u.id);
+    };
+    window.addEventListener(PROFILE_UPDATED_EVENT, onProfileEvent);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileEvent);
+  }, [loadProfile]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadProfile(user.id);
+  }, [pathname, user, loadProfile]);
 
   useEffect(() => {
     setMounted(true);
@@ -42,20 +97,10 @@ export function Header({ embedded = false }: HeaderProps) {
     };
   }, [mobileMenuOpen]);
 
-  const checkUser = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    } catch (error) {
-      console.error('Error checking user:', error);
-    }
-  };
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setProfile(null);
     setMobileMenuOpen(false);
     router.push('/');
   };
@@ -89,11 +134,23 @@ export function Header({ embedded = false }: HeaderProps) {
           <div className={styles.authActions}>
             {user ? (
               <>
-                <Button size="2" variant="outline" asChild>
-                  <Link href="/account">My Account</Link>
-                </Button>
-                <Button size="2" variant="ghost" onClick={handleSignOut}>
+                <button type="button" className={styles.navTextButton} onClick={handleSignOut}>
                   Sign Out
+                </button>
+                <Button size="2" variant="solid" asChild className={`join-network-button ${styles.joinCta}`}>
+                  <Link href="/account" className={styles.myAccountCtaLink} aria-label="My account">
+                    <UserAvatar
+                      avatarUrl={profile?.avatar_url}
+                      firstName={profile?.first_name}
+                      lastName={profile?.last_name}
+                      email={profile?.email}
+                      size={28}
+                      variant="circle"
+                      fallbackTone="onDark"
+                      alt=""
+                    />
+                    <span className={styles.myAccountCtaLabel}>My Account</span>
+                  </Link>
                 </Button>
               </>
             ) : (
@@ -174,12 +231,26 @@ export function Header({ embedded = false }: HeaderProps) {
                 <div className={styles.mobileFlyoutDivider} />
                 {user ? (
                   <div className={styles.mobileFlyoutActions}>
-                    <Button size="2" variant="outline" asChild style={{ width: '100%' }}>
-                      <Link href="/account" onClick={() => setMobileMenuOpen(false)}>
-                        My Account
+                    <Button size="2" variant="solid" asChild className={styles.mobileJoinCta}>
+                      <Link
+                        href="/account"
+                        className={styles.mobileMyAccountCtaLink}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <UserAvatar
+                          avatarUrl={profile?.avatar_url}
+                          firstName={profile?.first_name}
+                          lastName={profile?.last_name}
+                          email={profile?.email}
+                          size={36}
+                          variant="circle"
+                          fallbackTone="onDark"
+                          alt=""
+                        />
+                        <span>My Account</span>
                       </Link>
                     </Button>
-                    <Button size="2" variant="ghost" onClick={handleSignOut} style={{ width: '100%' }}>
+                    <Button size="2" variant="outline" onClick={handleSignOut} style={{ width: '100%' }}>
                       Sign Out
                     </Button>
                   </div>

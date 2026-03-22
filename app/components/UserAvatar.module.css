@@ -1,0 +1,63 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.circle {
+  border-radius: 50%;
+}
+
+.roundedSquare {
+  border-radius: 12px;
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Default (header / neutral surfaces) */
+.fallbackDefault {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  background: var(--gray-3, #ededed);
+  color: var(--gray-12, #202020);
+}
+
+/* Account hero bar: light text on frosted button */
+.fallbackAccountHero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  background: transparent;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+/* Solid dark buttons (e.g. Join Network–style My Account) */
+.fallbackOnDark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}

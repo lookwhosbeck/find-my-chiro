@@ -117,6 +117,64 @@
   flex-shrink: 0;
 }
 
+/* Matches plain "Log in" nav link (text, hero ink) */
+.navTextButton {
+  margin: 0;
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: inherit;
+  text-decoration: none;
+  color: var(--color-hero-ink);
+  font-size: 16px;
+  letter-spacing: -0.32px;
+  font-family: var(--font-body);
+  line-height: 22.4px;
+}
+
+.navTextButton:hover {
+  opacity: 0.85;
+}
+
+/* Inner link for Join Network–style My Account (solid black CTA) */
+.myAccountCtaLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: min(260px, 44vw);
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  font-family: var(--font-body);
+}
+
+.myAccountCtaLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.mobileMyAccountCtaLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 16px;
+  font-family: var(--font-body);
+}
+
 .joinCta {
   background: var(--color-hero-ink);
   color: #ffffff;
