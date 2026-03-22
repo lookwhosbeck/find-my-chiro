@@ -1,10 +1,59 @@
-.headerShell {
+/* Single-surface site header: one pill (bg + radius + padding) — no outer “shell” + inner “bar” split */
+
+.bar {
+  position: relative;
+  z-index: 1000;
   box-sizing: border-box;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   min-width: 0;
-  max-width: 100%;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  width: 100%;
+
+  background: #ffffff;
+  box-shadow: 0 2px 12px 2px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+
+  padding: 6px 12px;
+  border-radius: var(--radius-full, 9999px);
+  min-height: 48px;
+}
+
+@media (min-width: 768px) {
+  .bar {
+    padding: 8px 20px;
+    min-height: 52px;
+  }
+}
+
+/* Embedded (hero panels already provide outer spacing) */
+.barEmbedded {
+  position: relative;
+  max-width: 748px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Floats below global nav offset on marketing pages */
+.barFloating {
+  position: absolute;
+  top: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(748px, calc(100vw - 32px));
+  max-width: 748px;
+  /* Single horizontal inset from viewport — no extra wrapper padding */
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 768px) {
+  .barFloating {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
 }
 
 .logoLink {
@@ -12,6 +61,7 @@
   align-items: center;
   flex-shrink: 1;
   min-width: 0;
+  text-decoration: none;
 }
 
 /* Wordmark scales with viewport; smaller on phones */
@@ -28,46 +78,13 @@
   }
 }
 
-.headerBar {
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  background: #ffffff;
-  box-shadow: 0 2px 12px 2px rgba(0, 0, 0, 0.1);
-  padding: 6px 12px;
-  width: 100%;
-  min-width: 0;
-  /* Match globals .header-container + beat Radix surface rules that can drop radius */
-  border-radius: var(--radius-full, 9999px) !important;
-  overflow: hidden;
-}
-
-@media (min-width: 768px) {
-  .headerBar {
-    padding: 8px 20px;
-  }
-}
-
-.headerRow {
-  height: 48px;
-  min-height: 48px;
-  min-width: 0;
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .headerRow {
-    height: 52px;
-    min-height: 52px;
-  }
-}
-
-/* Nav + account/CTAs: one cluster, hidden below md */
+/* Desktop: primary links + auth — hidden on small screens */
 .desktopCluster {
   display: none;
   align-items: center;
   flex: 1;
   justify-content: flex-end;
-  gap: var(--space-4);
+  gap: var(--space-6);
   min-width: 0;
 }
 
@@ -77,17 +94,38 @@
   }
 }
 
-.desktopNav {
+.navLinks {
   display: flex;
   align-items: center;
   gap: var(--space-4);
 }
 
-.desktopUserActions {
+.navTextLink {
+  text-decoration: none;
+  color: var(--color-hero-ink);
+  font-size: 16px;
+  letter-spacing: -0.32px;
+  font-family: var(--font-body);
+  line-height: 22.4px;
+}
+
+.authActions {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   flex-shrink: 0;
+}
+
+.joinCta {
+  background: var(--color-hero-ink);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  min-height: auto;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
 }
 
 .mobileMenuButton {
@@ -101,7 +139,7 @@
   }
 }
 
-/* —— Mobile flyout (rendered via portal) —— */
+/* —— Mobile flyout (portaled next to <header>, not inside it) —— */
 
 .mobileFlyoutRoot {
   position: fixed;
@@ -135,9 +173,30 @@
 }
 
 .mobileFlyoutInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   padding: calc(16px + env(safe-area-inset-top, 0px)) 20px 24px;
   min-height: 100%;
   box-sizing: border-box;
+}
+
+.mobileFlyoutHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobileFlyoutLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mobileFlyoutActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .mobileFlyoutClose {

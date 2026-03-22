@@ -388,24 +388,21 @@ button.fmc-proximity-submit {
   border-radius: 0 24px 24px 0 !important;
 }
 
-/* Header container - keep fully rounded for navigation bar */
-.header-container {
+/* Main nav pill — class on app/components/Header.tsx <header> */
+.fmc-site-header {
   border-radius: var(--radius-full) !important;
 }
 
 /* Header navigation buttons should be fully rounded */
-header button,
-header .rt-Button,
-.header-container button,
-.header-container .rt-Button {
+header.fmc-site-header button,
+header.fmc-site-header .rt-Button {
   border-radius: var(--radius-full) !important;
 }
 
 /* Join Network button - specific rounded style */
 .join-network-button,
 .join-network-button.rt-Button,
-header .join-network-button,
-.header-container .join-network-button {
+header.fmc-site-header .join-network-button {
   border-radius: 154px !important;
 }
 
