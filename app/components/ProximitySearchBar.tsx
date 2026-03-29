@@ -20,8 +20,8 @@ function SearchGlyph({ className }: { className?: string }) {
   return (
     <svg
       className={className}
-      width={15}
-      height={15}
+      width={11}
+      height={11}
       viewBox="0 0 15 15"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +118,7 @@ export function ProximitySearchBar({
           type="text"
           inputMode="numeric"
           autoComplete="postal-code"
-          placeholder="Enter zipcode"
+          placeholder="Zipcode"
           maxLength={10}
           value={zip}
           onChange={(e) => setZip(e.target.value)}

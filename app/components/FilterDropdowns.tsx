@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Flex, Text, Checkbox } from '@radix-ui/themes';
+import { Flex } from '@radix-ui/themes';
+import { FilterMobileActionBar } from './FilterMobileActionBar';
 
 function ChevronDownIcon() {
   return (
@@ -11,14 +12,17 @@ function ChevronDownIcon() {
   );
 }
 
+export type FilterDropdownLayout = 'row' | 'column';
+
 interface MultiSelectDropdownProps {
   label: string;
   options: string[];
   selected: string[];
   onChange: (option: string, checked: boolean) => void;
+  layout: FilterDropdownLayout;
 }
 
-function MultiSelectDropdown({ label, options, selected, onChange }: MultiSelectDropdownProps) {
+function MultiSelectDropdown({ label, options, selected, onChange, layout }: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,60 +37,51 @@ function MultiSelectDropdown({ label, options, selected, onChange }: MultiSelect
 
   const count = selected.length;
   const displayLabel = count > 0 ? `${label} (${count})` : label;
+  const layoutClass = layout === 'column' ? 'filter-dropdown--column' : 'filter-dropdown--row';
 
   return (
-    <div className="filter-dropdown" ref={ref}>
-      <button
-        className={`filter-dropdown-trigger${open ? ' filter-dropdown-trigger--open' : ''}${count > 0 ? ' filter-dropdown-trigger--active' : ''}`}
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-      >
-        <Text
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-            fontWeight: 500,
-            color: count > 0 ? 'var(--color-accent)' : '#202020',
-            letterSpacing: '-0.14px',
-            lineHeight: '20px',
-            whiteSpace: 'nowrap',
-          }}
+    <div className={`filter-dropdown ${layoutClass}`} ref={ref}>
+      <div className={`filter-dropdown-surface${open ? ' filter-dropdown-surface--open' : ''}`}>
+        <button
+          type="button"
+          className={`filter-dropdown-trigger${open ? ' filter-dropdown-trigger--open' : ''}`}
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-haspopup="listbox"
         >
-          {displayLabel}
-        </Text>
-        <ChevronDownIcon />
-      </button>
-      {open && (
-        <div className="filter-dropdown-menu" role="listbox" aria-multiselectable="true">
-          {options.map((option) => (
-            <label key={option} className="filter-dropdown-option">
-              <Checkbox
-                size="1"
-                variant="surface"
-                checked={selected.includes(option)}
-                onCheckedChange={(checked) => onChange(option, checked as boolean)}
-              />
-              <Text
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 14,
-                  fontWeight: 400,
-                  color: '#202020',
-                  lineHeight: '20px',
-                }}
-              >
-                {option}
-              </Text>
-            </label>
-          ))}
-        </div>
-      )}
+          <span className="filter-dropdown-label">{displayLabel}</span>
+          <span className="filter-dropdown-chevron" aria-hidden>
+            <ChevronDownIcon />
+          </span>
+        </button>
+        {open && (
+          <div className="filter-dropdown-list" role="listbox" aria-multiselectable="true">
+            {options.map((option) => (
+              <label key={option} className="filter-dropdown-option">
+                <input
+                  type="checkbox"
+                  className="filter-dropdown-checkbox"
+                  checked={selected.includes(option)}
+                  onChange={(e) => onChange(option, e.target.checked)}
+                />
+                <span className="filter-dropdown-option-label">{option}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 interface FilterDropdownsProps {
+  /** `row`: bordered pills in a horizontal wrap. `column`: top-border sections for stacked flyout menus. */
+  layout?: FilterDropdownLayout;
+  /** Figma 89:912 — mobile-only action row (close, apply, clear). Requires the three callbacks when enabled. */
+  mobileFilterBar?: boolean;
+  onMobileFilterClose?: () => void;
+  onMobileFilterApply?: () => void;
+  onMobileFilterClear?: () => void;
   modalityOptions: string[];
   focusAreaOptions: string[];
   philosophyOptions: string[];
@@ -101,7 +96,21 @@ interface FilterDropdownsProps {
   onPaymentChange: (option: string, checked: boolean) => void;
 }
 
+export type FilterDropdownsFilterProps = Omit<
+  FilterDropdownsProps,
+  | 'layout'
+  | 'mobileFilterBar'
+  | 'onMobileFilterClose'
+  | 'onMobileFilterApply'
+  | 'onMobileFilterClear'
+>;
+
 export function FilterDropdowns({
+  layout = 'row',
+  mobileFilterBar = false,
+  onMobileFilterClose,
+  onMobileFilterApply,
+  onMobileFilterClear,
   modalityOptions,
   focusAreaOptions,
   philosophyOptions,
@@ -115,32 +124,53 @@ export function FilterDropdowns({
   onPhilosophyChange,
   onPaymentChange,
 }: FilterDropdownsProps) {
+  const rowClass = layout === 'column' ? 'filter-dropdowns-row filter-dropdowns-row--column' : 'filter-dropdowns-row';
+
+  const showMobileBar =
+    mobileFilterBar &&
+    onMobileFilterClose &&
+    onMobileFilterApply &&
+    onMobileFilterClear;
+
   return (
-    <Flex className="filter-dropdowns-row" align="center" gap="1">
-      <MultiSelectDropdown
-        label="Techniques"
-        options={modalityOptions}
-        selected={selectedModalities}
-        onChange={onModalityChange}
-      />
-      <MultiSelectDropdown
-        label="Specialties"
-        options={focusAreaOptions}
-        selected={selectedFocusAreas}
-        onChange={onFocusAreaChange}
-      />
-      <MultiSelectDropdown
-        label="Philosophy"
-        options={philosophyOptions}
-        selected={selectedPhilosophies}
-        onChange={onPhilosophyChange}
-      />
-      <MultiSelectDropdown
-        label="Payment"
-        options={paymentOptions}
-        selected={selectedPayment}
-        onChange={onPaymentChange}
-      />
-    </Flex>
+    <div className={showMobileBar ? 'filter-dropdowns-with-mobile-bar' : undefined}>
+      <Flex className={rowClass} align={layout === 'column' ? 'stretch' : 'center'} gap={layout === 'column' ? '0' : '1'}>
+        <MultiSelectDropdown
+          layout={layout}
+          label="Techniques"
+          options={modalityOptions}
+          selected={selectedModalities}
+          onChange={onModalityChange}
+        />
+        <MultiSelectDropdown
+          layout={layout}
+          label="Specialties"
+          options={focusAreaOptions}
+          selected={selectedFocusAreas}
+          onChange={onFocusAreaChange}
+        />
+        <MultiSelectDropdown
+          layout={layout}
+          label="Philosophy"
+          options={philosophyOptions}
+          selected={selectedPhilosophies}
+          onChange={onPhilosophyChange}
+        />
+        <MultiSelectDropdown
+          layout={layout}
+          label="Payment"
+          options={paymentOptions}
+          selected={selectedPayment}
+          onChange={onPaymentChange}
+        />
+      </Flex>
+      {showMobileBar && (
+        <FilterMobileActionBar
+          onClose={onMobileFilterClose}
+          onApply={onMobileFilterApply}
+          onClear={onMobileFilterClear}
+        />
+      )}
+    </div>
   );
 }

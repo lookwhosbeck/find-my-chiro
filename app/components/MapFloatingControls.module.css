@@ -1,0 +1,107 @@
+/* Figma 90:2518 — MapActionsMobile */
+
+.wrap {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.wrapHorizontal {
+  top: 12px;
+  right: 12px;
+  flex-direction: row;
+  width: auto;
+  min-width: 121px;
+}
+
+.wrapVertical {
+  top: 12px;
+  right: 12px;
+  flex-direction: column;
+  width: auto;
+  align-items: flex-end;
+}
+
+.wrap > * {
+  pointer-events: auto;
+}
+
+.filterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--fmc-filter-primary, #2563eb);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background 0.15s ease;
+}
+
+.filterBtn:hover {
+  background: var(--fmc-filter-primary-dark, #1d4ed8);
+}
+
+.filterBtn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.filterBtn svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.zoom {
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  border: 1px solid var(--fmc-filter-border-muted, #f3f4f6);
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.zoomVertical {
+  flex-direction: column;
+}
+
+.zoomBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.zoomBtn:hover {
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+.zoomBtn:focus-visible {
+  outline: 2px solid var(--fmc-filter-primary, #2563eb);
+  outline-offset: -2px;
+}
+
+.zoomBtn svg {
+  display: block;
+}

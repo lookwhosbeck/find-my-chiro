@@ -1,4 +1,4 @@
-/* Proximity search — Figma node 40:5621 (rebuilt: native controls, single pill, no Radix) */
+/* Proximity search — Figma node 84:4441 / 84:4443 */
 
 .visuallyHidden {
   position: absolute;
@@ -18,8 +18,7 @@
   display: flex;
   align-items: stretch;
   width: 100%;
-  max-width: 540px;
-  /* Fixed height so white segment and button stay one continuous pill (no vertical mismatch) */
+  max-width: 560px;
   height: var(--bar-h);
   border-radius: var(--bar-r);
   overflow: hidden;
@@ -30,13 +29,10 @@
 }
 
 .onLight.bar {
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.06),
-    0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(3, 3, 2, 0.12);
+  box-shadow: none;
+  border: 1px solid #e5e7eb;
 }
 
-/* White segment — Figma 40:5623: h 48, p 16, rounded left cap */
 .white {
   flex: 1 1 auto;
   min-width: 0;
@@ -50,15 +46,13 @@
   background: #ffffff;
 }
 
-/* Icon in 38px-tall hit area, horizontal padding 12px — Figma 40:5625 */
 .iconPad {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  height: 38px;
+  height: 32px;
   padding: 0 12px 0 0;
-  margin-left: -4px;
 }
 
 .searchIcon {
@@ -69,7 +63,7 @@
 .zipInput {
   flex: 1 1 auto;
   min-width: 72px;
-  height: 38px;
+  height: 32px;
   margin: 0;
   padding: 0 8px 0 0;
   border: none;
@@ -77,7 +71,7 @@
   font-family: var(--font-body);
   font-size: 16px;
   font-weight: 400;
-  line-height: 24px;
+  line-height: 20px;
   color: #202020;
   outline: none;
 }
@@ -86,7 +80,6 @@
   color: #646464;
 }
 
-/* Combobox chip — Figma 40:5629: h 32, px 12, gap 12, r 6, bg white 85% */
 .radius {
   display: flex;
   align-items: center;
@@ -119,7 +112,7 @@
 }
 
 .radiusSelect:focus-visible {
-  box-shadow: 0 0 0 2px #0072de;
+  box-shadow: 0 0 0 2px #2563eb;
 }
 
 .chevron {
@@ -132,7 +125,6 @@
   pointer-events: none;
 }
 
-/* Find Care — Figma 40:5634–5637: pl 24 pr 32, blue fill; no vertical padding (fills bar height) */
 .submit {
   flex-shrink: 0;
   display: flex;
@@ -141,17 +133,17 @@
   align-self: stretch;
   min-height: 0;
   margin: 0;
-  padding: 0 32px 0 24px;
+  padding: 0 32px 0 20px;
   border: none;
   border-radius: 0 var(--bar-r) var(--bar-r) 0;
   box-sizing: border-box;
-  background: #0072de;
+  background: #2563eb;
   color: #ffffff;
   font-family: var(--font-body);
   font-size: 16px;
   font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0;
+  line-height: 1.25;
+  letter-spacing: -0.32px;
   cursor: pointer;
   transition: background 0.15s ease;
   appearance: none;
@@ -159,7 +151,7 @@
 }
 
 .submit:hover {
-  background: #0066c7;
+  background: #1d4ed8;
 }
 
 .submit:focus-visible {
@@ -177,7 +169,8 @@
   }
 
   .submit {
-    padding: 0 20px 0 16px;
-    font-size: 15px;
+    padding: 0 20px 0 12px;
+    font-size: 14px;
+    letter-spacing: -0.28px;
   }
 }

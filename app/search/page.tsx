@@ -258,6 +258,7 @@ function SearchPageContent() {
   const [loading, setLoading] = useState(false);
   const [filtersReady, setFiltersReady] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
+  const [mapFiltersVisible, setMapFiltersVisible] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   const [filters, setFilters] = useState<PatientSearchFilters>(() => getDefaultEmptySearchFilters());
@@ -321,6 +322,23 @@ function SearchPageContent() {
       setLoading(false);
     }
   }, [filters]);
+
+  const handleClearMapFilters = useCallback(() => {
+    setFilters((prev) => ({
+      ...prev,
+      preferredModalities: [],
+      focusAreas: [],
+      preferredPhilosophies: [],
+      preferredBusinessModel: '',
+    }));
+  }, []);
+
+  const scrollToMapFilters = useCallback(() => {
+    setMapFiltersVisible(true);
+    requestAnimationFrame(() => {
+      document.getElementById('search-map-filters')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
 
   useEffect(() => {
     if (!filtersReady) return;
@@ -461,20 +479,32 @@ function SearchPageContent() {
             {viewMode === 'map' ? (
               /* ─── MAP MODE: inline filter dropdowns + full-width split ─── */
               <Flex direction="column" style={{ gap: 'var(--space-8)', width: '100%' }}>
-                <FilterDropdowns
-                  modalityOptions={modalityOptions}
-                  focusAreaOptions={focusAreaOptions}
-                  philosophyOptions={philosophyOptions}
-                  paymentOptions={paymentOptions}
-                  selectedModalities={filters.preferredModalities || []}
-                  selectedFocusAreas={filters.focusAreas || []}
-                  selectedPhilosophies={filters.preferredPhilosophies || []}
-                  selectedPayment={selectedPayment}
-                  onModalityChange={handleModalityChange}
-                  onFocusAreaChange={handleFocusAreaChange}
-                  onPhilosophyChange={handlePhilosophyChange}
-                  onPaymentChange={handlePaymentChange}
-                />
+                <Box
+                  id="search-map-filters"
+                  className={!mapFiltersVisible ? 'filter-map-panel--collapsed-mobile' : undefined}
+                >
+                  <FilterDropdowns
+                    mobileFilterBar
+                    onMobileFilterClose={() => setMapFiltersVisible(false)}
+                    onMobileFilterApply={() => {
+                      performSearch();
+                      setMapFiltersVisible(false);
+                    }}
+                    onMobileFilterClear={handleClearMapFilters}
+                    modalityOptions={modalityOptions}
+                    focusAreaOptions={focusAreaOptions}
+                    philosophyOptions={philosophyOptions}
+                    paymentOptions={paymentOptions}
+                    selectedModalities={filters.preferredModalities || []}
+                    selectedFocusAreas={filters.focusAreas || []}
+                    selectedPhilosophies={filters.preferredPhilosophies || []}
+                    selectedPayment={selectedPayment}
+                    onModalityChange={handleModalityChange}
+                    onFocusAreaChange={handleFocusAreaChange}
+                    onPhilosophyChange={handlePhilosophyChange}
+                    onPaymentChange={handlePaymentChange}
+                  />
+                </Box>
 
                 {!filtersReady ? (
                   <Flex justify="center" py="6">
@@ -487,6 +517,7 @@ function SearchPageContent() {
                       chiropractors={chiropractors}
                       profileHrefBuilder={(chiro) => appendSearchFiltersToQuery(`/chiropractor/${chiro.id}`, filters)}
                       resultsMatchAverage={resultsMatchAverage}
+                      onFilterMapClick={scrollToMapFilters}
                     />
                   </div>
                 ) : (

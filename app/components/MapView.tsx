@@ -1,17 +1,19 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Box, Flex, Text, Heading } from '@radix-ui/themes';
-import Link from 'next/link';
+import { Flex, Text, Heading } from '@radix-ui/themes';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
+import { ChiropractorCard } from './ChiropractorCard';
+import { MapFloatingControls } from './MapFloatingControls';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
 const US_CENTER: [number, number] = [-98.5795, 39.8283];
 const DEFAULT_ZOOM = 4;
+const MOBILE_MAP_MAX = '(max-width: 768px)';
 
 function markerColor(score: number | undefined): string {
   if (score == null) return '#86868b';
@@ -33,19 +35,27 @@ interface MapViewProps {
   chiropractors: Chiropractor[];
   profileHrefBuilder: (chiro: Chiropractor) => string;
   resultsMatchAverage: number | null;
+  /** Figma 90:2518 — scroll to / open map filters (mobile) */
+  onFilterMapClick?: () => void;
 }
 
-export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage }: MapViewProps) {
+export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage, onFilterMapClick }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const listRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const programmaticScrollRef = useRef(false);
+  const activeIdRef = useRef<string | null>(null);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapControlsVertical, setMapControlsVertical] = useState(false);
 
   const mappable = chiropractors.filter(hasCoords);
+
+  activeIdRef.current = activeId;
 
   const fitBounds = useCallback((map: mapboxgl.Map, items: MapChiropractor[]) => {
     if (items.length === 0) return;
@@ -69,8 +79,6 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
       zoom: DEFAULT_ZOOM,
     });
 
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
     map.on('load', () => {
       mapRef.current = map;
       setMapReady(true);
@@ -87,21 +95,58 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
   }, []);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapReady) return;
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 380px)');
+    const sync = () => setMapControlsVertical(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current.clear();
+  const scrollListToChiro = useCallback((id: string) => {
+    const wrap = listRefs.current.get(id);
+    if (!wrap) return;
+    programmaticScrollRef.current = true;
+    const isMobile = typeof window !== 'undefined' && window.matchMedia(MOBILE_MAP_MAX).matches;
+    wrap.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: isMobile ? 'center' : 'nearest',
+    });
+    window.setTimeout(() => {
+      programmaticScrollRef.current = false;
+    }, 500);
+  }, []);
+
+  const handleMarkerClick = useCallback((chiro: MapChiropractor, map: mapboxgl.Map) => {
+    setActiveId(chiro.id);
+
     popupRef.current?.remove();
 
-    if (mappable.length > 20) {
-      addClusteredMarkers(map, mappable);
-    } else {
-      addSimpleMarkers(map, mappable);
-    }
+    const score = chiro.matchScore ?? 0;
+    const pillColors = matchScorePillColors(score);
+    const popup = new mapboxgl.Popup({ offset: 25, closeButton: true, maxWidth: '260px' })
+      .setLngLat([chiro.longitude, chiro.latitude])
+      .setHTML(`
+        <div class="mapview-popup">
+          <strong>Dr. ${chiro.firstName} ${chiro.lastName}</strong>
+          <span class="mapview-popup-match" style="background:${pillColors.backgroundColor};color:${pillColors.color}">
+            ${Math.round(score)}% Match
+          </span>
+          <span class="mapview-popup-specialty">${buildSpecialtyLine(chiro)}</span>
+        </div>
+      `)
+      .addTo(map);
 
-    fitBounds(map, mappable);
-  }, [mapReady, chiropractors, mappable.length, fitBounds]);
+    popupRef.current = popup;
+    popup.on('close', () => {
+      if (popupRef.current === popup) popupRef.current = null;
+    });
+
+    map.flyTo({ center: [chiro.longitude, chiro.latitude], zoom: Math.max(map.getZoom(), 12) });
+
+    scrollListToChiro(chiro.id);
+  }, [scrollListToChiro]);
 
   const addSimpleMarkers = useCallback((map: mapboxgl.Map, items: MapChiropractor[]) => {
     items.forEach((chiro) => {
@@ -118,7 +163,7 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
 
       markersRef.current.set(chiro.id, marker);
     });
-  }, []);
+  }, [handleMarkerClick]);
 
   const addClusteredMarkers = useCallback((map: mapboxgl.Map, items: MapChiropractor[]) => {
     const sourceId = 'chiro-cluster-source';
@@ -222,38 +267,85 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
     map.on('mouseleave', clusterId, () => { map.getCanvas().style.cursor = ''; });
     map.on('mouseenter', unclusteredId, () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', unclusteredId, () => { map.getCanvas().style.cursor = ''; });
-  }, []);
+  }, [handleMarkerClick]);
 
-  const handleMarkerClick = useCallback((chiro: MapChiropractor, map: mapboxgl.Map) => {
-    setActiveId(chiro.id);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
 
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.clear();
     popupRef.current?.remove();
 
-    const score = chiro.matchScore ?? 0;
-    const pillColors = matchScorePillColors(score);
-    const popup = new mapboxgl.Popup({ offset: 25, closeButton: true, maxWidth: '260px' })
-      .setLngLat([chiro.longitude, chiro.latitude])
-      .setHTML(`
-        <div class="mapview-popup">
-          <strong>Dr. ${chiro.firstName} ${chiro.lastName}</strong>
-          <span class="mapview-popup-match" style="background:${pillColors.backgroundColor};color:${pillColors.color}">
-            ${Math.round(score)}% Match
-          </span>
-          <span class="mapview-popup-specialty">${buildSpecialtyLine(chiro)}</span>
-        </div>
-      `)
-      .addTo(map);
+    if (mappable.length > 20) {
+      addClusteredMarkers(map, mappable);
+    } else {
+      addSimpleMarkers(map, mappable);
+    }
 
-    popupRef.current = popup;
-    popup.on('close', () => {
-      if (popupRef.current === popup) popupRef.current = null;
+    fitBounds(map, mappable);
+  }, [mapReady, chiropractors, mappable.length, fitBounds, addSimpleMarkers, addClusteredMarkers]);
+
+  /** Mobile horizontal snap: sync map center + highlight when the centered card changes */
+  useEffect(() => {
+    let cancelled = false;
+    let observer: IntersectionObserver | undefined;
+
+    const connect = () => {
+      const root = listScrollRef.current;
+      const map = mapRef.current;
+      if (!root || !map || !mapReady || cancelled) return;
+
+      const mq = window.matchMedia(MOBILE_MAP_MAX);
+      if (!mq.matches) return;
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (programmaticScrollRef.current) return;
+          const best = [...entries]
+            .filter((e) => e.isIntersecting && e.intersectionRatio >= 0.5)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!best?.target) return;
+          const id = best.target.getAttribute('data-chiro-id');
+          if (!id || id === activeIdRef.current) return;
+
+          setActiveId(id);
+          const chiro = chiropractors.find((c) => c.id === id);
+          if (chiro && hasCoords(chiro)) {
+            popupRef.current?.remove();
+            map.flyTo({
+              center: [chiro.longitude, chiro.latitude],
+              zoom: Math.max(map.getZoom(), 12),
+            });
+          }
+        },
+        { root, threshold: [0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1] },
+      );
+
+      listRefs.current.forEach((el) => observer?.observe(el));
+    };
+
+    let rafInner = 0;
+    const rafOuter = requestAnimationFrame(() => {
+      rafInner = requestAnimationFrame(connect);
     });
 
-    map.flyTo({ center: [chiro.longitude, chiro.latitude], zoom: Math.max(map.getZoom(), 12) });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafOuter);
+      cancelAnimationFrame(rafInner);
+      observer?.disconnect();
+    };
+  }, [mapReady, chiropractors]);
 
-    const listEl = listRefs.current.get(chiro.id);
-    listEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, []);
+  /** DOM markers: persistent selected state */
+  useEffect(() => {
+    markersRef.current.forEach((marker, id) => {
+      const el = marker.getElement();
+      if (activeId === id) el.classList.add('mapview-marker--selected');
+      else el.classList.remove('mapview-marker--selected');
+    });
+  }, [activeId, mapReady, chiropractors]);
 
   const handleListItemClick = useCallback((chiro: Chiropractor) => {
     if (!hasCoords(chiro) || !mapRef.current) return;
@@ -280,12 +372,6 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
       .addTo(map);
 
     popupRef.current = popup;
-
-    const markerEl = markersRef.current.get(chiro.id)?.getElement();
-    if (markerEl) {
-      markerEl.classList.add('mapview-marker--active');
-      setTimeout(() => markerEl.classList.remove('mapview-marker--active'), 1500);
-    }
   }, []);
 
   const handleListItemHover = useCallback((chiro: Chiropractor) => {
@@ -314,6 +400,7 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
       <div className="mapview-list">
         <Heading
           size="5"
+          className="mapview-list-heading mapview-list-heading--desktop"
           style={{
             fontFamily: 'var(--font-body)',
             fontWeight: 700,
@@ -324,17 +411,25 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
         >
           {chiropractors.length} Results
         </Heading>
-        <div className="mapview-list-scroll">
+        <div ref={listScrollRef} className="mapview-list-scroll">
           {chiropractors.map((chiro) => (
             <div
               key={chiro.id}
-              ref={(el) => { if (el) listRefs.current.set(chiro.id, el); }}
+              data-chiro-id={chiro.id}
+              ref={(el) => {
+                if (el) listRefs.current.set(chiro.id, el);
+                else listRefs.current.delete(chiro.id);
+              }}
               className={`mapview-card-wrap${activeId === chiro.id ? ' mapview-card-wrap--active' : ''}`}
               onClick={() => handleListItemClick(chiro)}
               onMouseEnter={() => handleListItemHover(chiro)}
               onMouseLeave={() => handleListItemLeave(chiro)}
             >
-              <MapListCard chiro={chiro} profileHref={profileHrefBuilder(chiro)} />
+              <ChiropractorCard
+                variant="map"
+                chiropractor={chiro}
+                profileHref={profileHrefBuilder(chiro)}
+              />
             </div>
           ))}
         </div>
@@ -344,11 +439,12 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
         <div className="mapview-right-header">
           <Heading
             size="5"
+            className="mapview-list-heading mapview-list-heading--mobile"
             style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
           >
             {chiropractors.length} Results
           </Heading>
-          <Flex align="center" gap="3" wrap="wrap">
+          <Flex align="center" gap="3" wrap="wrap" className="mapview-right-meta">
             <Text
               style={{
                 fontFamily: 'var(--font-body)',
@@ -368,186 +464,17 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
         </div>
         <div className="mapview-map-wrap">
           <div ref={mapContainerRef} className="mapview-map" />
+          {mapReady && (
+            <MapFloatingControls
+              orientation={mapControlsVertical ? 'vertical' : 'horizontal'}
+              onFilterClick={onFilterMapClick}
+              onZoomIn={() => mapRef.current?.zoomIn({ duration: 200 })}
+              onZoomOut={() => mapRef.current?.zoomOut({ duration: 200 })}
+            />
+          )}
         </div>
       </div>
     </div>
-  );
-}
-
-function LocationPinIcon() {
-  return (
-    <svg width={12} height={16} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path
-        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function MapListCard({ chiro, profileHref }: { chiro: Chiropractor; profileHref: string }) {
-  const displayName = `Dr. ${chiro.firstName} ${chiro.lastName}`.trim();
-  const specialtyLine = buildSpecialtyLine(chiro);
-  const locationLine = [chiro.city, chiro.state].filter(Boolean).join(', ');
-  const distanceText =
-    chiro.distanceMiles != null && Number.isFinite(chiro.distanceMiles)
-      ? `${chiro.distanceMiles.toFixed(1)} miles away`
-      : '';
-  const matchPercent = chiro.matchScore != null && chiro.matchScore > 0 ? Math.round(chiro.matchScore) : null;
-  const pillColors = matchPercent != null ? matchScorePillColors(matchPercent) : null;
-  const initials = `${chiro.firstName?.[0] || ''}${chiro.lastName?.[0] || ''}`.toUpperCase();
-
-  return (
-    <Link
-      href={profileHref}
-      prefetch={false}
-      className="mapview-card-link"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="mapview-card">
-        {/* Top row: avatar + name/specialty + match badge */}
-        <Flex gap="4" align="start" style={{ width: '100%' }}>
-          <Box
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 12,
-              overflow: 'hidden',
-              flexShrink: 0,
-              backgroundColor: 'var(--color-yellow-accent)',
-            }}
-          >
-            {chiro.avatarUrl ? (
-              <img
-                src={chiro.avatarUrl}
-                alt={displayName}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              <Flex align="center" justify="center" style={{ width: '100%', height: '100%' }}>
-                <Text
-                  weight="medium"
-                  style={{
-                    color: 'var(--color-chiro-card-text)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 28,
-                    lineHeight: 1,
-                  }}
-                >
-                  {initials}
-                </Text>
-              </Flex>
-            )}
-          </Box>
-
-          <Flex direction="column" gap="1" justify="center" style={{ flex: 1, minWidth: 0, height: 80 }}>
-            <Flex align="start" justify="between" gap="2" style={{ width: '100%' }}>
-              <Text
-                as="p"
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 16,
-                  fontWeight: 500,
-                  letterSpacing: '0.16px',
-                  lineHeight: '24px',
-                  color: '#030302',
-                  margin: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {displayName}
-              </Text>
-              {matchPercent != null && pillColors && (
-                <Box
-                  style={{
-                    ...pillColors,
-                    borderRadius: 5,
-                    padding: 4,
-                    flexShrink: 0,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: pillColors.color,
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 12,
-                      fontWeight: 400,
-                      letterSpacing: '-0.36px',
-                      lineHeight: '24px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {matchPercent}% Match
-                  </Text>
-                </Box>
-              )}
-            </Flex>
-            {specialtyLine && (
-              <Text
-                as="p"
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 16,
-                  fontWeight: 400,
-                  letterSpacing: '-0.32px',
-                  lineHeight: '22.4px',
-                  color: '#030302',
-                  margin: 0,
-                }}
-              >
-                {specialtyLine}
-              </Text>
-            )}
-          </Flex>
-        </Flex>
-
-        {/* Bottom row: location + distance */}
-        {(locationLine || distanceText) && (
-          <Flex align="center" justify="between" style={{ width: '100%' }}>
-            {locationLine && (
-              <Flex align="center" gap="2" style={{ minWidth: 0 }}>
-                <LocationPinIcon />
-                <Text
-                  as="p"
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                    fontWeight: 400,
-                    letterSpacing: '-0.32px',
-                    lineHeight: '22.4px',
-                    color: '#030302',
-                    margin: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {locationLine}
-                </Text>
-              </Flex>
-            )}
-            {distanceText && (
-              <Text
-                as="p"
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 14,
-                  fontWeight: 400,
-                  letterSpacing: '-0.32px',
-                  lineHeight: '22.4px',
-                  color: '#030302',
-                  margin: 0,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                {distanceText}
-              </Text>
-            )}
-          </Flex>
-        )}
-      </div>
-    </Link>
   );
 }
 

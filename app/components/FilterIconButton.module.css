@@ -1,0 +1,53 @@
+/* Figma 85:398 — filter / close / clear icon buttons (28px min width, 8px radius) */
+
+.btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--fmc-filter-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.primary {
+  background: var(--fmc-filter-primary, #2563eb);
+  color: #ffffff;
+}
+
+.primary:hover {
+  background: var(--fmc-filter-primary-dark, #1d4ed8);
+}
+
+.neutral {
+  background: #ffffff;
+  border: 1px solid var(--fmc-filter-border-muted, #f3f4f6);
+  color: var(--color-text-primary, #111827);
+}
+
+.neutral:hover {
+  background: #f9fafb;
+}
+
+.icon,
+.iconNarrow {
+  display: block;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.iconNarrow {
+  width: 12px;
+  height: 16px;
+}
