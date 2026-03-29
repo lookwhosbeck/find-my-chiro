@@ -1,19 +1,21 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Flex, Text, Heading } from '@radix-ui/themes';
+import { Flex, Text } from '@radix-ui/themes';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { ChiropractorCard } from './ChiropractorCard';
-import { MapFloatingControls } from './MapFloatingControls';
+import { ProximitySearchBar } from './ProximitySearchBar';
+import { FilterDropdowns } from './FilterDropdowns';
+import { FilterMobileActionBar } from './FilterMobileActionBar';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
 const US_CENTER: [number, number] = [-98.5795, 39.8283];
 const DEFAULT_ZOOM = 4;
-const MOBILE_MAP_MAX = '(max-width: 768px)';
+const MOBILE_BP = '(max-width: 768px)';
 
 function markerColor(score: number | undefined): string {
   if (score == null) return '#86868b';
@@ -31,15 +33,68 @@ function hasCoords(c: Chiropractor): c is MapChiropractor {
   return c.latitude != null && c.longitude != null && Number.isFinite(c.latitude) && Number.isFinite(c.longitude);
 }
 
+function FilterGlyph() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M2.5 3.5h11M5 8h6M7 12.5h2"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 interface MapViewProps {
   chiropractors: Chiropractor[];
   profileHrefBuilder: (chiro: Chiropractor) => string;
-  resultsMatchAverage: number | null;
-  /** Figma 90:2518 — scroll to / open map filters (mobile) */
-  onFilterMapClick?: () => void;
+  loading?: boolean;
+  zipCode: string;
+  searchRadius: number;
+  onZipChange: (zip: string) => void;
+  onRadiusChange: (radius: number) => void;
+  onSearchSubmit: () => void;
+  modalityOptions: string[];
+  focusAreaOptions: string[];
+  philosophyOptions: string[];
+  paymentOptions: string[];
+  selectedModalities: string[];
+  selectedFocusAreas: string[];
+  selectedPhilosophies: string[];
+  selectedPayment: string[];
+  onModalityChange: (option: string, checked: boolean) => void;
+  onFocusAreaChange: (option: string, checked: boolean) => void;
+  onPhilosophyChange: (option: string, checked: boolean) => void;
+  onPaymentChange: (option: string, checked: boolean) => void;
+  onClearFilters: () => void;
+  onApplyFilters: () => void;
 }
 
-export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage, onFilterMapClick }: MapViewProps) {
+export function MapView({
+  chiropractors,
+  profileHrefBuilder,
+  loading,
+  zipCode,
+  searchRadius,
+  onZipChange,
+  onRadiusChange,
+  onSearchSubmit,
+  modalityOptions,
+  focusAreaOptions,
+  philosophyOptions,
+  paymentOptions,
+  selectedModalities,
+  selectedFocusAreas,
+  selectedPhilosophies,
+  selectedPayment,
+  onModalityChange,
+  onFocusAreaChange,
+  onPhilosophyChange,
+  onPaymentChange,
+  onClearFilters,
+  onApplyFilters,
+}: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -51,11 +106,21 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [mapControlsVertical, setMapControlsVertical] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const mappable = chiropractors.filter(hasCoords);
 
   activeIdRef.current = activeId;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia(MOBILE_BP);
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   const fitBounds = useCallback((map: mapboxgl.Map, items: MapChiropractor[]) => {
     if (items.length === 0) return;
@@ -70,7 +135,6 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
 
   useEffect(() => {
     if (!mapContainerRef.current || !MAPBOX_TOKEN) return;
-
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
@@ -78,12 +142,10 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
       center: US_CENTER,
       zoom: DEFAULT_ZOOM,
     });
-
     map.on('load', () => {
       mapRef.current = map;
       setMapReady(true);
     });
-
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current.clear();
@@ -94,35 +156,22 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(max-width: 380px)');
-    const sync = () => setMapControlsVertical(mq.matches);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
-
   const scrollListToChiro = useCallback((id: string) => {
     const wrap = listRefs.current.get(id);
     if (!wrap) return;
     programmaticScrollRef.current = true;
-    const isMobile = typeof window !== 'undefined' && window.matchMedia(MOBILE_MAP_MAX).matches;
+    const mobile = typeof window !== 'undefined' && window.matchMedia(MOBILE_BP).matches;
     wrap.scrollIntoView({
       behavior: 'smooth',
       block: 'nearest',
-      inline: isMobile ? 'center' : 'nearest',
+      inline: mobile ? 'center' : 'nearest',
     });
-    window.setTimeout(() => {
-      programmaticScrollRef.current = false;
-    }, 500);
+    window.setTimeout(() => { programmaticScrollRef.current = false; }, 500);
   }, []);
 
   const handleMarkerClick = useCallback((chiro: MapChiropractor, map: mapboxgl.Map) => {
     setActiveId(chiro.id);
-
     popupRef.current?.remove();
-
     const score = chiro.matchScore ?? 0;
     const pillColors = matchScorePillColors(score);
     const popup = new mapboxgl.Popup({ offset: 25, closeButton: true, maxWidth: '260px' })
@@ -137,14 +186,9 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
         </div>
       `)
       .addTo(map);
-
     popupRef.current = popup;
-    popup.on('close', () => {
-      if (popupRef.current === popup) popupRef.current = null;
-    });
-
+    popup.on('close', () => { if (popupRef.current === popup) popupRef.current = null; });
     map.flyTo({ center: [chiro.longitude, chiro.latitude], zoom: Math.max(map.getZoom(), 12) });
-
     scrollListToChiro(chiro.id);
   }, [scrollListToChiro]);
 
@@ -154,13 +198,10 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
       el.className = 'mapview-marker';
       el.style.backgroundColor = markerColor(chiro.matchScore);
       el.dataset.chiroId = chiro.id;
-
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([chiro.longitude, chiro.latitude])
         .addTo(map);
-
       el.addEventListener('click', () => handleMarkerClick(chiro, map));
-
       markersRef.current.set(chiro.id, marker);
     });
   }, [handleMarkerClick]);
@@ -192,53 +233,21 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
       })),
     };
 
-    map.addSource(sourceId, {
-      type: 'geojson',
-      data: geojson,
-      cluster: true,
-      clusterMaxZoom: 14,
-      clusterRadius: 50,
-    });
-
+    map.addSource(sourceId, { type: 'geojson', data: geojson, cluster: true, clusterMaxZoom: 14, clusterRadius: 50 });
     map.addLayer({
-      id: clusterId,
-      type: 'circle',
-      source: sourceId,
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': '#0071e3',
-        'circle-radius': ['step', ['get', 'point_count'], 18, 10, 24, 30, 30],
-        'circle-opacity': 0.85,
-      },
+      id: clusterId, type: 'circle', source: sourceId, filter: ['has', 'point_count'],
+      paint: { 'circle-color': '#0071e3', 'circle-radius': ['step', ['get', 'point_count'], 18, 10, 24, 30, 30], 'circle-opacity': 0.85 },
     });
-
     map.addLayer({
-      id: clusterCountId,
-      type: 'symbol',
-      source: sourceId,
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-size': 13,
-      },
+      id: clusterCountId, type: 'symbol', source: sourceId, filter: ['has', 'point_count'],
+      layout: { 'text-field': '{point_count_abbreviated}', 'text-size': 13 },
       paint: { 'text-color': '#ffffff' },
     });
-
     map.addLayer({
-      id: unclusteredId,
-      type: 'circle',
-      source: sourceId,
-      filter: ['!', ['has', 'point_count']],
+      id: unclusteredId, type: 'circle', source: sourceId, filter: ['!', ['has', 'point_count']],
       paint: {
-        'circle-color': [
-          'case',
-          ['>=', ['get', 'matchScore'], 90], '#30a84e',
-          ['>=', ['get', 'matchScore'], 80], '#6cc070',
-          '#86868b',
-        ],
-        'circle-radius': 8,
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
+        'circle-color': ['case', ['>=', ['get', 'matchScore'], 90], '#30a84e', ['>=', ['get', 'matchScore'], 80], '#6cc070', '#86868b'],
+        'circle-radius': 8, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff',
       },
     });
 
@@ -253,7 +262,6 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
         map.easeTo({ center: geom.coordinates as [number, number], zoom });
       });
     });
-
     map.on('click', unclusteredId, (e) => {
       const features = map.queryRenderedFeatures(e.point, { layers: [unclusteredId] });
       if (!features.length) return;
@@ -272,33 +280,26 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
-
     markersRef.current.forEach((m) => m.remove());
     markersRef.current.clear();
     popupRef.current?.remove();
-
     if (mappable.length > 20) {
       addClusteredMarkers(map, mappable);
     } else {
       addSimpleMarkers(map, mappable);
     }
-
     fitBounds(map, mappable);
   }, [mapReady, chiropractors, mappable.length, fitBounds, addSimpleMarkers, addClusteredMarkers]);
 
-  /** Mobile horizontal snap: sync map center + highlight when the centered card changes */
   useEffect(() => {
     let cancelled = false;
     let observer: IntersectionObserver | undefined;
-
     const connect = () => {
       const root = listScrollRef.current;
       const map = mapRef.current;
       if (!root || !map || !mapReady || cancelled) return;
-
-      const mq = window.matchMedia(MOBILE_MAP_MAX);
+      const mq = window.matchMedia(MOBILE_BP);
       if (!mq.matches) return;
-
       observer = new IntersectionObserver(
         (entries) => {
           if (programmaticScrollRef.current) return;
@@ -308,37 +309,22 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
           if (!best?.target) return;
           const id = best.target.getAttribute('data-chiro-id');
           if (!id || id === activeIdRef.current) return;
-
           setActiveId(id);
           const chiro = chiropractors.find((c) => c.id === id);
           if (chiro && hasCoords(chiro)) {
             popupRef.current?.remove();
-            map.flyTo({
-              center: [chiro.longitude, chiro.latitude],
-              zoom: Math.max(map.getZoom(), 12),
-            });
+            map.flyTo({ center: [chiro.longitude, chiro.latitude], zoom: Math.max(map.getZoom(), 12) });
           }
         },
         { root, threshold: [0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1] },
       );
-
       listRefs.current.forEach((el) => observer?.observe(el));
     };
-
     let rafInner = 0;
-    const rafOuter = requestAnimationFrame(() => {
-      rafInner = requestAnimationFrame(connect);
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(rafOuter);
-      cancelAnimationFrame(rafInner);
-      observer?.disconnect();
-    };
+    const rafOuter = requestAnimationFrame(() => { rafInner = requestAnimationFrame(connect); });
+    return () => { cancelled = true; cancelAnimationFrame(rafOuter); cancelAnimationFrame(rafInner); observer?.disconnect(); };
   }, [mapReady, chiropractors]);
 
-  /** DOM markers: persistent selected state */
   useEffect(() => {
     markersRef.current.forEach((marker, id) => {
       const el = marker.getElement();
@@ -350,12 +336,9 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
   const handleListItemClick = useCallback((chiro: Chiropractor) => {
     if (!hasCoords(chiro) || !mapRef.current) return;
     setActiveId(chiro.id);
-
     const map = mapRef.current;
     map.flyTo({ center: [chiro.longitude, chiro.latitude], zoom: Math.max(map.getZoom(), 12) });
-
     popupRef.current?.remove();
-
     const score = chiro.matchScore ?? 0;
     const pillColors = matchScorePillColors(score);
     const popup = new mapboxgl.Popup({ offset: 25, closeButton: true, maxWidth: '260px' })
@@ -370,12 +353,11 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
         </div>
       `)
       .addTo(map);
-
     popupRef.current = popup;
   }, []);
 
   const handleListItemHover = useCallback((chiro: Chiropractor) => {
-    if (!hasCoords(chiro) || !mapRef.current) return;
+    if (!hasCoords(chiro)) return;
     const markerEl = markersRef.current.get(chiro.id)?.getElement();
     if (markerEl) markerEl.classList.add('mapview-marker--hover');
   }, []);
@@ -383,6 +365,15 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
   const handleListItemLeave = useCallback((chiro: Chiropractor) => {
     const markerEl = markersRef.current.get(chiro.id)?.getElement();
     if (markerEl) markerEl.classList.remove('mapview-marker--hover');
+  }, []);
+
+  const handleApplyFilters = useCallback(() => {
+    onApplyFilters();
+    setFiltersOpen(false);
+  }, [onApplyFilters]);
+
+  const handleCloseFilters = useCallback(() => {
+    setFiltersOpen(false);
   }, []);
 
   if (!MAPBOX_TOKEN) {
@@ -396,84 +387,155 @@ export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage
   }
 
   return (
-    <div className="mapview-split">
-      <div className="mapview-list">
-        <Heading
-          size="5"
-          className="mapview-list-heading mapview-list-heading--desktop"
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontWeight: 700,
-            color: '#1d1d1f',
-            margin: 0,
-            padding: '24px 24px 12px',
-          }}
-        >
-          {chiropractors.length} Results
-        </Heading>
-        <div ref={listScrollRef} className="mapview-list-scroll">
-          {chiropractors.map((chiro) => (
-            <div
-              key={chiro.id}
-              data-chiro-id={chiro.id}
-              ref={(el) => {
-                if (el) listRefs.current.set(chiro.id, el);
-                else listRefs.current.delete(chiro.id);
-              }}
-              className={`mapview-card-wrap${activeId === chiro.id ? ' mapview-card-wrap--active' : ''}`}
-              onClick={() => handleListItemClick(chiro)}
-              onMouseEnter={() => handleListItemHover(chiro)}
-              onMouseLeave={() => handleListItemLeave(chiro)}
+    <div className="mapview-container">
+      {loading && <div className="search-loading-overlay" />}
+
+      <div ref={mapContainerRef} className="mapview-map" />
+
+      {/* Desktop: card list on the left */}
+      {!isMobile && chiropractors.length > 0 && (
+        <div className="mapview-overlay-left">
+          <div ref={listScrollRef} className="mapview-overlay-cards">
+            {chiropractors.map((chiro) => (
+              <div
+                key={chiro.id}
+                data-chiro-id={chiro.id}
+                ref={(el) => {
+                  if (el) listRefs.current.set(chiro.id, el);
+                  else listRefs.current.delete(chiro.id);
+                }}
+                className={`mapview-card-wrap${activeId === chiro.id ? ' mapview-card-wrap--active' : ''}`}
+                onClick={() => handleListItemClick(chiro)}
+                onMouseEnter={() => handleListItemHover(chiro)}
+                onMouseLeave={() => handleListItemLeave(chiro)}
+              >
+                <ChiropractorCard
+                  variant="map"
+                  chiropractor={chiro}
+                  profileHref={profileHrefBuilder(chiro)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Right column: search bar (top) + map controls (bottom) */}
+      <div className="mapview-overlay-right">
+        <div className="mapview-overlay-search">
+          <ProximitySearchBar
+            variant="onLight"
+            navigate={false}
+            zipCode={zipCode}
+            searchRadius={searchRadius}
+            onZipChange={onZipChange}
+            onRadiusChange={onRadiusChange}
+            onSubmit={onSearchSubmit}
+          />
+        </div>
+
+        <div className="mapview-overlay-controls">
+          <div className="mapview-zoom-group">
+            <button
+              type="button"
+              className="mapview-zoom-btn"
+              onClick={() => mapRef.current?.zoomIn({ duration: 200 })}
+              aria-label="Zoom in"
             >
-              <ChiropractorCard
-                variant="map"
-                chiropractor={chiro}
-                profileHref={profileHrefBuilder(chiro)}
-              />
-            </div>
-          ))}
+              <svg width={14} height={16} viewBox="0 0 14 16" fill="none" aria-hidden>
+                <path d="M7 3v10M2 8h10" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="mapview-zoom-btn"
+              onClick={() => mapRef.current?.zoomOut({ duration: 200 })}
+              aria-label="Zoom out"
+            >
+              <svg width={14} height={16} viewBox="0 0 14 16" fill="none" aria-hidden>
+                <path d="M2 8h10" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <button
+            type="button"
+            className="mapview-filter-btn"
+            onClick={() => setFiltersOpen(true)}
+            aria-label="Show filters"
+          >
+            <FilterGlyph />
+          </button>
         </div>
       </div>
 
-      <div className="mapview-right">
-        <div className="mapview-right-header">
-          <Heading
-            size="5"
-            className="mapview-list-heading mapview-list-heading--mobile"
-            style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
+      {/* Mobile: horizontal card carousel at the bottom */}
+      {isMobile && chiropractors.length > 0 && (
+        <div className="mapview-overlay-bottom">
+          <div ref={!isMobile ? undefined : listScrollRef} className="mapview-overlay-cards-mobile">
+            {chiropractors.map((chiro) => (
+              <div
+                key={chiro.id}
+                data-chiro-id={chiro.id}
+                ref={(el) => {
+                  if (el) listRefs.current.set(chiro.id, el);
+                  else listRefs.current.delete(chiro.id);
+                }}
+                className={`mapview-card-wrap-mobile${activeId === chiro.id ? ' mapview-card-wrap--active' : ''}`}
+                onClick={() => handleListItemClick(chiro)}
+              >
+                <ChiropractorCard
+                  variant="map"
+                  chiropractor={chiro}
+                  profileHref={profileHrefBuilder(chiro)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filter flyout */}
+      {filtersOpen && (
+        <div className="mapview-filter-backdrop" onClick={handleCloseFilters}>
+          <div
+            className="mapview-filter-flyout"
+            onClick={(e) => e.stopPropagation()}
           >
-            {chiropractors.length} Results
-          </Heading>
-          <Flex align="center" gap="3" wrap="wrap" className="mapview-right-meta">
-            <Text
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 14,
-                color: 'rgba(0,0,0,0.61)',
-                lineHeight: '20px',
-              }}
-            >
-              Sorted by match score
-            </Text>
-            {resultsMatchAverage != null && (
-              <span className="match-potential-pill" style={matchScorePillColors(resultsMatchAverage)}>
-                Your filters: {resultsMatchAverage}% match potential
-              </span>
-            )}
-          </Flex>
-        </div>
-        <div className="mapview-map-wrap">
-          <div ref={mapContainerRef} className="mapview-map" />
-          {mapReady && (
-            <MapFloatingControls
-              orientation={mapControlsVertical ? 'vertical' : 'horizontal'}
-              onFilterClick={onFilterMapClick}
-              onZoomIn={() => mapRef.current?.zoomIn({ duration: 200 })}
-              onZoomOut={() => mapRef.current?.zoomOut({ duration: 200 })}
+            <FilterMobileActionBar
+              onClose={handleCloseFilters}
+              onApply={handleApplyFilters}
+              onClear={onClearFilters}
+              placement="flyoutHeader"
             />
-          )}
+            <div className="mapview-filter-flyout-body">
+              <FilterDropdowns
+                layout="column"
+                modalityOptions={modalityOptions}
+                focusAreaOptions={focusAreaOptions}
+                philosophyOptions={philosophyOptions}
+                paymentOptions={paymentOptions}
+                selectedModalities={selectedModalities}
+                selectedFocusAreas={selectedFocusAreas}
+                selectedPhilosophies={selectedPhilosophies}
+                selectedPayment={selectedPayment}
+                onModalityChange={onModalityChange}
+                onFocusAreaChange={onFocusAreaChange}
+                onPhilosophyChange={onPhilosophyChange}
+                onPaymentChange={onPaymentChange}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Empty state */}
+      {chiropractors.length === 0 && !loading && (
+        <div className="mapview-empty-state">
+          <Text size="3" style={{ color: '#6b7280', textAlign: 'center' }}>
+            No chiropractors found. Try adjusting your search.
+          </Text>
+        </div>
+      )}
     </div>
   );
 }

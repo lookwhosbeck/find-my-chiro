@@ -841,7 +841,7 @@ header.fmc-site-header .join-network-button,
   line-height: 20px;
 }
 
-/* Map search — hide filter panel on mobile when user dismisses (Figma 89:912 close) */
+/* Legacy: hide filter panel on mobile when user dismisses */
 @media (max-width: 768px) {
   .filter-map-panel--collapsed-mobile {
     display: none !important;
@@ -853,79 +853,241 @@ header.fmc-site-header .join-network-button,
 }
 
 /* ========================================
-   Map View — Figma Split Layout
+   Search Page — Full-viewport map overlay layout
    ======================================== */
 
-.mapview-split {
-  display: flex;
-  align-items: stretch;
+.search-page-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #ffffff;
+  padding: 16px 32px;
+}
+
+@media (max-width: 768px) {
+  .search-page-root {
+    padding: 8px 16px;
+  }
+}
+
+.search-page-map-area {
+  flex: 1;
+  position: relative;
+  padding-top: 16px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .search-page-map-area {
+    padding-top: 8px;
+  }
+}
+
+/* ========================================
+   Map View — Overlay Layout (Figma 84:4164)
+   ======================================== */
+
+.mapview-container {
+  position: relative;
   width: 100%;
-  min-height: 740px;
+  height: calc(100vh - 130px);
+  min-height: 500px;
+  border-radius: 24px;
+  overflow: hidden;
 }
 
-.mapview-list {
-  width: 399px;
-  min-width: 320px;
-  flex-shrink: 0;
+@media (max-width: 768px) {
+  .mapview-container {
+    height: calc(100vh - 90px);
+    border-radius: 16px;
+  }
+}
+
+.mapview-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* LEFT overlay — scrollable card list (desktop) */
+.mapview-overlay-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 3;
   display: flex;
   flex-direction: column;
-  background: transparent;
-  min-height: 0;
+  padding: 16px;
+  pointer-events: none;
+  width: 412px;
+  max-width: 35%;
 }
 
-/* Desktop: clip list column; scroll only inside .mapview-list-scroll */
-@media (min-width: 769px) {
-  .mapview-list {
-    overflow: hidden;
-    max-height: min(740px, calc(100vh - 220px));
-  }
-}
-
-.mapview-list-heading--desktop {
-  display: none;
-}
-
-.mapview-list-heading--mobile {
-  display: block;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-@media (min-width: 769px) {
-  .mapview-list-heading--desktop {
-    display: block;
-  }
-
-  .mapview-list-heading--mobile {
-    display: none;
-  }
-}
-
-.mapview-list-scroll {
+.mapview-overlay-cards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 0 24px 24px;
-  overflow-x: hidden;
+  gap: 10px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   min-height: 0;
-  max-height: 740px;
+  pointer-events: auto;
   -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
 }
 
-@media (min-width: 769px) {
-  .mapview-list-scroll {
-    max-height: none;
+/* RIGHT overlay — search bar + controls */
+.mapview-overlay-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px;
+  pointer-events: none;
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .mapview-overlay-right {
+    padding: 8px;
   }
+}
+
+.mapview-overlay-search {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 560px;
+}
+
+@media (max-width: 768px) {
+  .mapview-overlay-search {
+    display: none;
+  }
+}
+
+.mapview-overlay-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.mapview-zoom-group {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--fmc-filter-border-muted, #f3f4f6);
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.mapview-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.mapview-zoom-btn:hover {
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+.mapview-zoom-btn:focus-visible {
+  outline: 2px solid var(--fmc-filter-primary, #2563eb);
+  outline-offset: -2px;
+}
+
+.mapview-zoom-btn svg {
+  display: block;
+}
+
+.mapview-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--fmc-filter-primary, #2563eb);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background 0.15s ease;
+}
+
+.mapview-filter-btn:hover {
+  background: var(--fmc-filter-primary-dark, #1d4ed8);
+}
+
+.mapview-filter-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.mapview-filter-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* BOTTOM overlay — horizontal card carousel (mobile) */
+.mapview-overlay-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 8px;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.mapview-overlay-cards-mobile {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 8px;
+  pointer-events: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.mapview-card-wrap-mobile {
+  flex: 0 0 304px;
+  width: 304px;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  cursor: pointer;
+  border-radius: 12px;
 }
 
 /* Card wrapper — clickable area */
 .mapview-card-wrap {
   cursor: pointer;
-  border-radius: 24px;
+  border-radius: 16px;
   transition: transform 0.15s;
 }
 
@@ -935,22 +1097,22 @@ header.fmc-site-header .join-network-button,
   }
 }
 
-/* Active card — Figma: #ebf5ff background + 2px #0072de border */
+/* Active card */
 .mapview-card-wrap--active .mapview-card {
   background: #ebf5ff !important;
   border: 2px solid #0072de !important;
 }
 
-/* Card inner — matches Figma chiropractor-profile-card */
+/* Card inner */
 .mapview-card {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 16px;
+  gap: 24px;
+  padding: 12px;
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 16px;
   border: 2px solid transparent;
-  box-shadow: var(--shadow-chiropractor-profile);
+  box-shadow: 0 2px 20px -6px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -959,43 +1121,69 @@ header.fmc-site-header .join-network-button,
   display: block;
   text-decoration: none;
   color: inherit;
-  border-radius: 24px;
+  border-radius: 16px;
 }
 
 .mapview-card-link:hover {
   color: inherit;
 }
 
-/* Right column: results heading + map */
-.mapview-right {
-  flex: 1;
-  min-width: 0;
+/* Filter flyout backdrop */
+.mapview-filter-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(30, 41, 59, 0.15);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: flex-end;
+  animation: mapview-fade-in 0.15s ease;
+}
+
+@keyframes mapview-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Filter flyout panel */
+.mapview-filter-flyout {
+  width: 320px;
+  max-width: 85%;
+  height: 100%;
+  background: #ffffff;
+  border-left: 1px solid #e5e7eb;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  padding: 10px 0;
+  animation: mapview-slide-in 0.2s ease;
+  overflow-y: auto;
 }
 
-.mapview-right-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  flex-wrap: wrap;
+@keyframes mapview-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
-.mapview-map-wrap {
+.mapview-filter-flyout-body {
   flex: 1;
-  position: relative;
-  min-width: 0;
+  overflow-y: auto;
   min-height: 0;
-  border-radius: 24px;
-  overflow: hidden;
 }
 
-.mapview-map {
-  width: 100%;
-  height: 100%;
+/* Empty state */
+.mapview-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 24px 32px;
+  border-radius: 16px;
+  box-shadow: 0 2px 20px -6px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
 }
 
 /* Markers (simple mode) */
@@ -1070,41 +1258,39 @@ header.fmc-site-header .join-network-button,
   padding: 2px 6px;
 }
 
-/* Map list card — map variant typography (matches search grid, scales down on small screens) */
+/* Map list card — map variant typography */
 .chiropractor-card-map-avatar {
-  width: 64px !important;
-  height: 64px !important;
-  min-width: 64px;
-  min-height: 64px;
+  width: 80px !important;
+  height: 80px !important;
+  min-width: 80px;
+  min-height: 80px;
 }
 
-@media (min-width: 769px) {
+@media (max-width: 768px) {
   .chiropractor-card-map-avatar {
-    width: 80px !important;
-    height: 80px !important;
-    min-width: 80px;
-    min-height: 80px;
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px;
+    min-height: 64px;
   }
 }
 
 .mapview-card[data-variant='map'] {
-  gap: 14px;
-}
-
-@media (min-width: 769px) {
-  .mapview-card[data-variant='map'] {
-    gap: 20px;
-  }
+  gap: 24px;
 }
 
 @media (max-width: 768px) {
+  .mapview-card[data-variant='map'] {
+    gap: 16px;
+  }
+
   .chiropractor-card-map-name {
     font-size: 15px !important;
     line-height: 22px !important;
   }
 
   .chiropractor-card-map-specialty {
-    font-size: 14px !important;
+    font-size: 13px !important;
     line-height: 20px !important;
   }
 
@@ -1115,7 +1301,7 @@ header.fmc-site-header .join-network-button,
   }
 }
 
-/* Responsive: map first, horizontal snap carousel below */
+/* Mobile filter dropdown stacking */
 @media (max-width: 768px) {
   .filter-dropdown {
     flex: 1 1 100%;
@@ -1124,71 +1310,6 @@ header.fmc-site-header .join-network-button,
 
   .filter-dropdowns-row:not(.filter-dropdowns-row--column) {
     justify-content: stretch;
-  }
-
-  .mapview-split {
-    flex-direction: column;
-    min-height: auto;
-    gap: 0;
-  }
-
-  /* Map + header first, then cards */
-  .mapview-right {
-    order: 1;
-    width: 100%;
-    min-height: 0;
-    padding: 12px 16px 0;
-    flex: 0 0 auto;
-  }
-
-  .mapview-list {
-    order: 2;
-    width: 100%;
-    min-width: 0;
-    overflow: visible;
-    max-height: none;
-  }
-
-  .mapview-list-heading--desktop {
-    display: none !important;
-  }
-
-  .mapview-right-header {
-    flex-direction: row;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 8px 12px;
-    margin-bottom: 8px;
-  }
-
-  .mapview-map-wrap {
-    min-height: min(52vh, 420px);
-    height: min(52vh, 420px);
-    flex: 0 0 auto;
-  }
-
-  .mapview-list-scroll {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 12px;
-    padding: 16px 16px 20px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: 16px;
-    max-height: none;
-    mask-image: none;
-    -webkit-mask-image: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .mapview-card-wrap {
-    flex: 0 0 100%;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    scroll-snap-align: center;
-    scroll-snap-stop: always;
   }
 }
 
