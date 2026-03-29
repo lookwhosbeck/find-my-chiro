@@ -7,7 +7,7 @@ import { Footer } from '@/app/components/Footer';
 export default function AboutPage() {
   return (
     <Flex direction="column" style={{ minHeight: '100vh' }} className="page-with-header">
-      <Header />
+      <Header surface="onLight" />
 
       <Flex direction="column" gap="9">
         {/* Hero Section */}

@@ -397,13 +397,13 @@ button.fmc-proximity-submit {
 }
 
 /*
- * Main nav pill (Header.tsx). Radix Theme can flatten corners; clip-path forces the capsule shape.
+ * Main nav bar (Header.tsx) — same 24px radius as ProximitySearchBar. Radix can flatten corners; clip-path enforces it.
  */
 header.fmc-site-header,
 .radix-themes header.fmc-site-header {
-  border-radius: 9999px !important;
+  border-radius: 24px !important;
   overflow: hidden !important;
-  clip-path: inset(0 round 9999px);
+  clip-path: inset(0 round 24px);
 }
 
 /* Header navigation buttons should be fully rounded */
@@ -934,8 +934,15 @@ header.fmc-site-header .join-network-button,
   min-height: 0;
   pointer-events: auto;
   -webkit-overflow-scrolling: touch;
+  /* Hide scrollbar; list remains scrollable (wheel / trackpad / touch) */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+}
+
+.mapview-overlay-cards::-webkit-scrollbar {
+  display: none;
 }
 
 /* RIGHT overlay — search bar + controls */

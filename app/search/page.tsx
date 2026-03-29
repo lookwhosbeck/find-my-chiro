@@ -165,7 +165,7 @@ function SearchPageContent() {
 
   return (
     <Flex direction="column" className="search-page-root">
-      <Header embedded />
+      <Header embedded surface="onLight" />
       <div className="search-page-map-area">
         <MapView
           chiropractors={chiropractors}

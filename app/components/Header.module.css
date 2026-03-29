@@ -1,6 +1,7 @@
-/* Single-surface site header: one pill (bg + radius + padding) — no outer “shell” + inner “bar” split */
+/* Single-surface site header — matches ProximitySearchBar (Figma 84:4441): 24px radius, shared elevation/border tokens */
 
 .bar {
+  --site-header-r: 24px;
   position: relative;
   z-index: 1000;
   box-sizing: border-box;
@@ -12,20 +13,36 @@
   width: 100%;
 
   background: #ffffff;
-  box-shadow: 0 2px 12px 2px rgba(0, 0, 0, 0.1);
-
   padding: 6px 12px;
-  border-radius: 9999px;
+  border-radius: var(--site-header-r);
   overflow: hidden;
   /* Fallback if globals load late — matches clip-path in globals.css */
-  clip-path: inset(0 round 9999px);
+  clip-path: inset(0 round var(--site-header-r));
   min-height: 48px;
+}
+
+.barOnDark {
+  border: none;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.07),
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.barOnLight {
+  box-shadow: none;
+  border: 1px solid #e5e7eb;
 }
 
 @media (min-width: 768px) {
   .bar {
     padding: 8px 20px;
     min-height: 52px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bar {
+    padding: 6px 10px;
   }
 }
 
@@ -191,7 +208,12 @@
 
 .mobileMenuButton {
   display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  min-width: var(--touch-target-min, 44px);
+  min-height: var(--touch-target-min, 44px);
+  padding-inline: 8px !important;
 }
 
 @media (min-width: 768px) {

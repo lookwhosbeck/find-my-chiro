@@ -21,9 +21,11 @@ type HeaderProfile = {
 type HeaderProps = {
   /** When true, header sits in normal flow (e.g. inside the search hero) instead of floating absolutely. */
   embedded?: boolean;
+  /** Matches ProximitySearchBar: soft shadow on dark heroes, outline on light surfaces. */
+  surface?: 'onDark' | 'onLight';
 };
 
-export function Header({ embedded = false }: HeaderProps) {
+export function Header({ embedded = false, surface = 'onDark' }: HeaderProps) {
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -113,6 +115,7 @@ export function Header({ embedded = false }: HeaderProps) {
     'fmc-site-header',
     styles.bar,
     embedded ? styles.barEmbedded : styles.barFloating,
+    surface === 'onLight' ? styles.barOnLight : styles.barOnDark,
   ].join(' ');
 
   return (
