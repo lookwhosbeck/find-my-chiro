@@ -559,71 +559,6 @@ header.fmc-site-header .join-network-button,
   box-shadow: var(--shadow-chiropractor-profile) !important;
 }
 
-/*
- * Refine card tabs (Figma 31:1764/1765): Radix Themes paints the tab “pill” on
- * .rt-BaseTabListTriggerInner and the default accent on .rt-BaseTabListTrigger::before.
- * Styling .rt-TabsTrigger alone is not enough — those layers override background on the button.
- */
-.search-refine-tabs .rt-BaseTabList {
-  width: 100%;
-  justify-content: flex-start;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 4px;
-  box-shadow: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  --tab-height: auto;
-  --tab-padding-x: 0;
-  --tab-inner-padding-y: 6px;
-  --tab-inner-padding-x: 12px;
-  --tab-inner-border-radius: var(--radius-xs);
-}
-
-.search-refine-tabs .rt-BaseTabListTrigger {
-  flex-shrink: 0;
-  color: #202020 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: -0.14px;
-  line-height: 20px;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.search-refine-tabs .rt-BaseTabListTrigger::before {
-  content: none !important;
-  display: none !important;
-}
-
-.search-refine-tabs .rt-BaseTabListTrigger[data-state='active'] .rt-BaseTabListTriggerInner,
-.search-refine-tabs .rt-BaseTabListTrigger[data-state='active'] .rt-TabsTriggerInner {
-  background-color: var(--refine-tab-active-bg) !important;
-}
-
-.search-refine-tabs .rt-BaseTabListTrigger[data-state='inactive'] .rt-BaseTabListTriggerInner,
-.search-refine-tabs .rt-BaseTabListTrigger[data-state='inactive'] .rt-TabsTriggerInner {
-  background-color: var(--color-surface) !important;
-}
-
-@media (hover: hover) {
-  .search-refine-tabs .rt-BaseTabListTrigger[data-state='inactive']:hover .rt-BaseTabListTriggerInner,
-  .search-refine-tabs .rt-BaseTabListTrigger[data-state='inactive']:hover .rt-TabsTriggerInner {
-    background-color: var(--gray-3) !important;
-  }
-
-  .search-refine-tabs .rt-BaseTabListTrigger[data-state='active']:hover .rt-BaseTabListTriggerInner,
-  .search-refine-tabs .rt-BaseTabListTrigger[data-state='active']:hover .rt-TabsTriggerInner {
-    background-color: var(--refine-tab-active-bg) !important;
-  }
-}
-
 /* Checkbox list — Figma 85:501 / 86:358 / 86:382: 16px, 4.5px radius, #f3f4f6 + #e5e7eb unchecked; #2563eb + #1d4ed8 checked */
 .search-refine-card .rt-BaseCheckboxRoot.rt-variant-surface.rt-r-size-1 {
   --checkbox-size: 16px;
@@ -688,15 +623,6 @@ header.fmc-site-header .join-network-button,
   to { opacity: 1; }
 }
 
-.search-results-heading-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  width: 100%;
-}
-
 .match-potential-pill {
   display: inline-flex;
   align-items: center;
@@ -707,19 +633,6 @@ header.fmc-site-header .join-network-button,
   letter-spacing: 0.03em;
   line-height: var(--leading-snug);
   white-space: nowrap;
-}
-
-.search-results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-5);
-  width: 100%;
-}
-
-@media (min-width: 1024px) {
-  .search-results-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* Chiropractor card → profile (full card clickable) */
@@ -739,46 +652,6 @@ header.fmc-site-header .join-network-button,
 .chiropractor-card-link:focus-visible {
   outline: 2px solid var(--color-tab-active-underline);
   outline-offset: 3px;
-}
-
-/* ========================================
-   View Toggle (List / Map)
-   ======================================== */
-
-.view-toggle-group {
-  display: inline-flex;
-  border-radius: var(--radius-xs);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
-.view-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-family: var(--font-body);
-  color: var(--color-text-secondary);
-  transition: background 0.15s, color 0.15s;
-  line-height: 1;
-  border-radius: 0 !important;
-}
-
-.view-toggle-btn:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.view-toggle-btn--active {
-  background: var(--color-text-primary) !important;
-  color: #ffffff !important;
-}
-
-.view-toggle-btn + .view-toggle-btn {
-  border-left: 1px solid var(--color-border);
 }
 
 /* ========================================
