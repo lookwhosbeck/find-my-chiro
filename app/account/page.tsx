@@ -589,6 +589,20 @@ export default function AccountPage() {
       const merged = { id: user.id, ...chiroPayload } as ChiropractorProfile;
       setChiropractorProfile((prev) => (prev ? { ...prev, ...merged } : merged));
       practiceSnapshotRef.current = null;
+
+      const { data: sess } = await supabase.auth.getSession();
+      const geoTok = sess.session?.access_token?.trim();
+      if (geoTok && oid) {
+        void fetch('/api/organizations/geocode', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${geoTok}`,
+          },
+          body: JSON.stringify({ organizationId: oid }),
+        });
+      }
+
       setPracticeEditing(false);
     } catch (e) {
       console.error(e);

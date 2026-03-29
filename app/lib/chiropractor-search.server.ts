@@ -27,7 +27,7 @@ export async function searchChiropractorsWithClient(
       `
         *,
         profiles!inner(first_name, last_name, email, avatar_url),
-        organizations!inner(name, city, state, zip_code, phone, website, address_line_1),
+        organizations!inner(name, city, state, zip_code, phone, website, address_line_1, latitude, longitude),
         chiropractor_modalities(modality_id, modalities!inner(name)),
         chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
         chiropractor_payment_models(payment_model_id, payment_models!inner(name)),
@@ -51,6 +51,20 @@ export async function searchChiropractorsWithClient(
     if (origin && origin.latitude != null && origin.longitude != null) {
       chiropractors = chiropractors
         .map((c) => {
+          if (
+            c.latitude != null &&
+            c.longitude != null &&
+            Number.isFinite(c.latitude) &&
+            Number.isFinite(c.longitude)
+          ) {
+            const distanceMiles = haversineMiles(
+              origin.latitude,
+              origin.longitude,
+              c.latitude,
+              c.longitude,
+            );
+            return { ...c, distanceMiles };
+          }
           const z = normalizeUsZip(c.zipCode);
           if (!z) return { ...c, distanceMiles: Number.POSITIVE_INFINITY };
           const loc = zipcodes.lookup(z);
@@ -82,6 +96,14 @@ export async function searchChiropractorsWithClient(
   }
 
   const enriched = chiropractors.slice(0, limit).map((c) => {
+    if (
+      c.latitude != null &&
+      c.longitude != null &&
+      Number.isFinite(c.latitude) &&
+      Number.isFinite(c.longitude)
+    ) {
+      return c;
+    }
     const z = normalizeUsZip(c.zipCode);
     if (!z) return c;
     const loc = zipcodes.lookup(z);

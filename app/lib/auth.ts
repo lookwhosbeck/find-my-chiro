@@ -87,6 +87,7 @@ async function attachClinicOrganizationFromSignup(
   supabase: SupabaseClient,
   userId: string,
   data: SignUpData,
+  accessToken?: string | null,
 ): Promise<void> {
   if (!hasSignupClinicLocationData(data)) return;
 
@@ -123,6 +124,27 @@ async function attachClinicOrganizationFromSignup(
 
   if (linkErr) {
     console.error('Could not link clinic organization to chiropractor:', linkErr);
+    return;
+  }
+
+  if (accessToken?.trim() && newId) {
+    void requestOrganizationGeocode(accessToken.trim(), newId);
+  }
+}
+
+async function requestOrganizationGeocode(accessToken: string, organizationId: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    await fetch('/api/organizations/geocode', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ organizationId }),
+    });
+  } catch {
+    /* non-blocking */
   }
 }
 
@@ -198,6 +220,9 @@ async function ensureSignupClinicLinked(
     String(rpcOrgId).toLowerCase() !== 'null';
 
   if (rpcOk) {
+    if (accessToken?.trim()) {
+      void requestOrganizationGeocode(accessToken.trim(), String(rpcOrgId));
+    }
     return;
   }
 
@@ -205,7 +230,7 @@ async function ensureSignupClinicLinked(
     console.warn('signup_attach_chiropractor_organization RPC skipped or failed:', rpcErr.message);
   }
 
-  await attachClinicOrganizationFromSignup(supabase, userId, data);
+  await attachClinicOrganizationFromSignup(supabase, userId, data, accessToken);
 
   const { data: chiroRow } = await supabase
     .from('chiropractors')

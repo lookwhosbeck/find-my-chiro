@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { geocodeOrganizationWithAdmin } from '@/app/lib/geocode-organization.server';
 
 /**
  * Links signup clinic → organizations + chiropractors.organization_id using the service role.
@@ -85,6 +86,10 @@ export async function POST(req: NextRequest) {
   if (upErr) {
     return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
+
+  geocodeOrganizationWithAdmin(admin, inserted.id).catch((e) =>
+    console.error('attach-chiropractor-clinic geocode:', e),
+  );
 
   return NextResponse.json({ ok: true, organizationId: inserted.id });
 }

@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
         `
         *,
         profiles!inner(first_name, last_name, avatar_url),
-        organizations!inner(name, city, state, zip_code, phone, website, address_line_1),
+        organizations!inner(name, city, state, zip_code, phone, website, address_line_1, latitude, longitude),
         chiropractor_modalities(modality_id, modalities!inner(name)),
         chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
         chiropractor_payment_models(payment_model_id, payment_models!inner(name)),

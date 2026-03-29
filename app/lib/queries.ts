@@ -31,9 +31,9 @@ export interface Chiropractor {
   matchScore?: number;
   /** Miles from search ZIP when radius search ran (server-computed). */
   distanceMiles?: number;
-  /** Latitude derived from ZIP centroid (for map view). */
+  /** Latitude: geocoded org coords when set, else ZIP centroid for map/distance. */
   latitude?: number;
-  /** Longitude derived from ZIP centroid (for map view). */
+  /** Longitude: geocoded org coords when set, else ZIP centroid for map/distance. */
   longitude?: number;
 }
 
@@ -93,7 +93,7 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
       .select(`
         *,
         profiles!inner(id, first_name, last_name, avatar_url),
-        organizations(name, city, state, zip_code, phone, website, address_line_1),
+        organizations(name, city, state, zip_code, phone, website, address_line_1, latitude, longitude),
         chiropractor_modalities(modalities(name)),
         chiropractor_focus_areas(focus_areas(name)),
         chiropractor_payment_models(payment_models(name)),
@@ -124,6 +124,15 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
     console.error('Error fetching chiropractors:', error);
     return [];
   }
+}
+
+function toFiniteNumber(v: unknown): number | undefined {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
 }
 
 /**
@@ -169,6 +178,8 @@ export function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropract
       businessModel: paymentModelsLower[0],
       paymentModels: paymentModelsLower.length > 0 ? paymentModelsLower : undefined,
       zipCode: item.organizations?.zip_code || undefined,
+      latitude: toFiniteNumber(item.organizations?.latitude),
+      longitude: toFiniteNumber(item.organizations?.longitude),
     };
   });
 }
@@ -236,7 +247,7 @@ export interface ChiropracticCollege {
 
 /**
  * Search chiropractors based on patient preferences and matching algorithm.
- * Runs on the server (ZIP centroids + radius) via API route — no geocoding API key required.
+ * Runs on the server: prefers org lat/lng from DB (Mapbox geocode), else ZIP centroids + radius.
  */
 export async function searchChiropractors(filters: PatientSearchFilters, limit: number = 20): Promise<Chiropractor[]> {
   try {
