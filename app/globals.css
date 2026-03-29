@@ -699,6 +699,196 @@ header.fmc-site-header .join-network-button,
   outline-offset: 3px;
 }
 
+/* ========================================
+   View Toggle (List / Map)
+   ======================================== */
+
+.view-toggle-group {
+  display: inline-flex;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--color-text-secondary);
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+  border-radius: 0 !important;
+}
+
+.view-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.view-toggle-btn--active {
+  background: var(--color-text-primary) !important;
+  color: #ffffff !important;
+}
+
+.view-toggle-btn + .view-toggle-btn {
+  border-left: 1px solid var(--color-border);
+}
+
+/* ========================================
+   Map View — Split Layout
+   ======================================== */
+
+.mapview-container {
+  display: flex;
+  gap: 0;
+  width: 100%;
+  min-height: 500px;
+  height: calc(100vh - 420px);
+  max-height: 700px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.mapview-list {
+  width: 320px;
+  min-width: 280px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+
+.mapview-list-card {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mapview-list-card:hover {
+  background: rgba(0, 113, 227, 0.04);
+}
+
+.mapview-list-card--active {
+  background: rgba(0, 113, 227, 0.08) !important;
+  border-left: 3px solid var(--color-accent);
+  padding-left: 13px;
+}
+
+.mapview-list-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mapview-list-card-link:hover {
+  color: inherit;
+}
+
+.mapview-map-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.mapview-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Markers (simple mode) */
+.mapview-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.mapview-marker:hover,
+.mapview-marker--hover {
+  transform: scale(1.35);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  z-index: 10 !important;
+}
+
+.mapview-marker--active {
+  transform: scale(1.5);
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.35), 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Popup */
+.mapview-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-body);
+}
+
+.mapview-popup strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.mapview-popup-match {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.mapview-popup-specialty {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* Mapbox popup overrides */
+.mapboxgl-popup-content {
+  border-radius: var(--radius-sm) !important;
+  padding: 12px 14px !important;
+  box-shadow: var(--shadow-md) !important;
+  font-family: var(--font-body);
+}
+
+.mapboxgl-popup-close-button {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  padding: 2px 6px;
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 768px) {
+  .mapview-container {
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+  }
+
+  .mapview-list {
+    width: 100%;
+    min-width: 0;
+    max-height: 320px;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mapview-map-wrap {
+    height: 400px;
+  }
+}
+
 /* Match radar (profile) */
 .match-radar-svg .match-radar-label {
   font-size: 11px;

@@ -81,5 +81,13 @@ export async function searchChiropractorsWithClient(
     chiropractors.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
   }
 
-  return chiropractors.slice(0, limit);
+  const enriched = chiropractors.slice(0, limit).map((c) => {
+    const z = normalizeUsZip(c.zipCode);
+    if (!z) return c;
+    const loc = zipcodes.lookup(z);
+    if (!loc || loc.latitude == null || loc.longitude == null) return c;
+    return { ...c, latitude: loc.latitude, longitude: loc.longitude };
+  });
+
+  return enriched;
 }

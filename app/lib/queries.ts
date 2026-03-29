@@ -31,6 +31,10 @@ export interface Chiropractor {
   matchScore?: number;
   /** Miles from search ZIP when radius search ran (server-computed). */
   distanceMiles?: number;
+  /** Latitude derived from ZIP centroid (for map view). */
+  latitude?: number;
+  /** Longitude derived from ZIP centroid (for map view). */
+  longitude?: number;
 }
 
 export interface PatientSearchFilters {

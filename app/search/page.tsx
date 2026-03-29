@@ -10,6 +10,8 @@ import { Footer } from '../components/Footer';
 import { Container } from '../components/Container';
 import { ChiropractorCard } from '../components/ChiropractorCard';
 import { ProximitySearchBar } from '../components/ProximitySearchBar';
+import { ViewToggle, type ViewMode } from '../components/ViewToggle';
+import { MapView } from '../components/MapView';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import {
@@ -255,6 +257,7 @@ function SearchPageContent() {
   const [loading, setLoading] = useState(false);
   const [filtersReady, setFiltersReady] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   const [filters, setFilters] = useState<PatientSearchFilters>(() => getDefaultEmptySearchFilters());
 
@@ -469,12 +472,17 @@ function SearchPageContent() {
               <Box style={{ flex: '1 1 0', minWidth: 0, width: '100%' }}>
                 <Flex direction="column" gap="5" pb="3" px={{ initial: '0', lg: '2' }}>
                   <div className="search-results-heading-row">
-                    <Heading
-                      size="5"
-                      style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
-                    >
-                      {!filtersReady ? 'Loading…' : loading ? 'Searching…' : `${chiropractors.length} Results`}
-                    </Heading>
+                    <Flex align="center" gap="4">
+                      <Heading
+                        size="5"
+                        style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
+                      >
+                        {!filtersReady ? 'Loading…' : loading ? 'Searching…' : `${chiropractors.length} Results`}
+                      </Heading>
+                      {filtersReady && !loading && chiropractors.length > 0 && (
+                        <ViewToggle mode={viewMode} onChange={setViewMode} />
+                      )}
+                    </Flex>
                     {filtersReady && !loading && chiropractors.length > 0 && (
                       <Flex align="center" gap="3" wrap="wrap">
                         <Text size="2" style={{ color: 'rgba(0,0,0,0.61)' }}>
@@ -499,15 +507,22 @@ function SearchPageContent() {
                       </Text>
                     </Flex>
                   ) : chiropractors.length > 0 ? (
-                    <div className="search-results-grid">
-                      {chiropractors.map((chiropractor) => (
-                        <ChiropractorCard
-                          key={chiropractor.id}
-                          chiropractor={chiropractor}
-                          profileHref={appendSearchFiltersToQuery(`/chiropractor/${chiropractor.id}`, filters)}
-                        />
-                      ))}
-                    </div>
+                    viewMode === 'map' ? (
+                      <MapView
+                        chiropractors={chiropractors}
+                        profileHrefBuilder={(chiro) => appendSearchFiltersToQuery(`/chiropractor/${chiro.id}`, filters)}
+                      />
+                    ) : (
+                      <div className="search-results-grid">
+                        {chiropractors.map((chiropractor) => (
+                          <ChiropractorCard
+                            key={chiropractor.id}
+                            chiropractor={chiropractor}
+                            profileHref={appendSearchFiltersToQuery(`/chiropractor/${chiropractor.id}`, filters)}
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <Flex direction="column" align="center" gap="3" py="6">
                       <Text size="3" color="gray" align="center">
