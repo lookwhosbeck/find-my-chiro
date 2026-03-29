@@ -14,8 +14,8 @@ const KEYS = {
   budget: 'budget',
 } as const;
 
-/** Append serialized search filters so the profile page can reproduce match / radar axes. */
-export function appendSearchFiltersToQuery(basePath: string, filters: PatientSearchFilters): string {
+/** Serialize filters to query params (same shape as appendSearchFiltersToQuery). */
+export function filtersToSearchParams(filters: PatientSearchFilters): URLSearchParams {
   const q = new URLSearchParams();
   if (filters.zipCode) q.set(KEYS.zip, filters.zipCode);
   if (filters.searchRadius != null && filters.searchRadius !== 25) {
@@ -29,8 +29,21 @@ export function appendSearchFiltersToQuery(basePath: string, filters: PatientSea
   if (filters.preferredBusinessModel) q.set(KEYS.business, filters.preferredBusinessModel);
   if (filters.insuranceType) q.set(KEYS.insurance, filters.insuranceType);
   if (filters.budgetRange) q.set(KEYS.budget, filters.budgetRange);
+  return q;
+}
+
+/** Append serialized search filters so the profile page can reproduce match / radar axes. */
+export function appendSearchFiltersToQuery(basePath: string, filters: PatientSearchFilters): string {
+  const q = filtersToSearchParams(filters);
   const qs = q.toString();
   return qs ? `${basePath}?${qs}` : basePath;
+}
+
+/** True when `filters` round-trip to the same parsed shape as the current URL (order-insensitive). */
+export function filtersMatchCurrentUrl(filters: PatientSearchFilters, searchParams: URLSearchParams): boolean {
+  const fromFilters = parseSearchFiltersFromParams(filtersToSearchParams(filters));
+  const fromUrl = parseSearchFiltersFromParams(new URLSearchParams(searchParams.toString()));
+  return JSON.stringify(fromFilters) === JSON.stringify(fromUrl);
 }
 
 export function parseSearchFiltersFromParams(searchParams: URLSearchParams): PatientSearchFilters {

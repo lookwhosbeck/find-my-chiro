@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Flex } from '@radix-ui/themes';
 import { Header } from '../components/Header';
 import { MapView } from '../components/MapView';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 import {
   appendSearchFiltersToQuery,
+  filtersMatchCurrentUrl,
+  filtersToSearchParams,
   getDefaultEmptySearchFilters,
   mergeProfileDefaultsWithUrlParams,
+  parseSearchFiltersFromParams,
   patientRowToSearchFilters,
 } from '../lib/search-filters-url';
 import { createSupabaseClient } from '../lib/supabase-client';
@@ -21,14 +24,19 @@ const BUSINESS_LABELS: Record<string, string> = {
   hybrid: 'Hybrid',
 };
 
+const URL_SYNC_DEBOUNCE_MS = 400;
+
 function SearchPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const paramsKey = searchParams.toString();
   const [chiropractors, setChiropractors] = useState<Chiropractor[]>([]);
   const [loading, setLoading] = useState(false);
   const [filtersReady, setFiltersReady] = useState(false);
 
-  const [filters, setFilters] = useState<PatientSearchFilters>(() => getDefaultEmptySearchFilters());
+  const [filters, setFilters] = useState<PatientSearchFilters>(() =>
+    parseSearchFiltersFromParams(new URLSearchParams(searchParams.toString())),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +72,17 @@ function SearchPageContent() {
     })();
     return () => { cancelled = true; };
   }, [paramsKey]);
+
+  /** Keep the address bar in sync so back/forward and reload preserve zip + filters. */
+  useEffect(() => {
+    if (!filtersReady) return;
+    const t = window.setTimeout(() => {
+      if (filtersMatchCurrentUrl(filters, searchParams)) return;
+      const nextQs = filtersToSearchParams(filters).toString();
+      router.replace(nextQs ? `/search?${nextQs}` : '/search', { scroll: false });
+    }, URL_SYNC_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [filters, filtersReady, router, searchParams]);
 
   const modalityOptions = ['Gonstead', 'Diversified', 'Activator', 'TRT', 'SOT', 'Thompson', 'Webster', 'Cox'];
   const focusAreaOptions = ['Pediatrics', 'Sports', 'Auto Injury', 'Wellness', 'Prenatal', 'Geriatric'];
