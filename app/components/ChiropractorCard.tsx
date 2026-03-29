@@ -4,7 +4,7 @@ import { Box, Flex, Text } from '@radix-ui/themes';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { Chiropractor } from '../lib/queries';
 
-function LocationPinIcon({ style }: { style?: CSSProperties }) {
+function LocationPinIcon({ style, className }: { style?: CSSProperties; className?: string }) {
   return (
     <svg
       width={12}
@@ -13,6 +13,7 @@ function LocationPinIcon({ style }: { style?: CSSProperties }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
+      className={className}
       style={style}
     >
       <path
@@ -238,9 +239,77 @@ export function ChiropractorCard({
   const href = profileHref ?? `/chiropractor/${chiropractor.id}`;
 
   if (isMap) {
-    const mapNameSize = { fontSize: 15, lineHeight: '22px' } as const;
-    const mapSpecialtySize = { fontSize: 14, lineHeight: '20px' } as const;
-    const mapMetaSize = { fontSize: 13, lineHeight: '20px' } as const;
+    const mapNameDesktop = { fontSize: 18, lineHeight: '18px' } as const;
+    const mapSpecialtyDesktop = { fontSize: 15, lineHeight: '15px' } as const;
+    const mapMetaDesktop = { fontSize: 15, lineHeight: '15px' } as const;
+
+    const mapMatchBadgeEl =
+      showMatch && matchPillColors ? (
+        <Box
+          className="chiropractor-card-map-match"
+          style={{
+            ...matchPillColors,
+            borderRadius: 9,
+            padding: '4px 8px',
+            flexShrink: 0,
+            alignSelf: 'flex-start',
+          }}
+        >
+          <Text
+            style={{
+              color: matchPillColors.color,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 400,
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {matchPercent}% Match
+          </Text>
+        </Box>
+      ) : null;
+
+    const nameAndSpecialtyMap = (
+      <Flex direction="column" align="start" style={{ width: '100%', minWidth: 0, gap: 4 }}>
+        <Text
+          as="p"
+          className="chiropractor-card-map-name"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontWeight: 500,
+            color: '#030302',
+            margin: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            width: '100%',
+            ...mapNameDesktop,
+          }}
+        >
+          {displayName}
+        </Text>
+        {specialtyLine ? (
+          <Text
+            as="p"
+            className="chiropractor-card-map-specialty"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontWeight: 400,
+              color: '#6b7280',
+              margin: 0,
+              width: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              ...mapSpecialtyDesktop,
+            }}
+          >
+            {specialtyLine}
+          </Text>
+        ) : null}
+      </Flex>
+    );
+
     return (
       <Link
         href={href}
@@ -250,72 +319,35 @@ export function ChiropractorCard({
         aria-label={`View profile: ${displayName}`}
       >
         <Box className="mapview-card" data-variant="map">
-          <Flex gap="3" align="start" className="chiropractor-card-map-top" style={{ width: '100%' }}>
-            {avatarBlock}
-            <Flex direction="column" gap="1" justify="center" style={{ flex: 1, minWidth: 0 }} className="chiropractor-card-map-text-col">
-              <Flex align="start" justify="between" gap="2" style={{ width: '100%' }}>
-                <Text
-                  as="p"
-                  className="chiropractor-card-map-name"
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontWeight: 500,
-                    letterSpacing: '0.16px',
-                    color: 'var(--color-chiro-card-text)',
-                    margin: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    ...mapNameSize,
-                  }}
-                >
-                  {displayName}
-                </Text>
-                {matchBadge}
-              </Flex>
-              {specialtyLine ? (
-                <Text
-                  as="p"
-                  className="chiropractor-card-map-specialty"
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontWeight: 400,
-                    letterSpacing: '-0.32px',
-                    color: 'var(--color-chiro-card-text)',
-                    margin: 0,
-                    ...mapSpecialtySize,
-                  }}
-                >
-                  {specialtyLine}
-                </Text>
-              ) : null}
+          <Flex align="stretch" className="chiropractor-card-map-top" style={{ width: '100%' }}>
+            <Box style={{ alignSelf: 'flex-start', flexShrink: 0 }}>{avatarBlock}</Box>
+            <Flex
+              direction="column"
+              justify={mapMatchBadgeEl ? 'between' : 'start'}
+              className="chiropractor-card-map-text-col"
+              style={{ flex: '1 1 auto', minWidth: 0 }}
+            >
+              {mapMatchBadgeEl}
+              {nameAndSpecialtyMap}
             </Flex>
           </Flex>
           {(locationLine || distanceText) && (
             <Flex align="center" justify="between" gap="2" style={{ width: '100%' }} className="chiropractor-card-map-bottom">
               {locationLine ? (
-                <Flex align="center" gap="2" style={{ minWidth: 0 }}>
-                  <LocationPinIcon
-                    style={{
-                      flexShrink: 0,
-                      color: 'var(--color-text-secondary)',
-                      width: 12,
-                      height: 16,
-                    }}
-                  />
+                <Flex align="center" className="chiropractor-card-map-location-row" style={{ minWidth: 0, gap: 4 }}>
+                  <LocationPinIcon className="chiropractor-card-map-pin" />
                   <Text
                     as="p"
                     className="chiropractor-card-map-location"
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontWeight: 400,
-                      letterSpacing: '-0.32px',
-                      color: 'var(--color-chiro-card-text)',
+                      color: '#9ca3af',
                       margin: 0,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      ...mapMetaSize,
+                      ...mapMetaDesktop,
                     }}
                   >
                     {locationLine}
@@ -331,12 +363,11 @@ export function ChiropractorCard({
                   style={{
                     fontFamily: 'var(--font-body)',
                     fontWeight: 400,
-                    letterSpacing: '-0.32px',
-                    color: 'var(--color-chiro-card-text)',
+                    color: '#9ca3af',
                     margin: 0,
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
-                    ...mapMetaSize,
+                    ...mapMetaDesktop,
                   }}
                 >
                   {distanceText}
