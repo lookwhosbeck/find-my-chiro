@@ -39,7 +39,7 @@
   width: 28px;
   min-height: 28px;
   margin: 0;
-  padding: 6px 12px;
+  padding: 6px;
   border: none;
   border-radius: 8px;
   background: var(--fmc-filter-primary, #2563eb);
@@ -84,7 +84,7 @@
   width: 28px;
   min-height: 28px;
   margin: 0;
-  padding: 6px 12px;
+  padding: 7px;
   border: none;
   background: transparent;
   color: #9ca3af;
