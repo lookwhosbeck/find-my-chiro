@@ -46,3 +46,5 @@ seed_function.sql
 *.tsbuildinfo
 next-env.d.ts
 
+# Pulled from Vercel for one-off scripts (never commit)
+.env.vercel.pull
