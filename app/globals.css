@@ -823,13 +823,12 @@ header.fmc-site-header .join-network-button,
 .filter-dropdown-checkbox:checked::after {
   content: '';
   position: absolute;
-  left: 5px;
-  top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid #ffffff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  left: 3px;
+  top: 3.5px;
+  width: 10px;
+  height: 9px;
+  background: center / contain no-repeat;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 9' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9.705.134a.75.75 0 0 1 .159.967L4.149 8.714a.75.75 0 0 1-.522.283.75.75 0 0 1-.56-.2L.21 6.027a.75.75 0 0 1 1.01-.98L3.486 7.244 8.71.286a.75.75 0 0 1 .996-.152Z' fill='%23ffffff'/%3E%3C/svg%3E");
   box-sizing: border-box;
 }
 

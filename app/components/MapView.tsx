@@ -35,12 +35,10 @@ function hasCoords(c: Chiropractor): c is MapChiropractor {
 
 function FilterGlyph() {
   return (
-    <svg width={16} height={16} viewBox="0 0 16 16" fill="none" aria-hidden>
+    <svg width={16} height={14} viewBox="0 0 16 14" fill="none" aria-hidden>
       <path
-        d="M2.5 3.5h11M5 8h6M7 12.5h2"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
+        d="M1 .5a.5.5 0 0 0-.46.31.5.5 0 0 0 .11.54l5.78 5.78a.25.25 0 0 1 .07.18V11c0 .13.05.26.15.35l2 2a.5.5 0 0 0 .54.11.5.5 0 0 0 .31-.46V7.31a.25.25 0 0 1 .07-.18L15.35 1.35a.5.5 0 0 0 .11-.54A.5.5 0 0 0 15 .5H1Zm-.92.12A1 1 0 0 1 1 0h14a1 1 0 0 1 .93.62 1 1 0 0 1-.22 1.09L10 7.42V13a1 1 0 0 1-.62.93 1 1 0 0 1-1.09-.22l-2-2A1 1 0 0 1 6 11l.003-3.58L.29 1.71A1 1 0 0 1 .08.62Z"
+        fill="currentColor"
       />
     </svg>
   );

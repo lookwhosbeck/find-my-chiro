@@ -9,14 +9,14 @@ function LocationPinIcon({ style }: { style?: CSSProperties }) {
     <svg
       width={12}
       height={16}
-      viewBox="0 0 24 24"
+      viewBox="0 0 12 16"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
       style={style}
     >
       <path
-        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+        d="M0 5.86C0 2.62 2.69 0 6 0s6 2.62 6 5.86c0 3.7-3.76 8.15-5.32 9.84a.97.97 0 0 1-1.36 0C3.76 14.01 0 9.57 0 5.86Zm6 2.09a2 2 0 1 0 0-3.98 2 2 0 0 0 0 3.98Z"
         fill="currentColor"
       />
     </svg>
