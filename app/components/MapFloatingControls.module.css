@@ -1,4 +1,4 @@
-/* Figma 90:2518 — MapActionsMobile */
+/* Figma 90:2518 — MapActionsMobile (+50% touch targets vs spec) */
 
 .wrap {
   position: absolute;
@@ -6,8 +6,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px;
+  gap: 12px;
+  padding: 12px;
   pointer-events: none;
   box-sizing: border-box;
 }
@@ -17,7 +17,7 @@
   right: 12px;
   flex-direction: row;
   width: auto;
-  min-width: 121px;
+  min-width: 182px;
 }
 
 .wrapVertical {
@@ -36,12 +36,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  min-height: 28px;
+  width: 42px;
+  min-height: 42px;
   margin: 0;
-  padding: 6px;
+  padding: 9px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--fmc-filter-primary, #2563eb);
   color: #ffffff;
   cursor: pointer;
@@ -68,7 +68,7 @@
   overflow: hidden;
   align-items: center;
   border: 1px solid var(--fmc-filter-border-muted, #f3f4f6);
-  border-radius: 6px;
+  border-radius: 9px;
   background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -81,10 +81,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  min-height: 28px;
+  width: 42px;
+  min-height: 42px;
   margin: 0;
-  padding: 7px;
+  padding: 11px;
   border: none;
   background: transparent;
   color: #9ca3af;
