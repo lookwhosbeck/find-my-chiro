@@ -32,9 +32,10 @@ function hasCoords(c: Chiropractor): c is MapChiropractor {
 interface MapViewProps {
   chiropractors: Chiropractor[];
   profileHrefBuilder: (chiro: Chiropractor) => string;
+  resultsMatchAverage: number | null;
 }
 
-export function MapView({ chiropractors, profileHrefBuilder }: MapViewProps) {
+export function MapView({ chiropractors, profileHrefBuilder, resultsMatchAverage }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -309,23 +310,65 @@ export function MapView({ chiropractors, profileHrefBuilder }: MapViewProps) {
   }
 
   return (
-    <div className="mapview-container">
+    <div className="mapview-split">
       <div className="mapview-list">
-        {chiropractors.map((chiro) => (
-          <div
-            key={chiro.id}
-            ref={(el) => { if (el) listRefs.current.set(chiro.id, el); }}
-            className={`mapview-list-card${activeId === chiro.id ? ' mapview-list-card--active' : ''}`}
-            onClick={() => handleListItemClick(chiro)}
-            onMouseEnter={() => handleListItemHover(chiro)}
-            onMouseLeave={() => handleListItemLeave(chiro)}
-          >
-            <MapListCard chiro={chiro} profileHref={profileHrefBuilder(chiro)} />
-          </div>
-        ))}
+        <Heading
+          size="5"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontWeight: 700,
+            color: '#1d1d1f',
+            margin: 0,
+            padding: '24px 24px 12px',
+          }}
+        >
+          {chiropractors.length} Results
+        </Heading>
+        <div className="mapview-list-scroll">
+          {chiropractors.map((chiro) => (
+            <div
+              key={chiro.id}
+              ref={(el) => { if (el) listRefs.current.set(chiro.id, el); }}
+              className={`mapview-card-wrap${activeId === chiro.id ? ' mapview-card-wrap--active' : ''}`}
+              onClick={() => handleListItemClick(chiro)}
+              onMouseEnter={() => handleListItemHover(chiro)}
+              onMouseLeave={() => handleListItemLeave(chiro)}
+            >
+              <MapListCard chiro={chiro} profileHref={profileHrefBuilder(chiro)} />
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mapview-map-wrap">
-        <div ref={mapContainerRef} className="mapview-map" />
+
+      <div className="mapview-right">
+        <div className="mapview-right-header">
+          <Heading
+            size="5"
+            style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
+          >
+            {chiropractors.length} Results
+          </Heading>
+          <Flex align="center" gap="3" wrap="wrap">
+            <Text
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+                color: 'rgba(0,0,0,0.61)',
+                lineHeight: '20px',
+              }}
+            >
+              Sorted by match score
+            </Text>
+            {resultsMatchAverage != null && (
+              <span className="match-potential-pill" style={matchScorePillColors(resultsMatchAverage)}>
+                Your filters: {resultsMatchAverage}% match potential
+              </span>
+            )}
+          </Flex>
+        </div>
+        <div className="mapview-map-wrap">
+          <div ref={mapContainerRef} className="mapview-map" />
+        </div>
       </div>
     </div>
   );
@@ -333,7 +376,7 @@ export function MapView({ chiropractors, profileHrefBuilder }: MapViewProps) {
 
 function LocationPinIcon() {
   return (
-    <svg width={10} height={13} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <svg width={12} height={16} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <path
         d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
         fill="currentColor"
@@ -346,71 +389,164 @@ function MapListCard({ chiro, profileHref }: { chiro: Chiropractor; profileHref:
   const displayName = `Dr. ${chiro.firstName} ${chiro.lastName}`.trim();
   const specialtyLine = buildSpecialtyLine(chiro);
   const locationLine = [chiro.city, chiro.state].filter(Boolean).join(', ');
-  const distanceSuffix =
+  const distanceText =
     chiro.distanceMiles != null && Number.isFinite(chiro.distanceMiles)
-      ? `${chiro.distanceMiles.toFixed(1)} mi`
+      ? `${chiro.distanceMiles.toFixed(1)} miles away`
       : '';
   const matchPercent = chiro.matchScore != null && chiro.matchScore > 0 ? Math.round(chiro.matchScore) : null;
   const pillColors = matchPercent != null ? matchScorePillColors(matchPercent) : null;
-
   const initials = `${chiro.firstName?.[0] || ''}${chiro.lastName?.[0] || ''}`.toUpperCase();
 
   return (
-    <Link href={profileHref} prefetch={false} className="mapview-list-card-link" onClick={(e) => e.stopPropagation()}>
-      <Flex gap="3" align="start" style={{ width: '100%' }}>
-        <Box
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 10,
-            overflow: 'hidden',
-            flexShrink: 0,
-            backgroundColor: 'var(--color-yellow-accent)',
-          }}
-        >
-          {chiro.avatarUrl ? (
-            <img
-              src={chiro.avatarUrl}
-              alt={displayName}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          ) : (
-            <Flex align="center" justify="center" style={{ width: '100%', height: '100%' }}>
-              <Text weight="medium" style={{ color: 'var(--color-chiro-card-text)', fontFamily: 'var(--font-body)', fontSize: 18, lineHeight: 1 }}>
-                {initials}
-              </Text>
-            </Flex>
-          )}
-        </Box>
-
-        <Flex direction="column" gap="1" style={{ flex: 1, minWidth: 0 }}>
-          <Flex align="center" justify="between" gap="2">
-            <Text as="p" style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500, color: 'var(--color-chiro-card-text)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {displayName}
-            </Text>
-            {matchPercent != null && pillColors && (
-              <Box style={{ ...pillColors, borderRadius: 5, padding: '2px 6px', flexShrink: 0 }}>
-                <Text style={{ color: pillColors.color, fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 400, letterSpacing: '-0.36px', lineHeight: '18px', whiteSpace: 'nowrap' }}>
-                  {matchPercent}% Match
+    <Link
+      href={profileHref}
+      prefetch={false}
+      className="mapview-card-link"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="mapview-card">
+        {/* Top row: avatar + name/specialty + match badge */}
+        <Flex gap="4" align="start" style={{ width: '100%' }}>
+          <Box
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 12,
+              overflow: 'hidden',
+              flexShrink: 0,
+              backgroundColor: 'var(--color-yellow-accent)',
+            }}
+          >
+            {chiro.avatarUrl ? (
+              <img
+                src={chiro.avatarUrl}
+                alt={displayName}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              <Flex align="center" justify="center" style={{ width: '100%', height: '100%' }}>
+                <Text
+                  weight="medium"
+                  style={{
+                    color: 'var(--color-chiro-card-text)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 28,
+                    lineHeight: 1,
+                  }}
+                >
+                  {initials}
                 </Text>
-              </Box>
+              </Flex>
+            )}
+          </Box>
+
+          <Flex direction="column" gap="1" justify="center" style={{ flex: 1, minWidth: 0, height: 80 }}>
+            <Flex align="start" justify="between" gap="2" style={{ width: '100%' }}>
+              <Text
+                as="p"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  letterSpacing: '0.16px',
+                  lineHeight: '24px',
+                  color: '#030302',
+                  margin: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {displayName}
+              </Text>
+              {matchPercent != null && pillColors && (
+                <Box
+                  style={{
+                    ...pillColors,
+                    borderRadius: 5,
+                    padding: 4,
+                    flexShrink: 0,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: pillColors.color,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      fontWeight: 400,
+                      letterSpacing: '-0.36px',
+                      lineHeight: '24px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {matchPercent}% Match
+                  </Text>
+                </Box>
+              )}
+            </Flex>
+            {specialtyLine && (
+              <Text
+                as="p"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 16,
+                  fontWeight: 400,
+                  letterSpacing: '-0.32px',
+                  lineHeight: '22.4px',
+                  color: '#030302',
+                  margin: 0,
+                }}
+              >
+                {specialtyLine}
+              </Text>
             )}
           </Flex>
-          {specialtyLine && (
-            <Text as="p" style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 400, color: 'var(--color-chiro-card-text)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {specialtyLine}
-            </Text>
-          )}
-          {(locationLine || distanceSuffix) && (
-            <Flex align="center" gap="1" style={{ marginTop: 2 }}>
-              <LocationPinIcon />
-              <Text as="p" style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 400, color: 'var(--color-text-secondary)', margin: 0, whiteSpace: 'nowrap' }}>
-                {locationLine}{locationLine && distanceSuffix ? ' · ' : ''}{distanceSuffix}
-              </Text>
-            </Flex>
-          )}
         </Flex>
-      </Flex>
+
+        {/* Bottom row: location + distance */}
+        {(locationLine || distanceText) && (
+          <Flex align="center" justify="between" style={{ width: '100%' }}>
+            {locationLine && (
+              <Flex align="center" gap="2" style={{ minWidth: 0 }}>
+                <LocationPinIcon />
+                <Text
+                  as="p"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                    fontWeight: 400,
+                    letterSpacing: '-0.32px',
+                    lineHeight: '22.4px',
+                    color: '#030302',
+                    margin: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {locationLine}
+                </Text>
+              </Flex>
+            )}
+            {distanceText && (
+              <Text
+                as="p"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  fontWeight: 400,
+                  letterSpacing: '-0.32px',
+                  lineHeight: '22.4px',
+                  color: '#030302',
+                  margin: 0,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {distanceText}
+              </Text>
+            )}
+          </Flex>
+        )}
+      </div>
     </Link>
   );
 }

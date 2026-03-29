@@ -12,6 +12,7 @@ import { ChiropractorCard } from '../components/ChiropractorCard';
 import { ProximitySearchBar } from '../components/ProximitySearchBar';
 import { ViewToggle, type ViewMode } from '../components/ViewToggle';
 import { MapView } from '../components/MapView';
+import { FilterDropdowns } from '../components/FilterDropdowns';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import {
@@ -353,6 +354,17 @@ function SearchPageContent() {
     }));
   };
 
+  const paymentOptions = ['Cash-based', 'Insurance-based', 'Hybrid'];
+  const selectedPayment = filters.preferredBusinessModel ? [BUSINESS_LABELS[filters.preferredBusinessModel] || filters.preferredBusinessModel] : [];
+
+  const handlePaymentChange = (label: string, checked: boolean) => {
+    const keyFromLabel = Object.entries(BUSINESS_LABELS).find(([, v]) => v === label)?.[0] || '';
+    setFilters((prev) => ({
+      ...prev,
+      preferredBusinessModel: checked ? keyFromLabel : '',
+    }));
+  };
+
   const handleZipSearch = () => {
     const zipRegex = /^\d{5}(-\d{4})?$/;
     if (filters.zipCode && !zipRegex.test(filters.zipCode.trim())) {
@@ -439,40 +451,92 @@ function SearchPageContent() {
       <Box style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <Container>
           <Flex direction="column" style={{ gap: 'var(--space-8)' }}>
-            <Flex
-              direction={{ initial: 'column', lg: 'row' }}
-              gap="6"
-              align="start"
-              style={{ width: '100%' }}
-            >
-              <Box style={{ width: '100%', flexShrink: 0, maxWidth: 437 }}>
-                <Box display={{ initial: 'none', lg: 'block' }} mb={{ initial: '0', lg: '4' }}>
-                  <Heading size="5" style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f' }}>
-                    Refine Your Search
-                  </Heading>
+            {/* View toggle — always visible when there are results */}
+            {filtersReady && !loading && chiropractors.length > 0 && (
+              <Flex justify="center">
+                <ViewToggle mode={viewMode} onChange={setViewMode} />
+              </Flex>
+            )}
+
+            {viewMode === 'map' ? (
+              /* ─── MAP MODE: inline filter dropdowns + full-width split ─── */
+              <Flex direction="column" style={{ gap: 'var(--space-8)', width: '100%' }}>
+                <FilterDropdowns
+                  modalityOptions={modalityOptions}
+                  focusAreaOptions={focusAreaOptions}
+                  philosophyOptions={philosophyOptions}
+                  paymentOptions={paymentOptions}
+                  selectedModalities={filters.preferredModalities || []}
+                  selectedFocusAreas={filters.focusAreas || []}
+                  selectedPhilosophies={filters.preferredPhilosophies || []}
+                  selectedPayment={selectedPayment}
+                  onModalityChange={handleModalityChange}
+                  onFocusAreaChange={handleFocusAreaChange}
+                  onPhilosophyChange={handlePhilosophyChange}
+                  onPaymentChange={handlePaymentChange}
+                />
+
+                {!filtersReady || loading ? (
+                  <Flex justify="center" py="6">
+                    <Text style={{ color: 'rgba(0,0,0,0.61)' }}>
+                      {!filtersReady ? 'Loading your search…' : 'Loading results…'}
+                    </Text>
+                  </Flex>
+                ) : chiropractors.length > 0 ? (
+                  <MapView
+                    chiropractors={chiropractors}
+                    profileHrefBuilder={(chiro) => appendSearchFiltersToQuery(`/chiropractor/${chiro.id}`, filters)}
+                    resultsMatchAverage={resultsMatchAverage}
+                  />
+                ) : (
+                  <Flex direction="column" align="center" gap="3" py="6">
+                    <Text size="3" color="gray" align="center">
+                      No chiropractors found matching your criteria.
+                    </Text>
+                    <Text size="2" color="gray" align="center">
+                      Try adjusting your filters or expanding your search area.
+                    </Text>
+                    <Button variant="outline" asChild>
+                      <Link href="/signup-patient">Create a Patient Profile</Link>
+                    </Button>
+                  </Flex>
+                )}
+              </Flex>
+            ) : (
+              /* ─── LIST MODE: sidebar refine panel + results grid ─── */
+              <Flex
+                direction={{ initial: 'column', lg: 'row' }}
+                gap="6"
+                align="start"
+                style={{ width: '100%' }}
+              >
+                <Box style={{ width: '100%', flexShrink: 0, maxWidth: 437 }}>
+                  <Box display={{ initial: 'none', lg: 'block' }} mb={{ initial: '0', lg: '4' }}>
+                    <Heading size="5" style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f' }}>
+                      Refine Your Search
+                    </Heading>
+                  </Box>
+
+                  <Flex
+                    display={{ initial: 'flex', lg: 'none' }}
+                    justify="between"
+                    align="center"
+                    mb="4"
+                  >
+                    <Heading size="5" style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f' }}>
+                      Refine Your Search
+                    </Heading>
+                    <Button variant="ghost" size="2" onClick={() => setShowFilters(!showFilters)}>
+                      {showFilters ? 'Hide' : 'Show'}
+                    </Button>
+                  </Flex>
+
+                  <Box display={{ initial: showFilters ? 'block' : 'none', lg: 'block' }}>{refinePanel}</Box>
                 </Box>
 
-                <Flex
-                  display={{ initial: 'flex', lg: 'none' }}
-                  justify="between"
-                  align="center"
-                  mb="4"
-                >
-                  <Heading size="5" style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f' }}>
-                    Refine Your Search
-                  </Heading>
-                  <Button variant="ghost" size="2" onClick={() => setShowFilters(!showFilters)}>
-                    {showFilters ? 'Hide' : 'Show'}
-                  </Button>
-                </Flex>
-
-                <Box display={{ initial: showFilters ? 'block' : 'none', lg: 'block' }}>{refinePanel}</Box>
-              </Box>
-
-              <Box style={{ flex: '1 1 0', minWidth: 0, width: '100%' }}>
-                <Flex direction="column" gap="5" pb="3" px={{ initial: '0', lg: '2' }}>
-                  <div className="search-results-heading-row">
-                    <Flex align="center" gap="4">
+                <Box style={{ flex: '1 1 0', minWidth: 0, width: '100%' }}>
+                  <Flex direction="column" gap="5" pb="3" px={{ initial: '0', lg: '2' }}>
+                    <div className="search-results-heading-row">
                       <Heading
                         size="5"
                         style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
@@ -480,39 +544,29 @@ function SearchPageContent() {
                         {!filtersReady ? 'Loading…' : loading ? 'Searching…' : `${chiropractors.length} Results`}
                       </Heading>
                       {filtersReady && !loading && chiropractors.length > 0 && (
-                        <ViewToggle mode={viewMode} onChange={setViewMode} />
+                        <Flex align="center" gap="3" wrap="wrap">
+                          <Text size="2" style={{ color: 'rgba(0,0,0,0.61)' }}>
+                            Sorted by match score
+                          </Text>
+                          {resultsMatchAverage != null && (
+                            <span
+                              className="match-potential-pill"
+                              style={matchScorePillColors(resultsMatchAverage)}
+                            >
+                              Your filters: {resultsMatchAverage}% match potential
+                            </span>
+                          )}
+                        </Flex>
                       )}
-                    </Flex>
-                    {filtersReady && !loading && chiropractors.length > 0 && (
-                      <Flex align="center" gap="3" wrap="wrap">
-                        <Text size="2" style={{ color: 'rgba(0,0,0,0.61)' }}>
-                          Sorted by match score
-                        </Text>
-                        {resultsMatchAverage != null && (
-                          <span
-                            className="match-potential-pill"
-                            style={matchScorePillColors(resultsMatchAverage)}
-                          >
-                            Your filters: {resultsMatchAverage}% match potential
-                          </span>
-                        )}
-                      </Flex>
-                    )}
-                  </div>
+                    </div>
 
-                  {!filtersReady || loading ? (
-                    <Flex justify="center" py="6">
-                      <Text style={{ color: 'rgba(0,0,0,0.61)' }}>
-                        {!filtersReady ? 'Loading your search…' : 'Loading results…'}
-                      </Text>
-                    </Flex>
-                  ) : chiropractors.length > 0 ? (
-                    viewMode === 'map' ? (
-                      <MapView
-                        chiropractors={chiropractors}
-                        profileHrefBuilder={(chiro) => appendSearchFiltersToQuery(`/chiropractor/${chiro.id}`, filters)}
-                      />
-                    ) : (
+                    {!filtersReady || loading ? (
+                      <Flex justify="center" py="6">
+                        <Text style={{ color: 'rgba(0,0,0,0.61)' }}>
+                          {!filtersReady ? 'Loading your search…' : 'Loading results…'}
+                        </Text>
+                      </Flex>
+                    ) : chiropractors.length > 0 ? (
                       <div className="search-results-grid">
                         {chiropractors.map((chiropractor) => (
                           <ChiropractorCard
@@ -522,23 +576,23 @@ function SearchPageContent() {
                           />
                         ))}
                       </div>
-                    )
-                  ) : (
-                    <Flex direction="column" align="center" gap="3" py="6">
-                      <Text size="3" color="gray" align="center">
-                        No chiropractors found matching your criteria.
-                      </Text>
-                      <Text size="2" color="gray" align="center">
-                        Try adjusting your filters or expanding your search area.
-                      </Text>
-                      <Button variant="outline" asChild>
-                        <Link href="/signup-patient">Create a Patient Profile</Link>
-                      </Button>
-                    </Flex>
-                  )}
-                </Flex>
-              </Box>
-            </Flex>
+                    ) : (
+                      <Flex direction="column" align="center" gap="3" py="6">
+                        <Text size="3" color="gray" align="center">
+                          No chiropractors found matching your criteria.
+                        </Text>
+                        <Text size="2" color="gray" align="center">
+                          Try adjusting your filters or expanding your search area.
+                        </Text>
+                        <Button variant="outline" asChild>
+                          <Link href="/signup-patient">Create a Patient Profile</Link>
+                        </Button>
+                      </Flex>
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            )}
           </Flex>
         </Container>
       </Box>

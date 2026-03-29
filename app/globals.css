@@ -740,62 +740,193 @@ header.fmc-site-header .join-network-button,
 }
 
 /* ========================================
-   Map View — Split Layout
+   Filter Dropdowns (inline multiselect)
    ======================================== */
 
-.mapview-container {
+.filter-dropdowns-row {
   display: flex;
-  gap: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   width: 100%;
-  min-height: 500px;
-  height: calc(100vh - 420px);
-  max-height: 700px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-card);
+  flex-wrap: wrap;
 }
 
-.mapview-list {
-  width: 320px;
-  min-width: 280px;
-  flex-shrink: 0;
-  overflow-y: auto;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+.filter-dropdown {
+  position: relative;
 }
 
-.mapview-list-card {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--color-border);
+.filter-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 280px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px !important;
   cursor: pointer;
-  transition: background 0.15s;
+  font-family: var(--font-body);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.mapview-list-card:hover {
+.filter-dropdown-trigger:hover {
+  border-color: #c0c0c0;
+}
+
+.filter-dropdown-trigger--open {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.filter-dropdown-trigger--active {
+  border-color: var(--color-accent);
   background: rgba(0, 113, 227, 0.04);
 }
 
-.mapview-list-card--active {
-  background: rgba(0, 113, 227, 0.08) !important;
-  border-left: 3px solid var(--color-accent);
-  padding-left: 13px;
+.filter-dropdown-trigger svg {
+  color: #86868b;
+  flex-shrink: 0;
+  transition: transform 0.15s;
 }
 
-.mapview-list-card-link {
+.filter-dropdown-trigger--open svg {
+  transform: rotate(180deg);
+}
+
+.filter-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 280px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e1e1e1;
+  border-radius: 12px;
+  box-shadow: var(--shadow-float);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.filter-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.filter-dropdown-option:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ========================================
+   Map View — Figma Split Layout
+   ======================================== */
+
+.mapview-split {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 740px;
+}
+
+.mapview-list {
+  width: 399px;
+  min-width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.mapview-list-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  max-height: 740px;
+  mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+}
+
+/* Card wrapper — clickable area */
+.mapview-card-wrap {
+  cursor: pointer;
+  border-radius: 24px;
+  transition: transform 0.15s;
+}
+
+.mapview-card-wrap:hover {
+  transform: translateY(-1px);
+}
+
+/* Active card — Figma: #ebf5ff background + 2px #0072de border */
+.mapview-card-wrap--active .mapview-card {
+  background: #ebf5ff !important;
+  border: 2px solid #0072de !important;
+}
+
+/* Card inner — matches Figma chiropractor-profile-card */
+.mapview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 2px solid transparent;
+  box-shadow: var(--shadow-chiropractor-profile);
+  overflow: hidden;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.mapview-card-link {
   display: block;
   text-decoration: none;
   color: inherit;
+  border-radius: 24px;
 }
 
-.mapview-list-card-link:hover {
+.mapview-card-link:hover {
   color: inherit;
+}
+
+/* Right column: results heading + map */
+.mapview-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.mapview-right-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .mapview-map-wrap {
   flex: 1;
   position: relative;
   min-width: 0;
+  min-height: 0;
+  border-radius: 24px;
+  overflow: hidden;
 }
 
 .mapview-map {
@@ -870,22 +1001,40 @@ header.fmc-site-header .join-network-button,
 
 /* Responsive: stack on small screens */
 @media (max-width: 768px) {
-  .mapview-container {
+  .filter-dropdown-trigger {
+    width: 100%;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .filter-dropdown-menu {
+    width: 100%;
+    min-width: 220px;
+  }
+
+  .filter-dropdown {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .mapview-split {
     flex-direction: column;
-    height: auto;
-    max-height: none;
+    min-height: auto;
   }
 
   .mapview-list {
     width: 100%;
     min-width: 0;
-    max-height: 320px;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
   }
 
-  .mapview-map-wrap {
-    height: 400px;
+  .mapview-list-scroll {
+    max-height: 360px;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .mapview-right {
+    min-height: 400px;
   }
 }
 
