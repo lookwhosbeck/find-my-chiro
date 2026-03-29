@@ -101,7 +101,7 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
       `)
       .eq('accepting_new_patients', true)
       .limit(limit)
-      .order('created_at', { ascending: false });
+      .order('updated_at', { ascending: false });
 
     if (error) {
       // If chiropractors table doesn't exist, try profiles table
