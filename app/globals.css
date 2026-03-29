@@ -1289,74 +1289,187 @@ header.fmc-site-header .join-network-button,
   padding: 2px 6px;
 }
 
-/* Map list card — Figma 84:3608 layout + typography */
-.chiropractor-card-map-top {
+/* Map list card — Figma 84:3608 */
+.chiropractor-map-card__profile {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 768px) {
-  /* Mobile: avatar on the right (Figma viewport mobile) */
-  .chiropractor-card-map-top {
+  .chiropractor-map-card__profile {
     flex-direction: row-reverse;
   }
 }
 
-.chiropractor-card-map-text-col {
+.chiropractor-map-card__avatar {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-yellow-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chiropractor-map-card__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.chiropractor-map-card__avatar-initials {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-chiro-card-text);
+}
+
+@media (max-width: 768px) {
+  .chiropractor-map-card__avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+  }
+
+  .chiropractor-map-card__avatar-initials {
+    font-size: 20px;
+  }
+}
+
+.chiropractor-map-card__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: stretch;
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
+.chiropractor-map-card__body--with-match {
+  justify-content: space-between;
+}
+
 @media (max-width: 768px) {
-  .chiropractor-card-map-text-col {
+  .chiropractor-map-card__body {
     padding-top: 0;
     padding-bottom: 0;
   }
 }
 
-.chiropractor-card-map-match {
+.chiropractor-map-card__match {
+  flex-shrink: 0;
+  border-radius: 9px;
+  padding: 4px 8px;
+  font-family: var(--font-body);
   font-size: 12px;
+  font-weight: 400;
   line-height: 1;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
-  .chiropractor-card-map-match {
+  .chiropractor-map-card__match {
     font-size: 11px;
   }
 }
 
-.chiropractor-card-map-pin {
+.chiropractor-map-card__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.chiropractor-map-card__name {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1;
+  color: #030302;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chiropractor-map-card__specialty {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1;
+  color: #6b7280;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chiropractor-map-card__footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.chiropractor-map-card__location {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chiropractor-map-card__pin {
   flex-shrink: 0;
+  display: block;
   color: #2563eb;
   width: 12px;
   height: 16px;
 }
 
-@media (max-width: 768px) {
-  .chiropractor-card-map-pin {
-    width: 10px;
-    height: 13px;
-  }
+.chiropractor-map-card__location-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.chiropractor-card-map-avatar {
-  width: 80px !important;
-  height: 80px !important;
-  min-width: 80px;
-  min-height: 80px;
-  border-radius: 12px !important;
+.chiropractor-map-card__distance {
+  margin: 0;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1;
+  color: #9ca3af;
+  white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .chiropractor-card-map-avatar {
-    width: 64px !important;
-    height: 64px !important;
-    min-width: 64px;
-    min-height: 64px;
-    border-radius: 8px !important;
-  }
+.chiropractor-map-card__distance--solo {
+  margin-left: auto;
 }
 
 .mapview-card[data-variant='map'] {
@@ -1368,25 +1481,23 @@ header.fmc-site-header .join-network-button,
     gap: 16px;
   }
 
-  .chiropractor-card-map-name {
-    font-size: 15px !important;
-    line-height: 15px !important;
+  .chiropractor-map-card__name {
+    font-size: 15px;
   }
 
-  .chiropractor-card-map-specialty {
-    font-size: 13px !important;
-    line-height: 13px !important;
+  .chiropractor-map-card__specialty {
+    font-size: 13px;
   }
 
-  .chiropractor-card-map-location,
-  .chiropractor-card-map-distance {
-    font-size: 13px !important;
-    line-height: 13px !important;
-    color: rgba(0, 0, 0, 0.4) !important;
+  .chiropractor-map-card__location-text,
+  .chiropractor-map-card__distance {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.4);
   }
 
-  .chiropractor-card-map-location-row .chiropractor-card-map-pin {
-    color: #2563eb;
+  .chiropractor-map-card__pin {
+    width: 10px;
+    height: 13px;
   }
 }
 

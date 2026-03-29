@@ -538,13 +538,3 @@ export function MapView({
   );
 }
 
-function buildSpecialtyLine(chiro: Chiropractor): string {
-  const parts: string[] = [];
-  if (chiro.modality) {
-    parts.push(chiro.modality);
-  } else if (chiro.modalities?.length) {
-    parts.push(chiro.modalities.slice(0, 2).join(', '));
-  }
-  if (chiro.philosophy) parts.push(chiro.philosophy);
-  return parts.length > 0 ? parts.join(', ') : chiro.clinicName || '';
-}

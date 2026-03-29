@@ -1,8 +1,10 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { Box, Flex, Text } from '@radix-ui/themes';
+import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-line';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { Chiropractor } from '../lib/queries';
+import { ChiropractorMapCard } from './ChiropractorMapCard';
 
 function LocationPinIcon({ style, className }: { style?: CSSProperties; className?: string }) {
   return (
@@ -37,44 +39,27 @@ interface ChiropractorCardProps {
   variant?: 'default' | 'marquee' | 'map';
 }
 
-function buildSpecialtyLine(chiropractor: Chiropractor): string {
-  const parts: string[] = [];
-  if (chiropractor.modality) {
-    parts.push(chiropractor.modality);
-  } else if (chiropractor.modalities?.length) {
-    parts.push(chiropractor.modalities.slice(0, 2).join(', '));
-  }
-  if (chiropractor.philosophy) {
-    parts.push(chiropractor.philosophy);
-  }
-  if (parts.length > 0) {
-    return parts.join(', ');
-  }
-  if (chiropractor.clinicName) {
-    return chiropractor.clinicName;
-  }
-  return '';
-}
-
 export function ChiropractorCard({
   chiropractor,
   profileHref,
   marketingMatchPercent,
   variant = 'default',
 }: ChiropractorCardProps) {
+  if (variant === 'map') {
+    return <ChiropractorMapCard chiropractor={chiropractor} profileHref={profileHref} />;
+  }
+
   const isMarquee = variant === 'marquee';
-  const isMap = variant === 'map';
   const avatarSize = isMarquee ? 72 : 80;
   const initials = `${chiropractor.firstName?.[0] || ''}${chiropractor.lastName?.[0] || ''}`.toUpperCase();
   const displayName = `Dr. ${chiropractor.firstName} ${chiropractor.lastName}`.trim();
-  const specialtyLine = buildSpecialtyLine(chiropractor);
+  const specialtyLine = buildChiropractorSpecialtyLine(chiropractor);
   const locationLine = [chiropractor.city, chiropractor.state].filter(Boolean).join(', ');
   const distanceMiles =
     chiropractor.distanceMiles != null && Number.isFinite(chiropractor.distanceMiles)
       ? chiropractor.distanceMiles
       : null;
   const distanceSuffix = distanceMiles != null ? ` · ${distanceMiles.toFixed(1)} mi` : '';
-  const distanceText = distanceMiles != null ? `${distanceMiles.toFixed(1)} miles away` : '';
   const matchPercent =
     marketingMatchPercent ??
     (chiropractor.matchScore !== undefined && chiropractor.matchScore > 0
@@ -94,7 +79,6 @@ export function ChiropractorCard({
 
   const avatarBlock = (
     <Box
-      className={isMap ? 'chiropractor-card-map-avatar' : undefined}
       style={{
         width: avatarSize,
         height: avatarSize,
@@ -117,7 +101,7 @@ export function ChiropractorCard({
             style={{
               color: isMarquee ? '#ffffff' : 'var(--color-chiro-card-text)',
               fontFamily: 'var(--font-body)',
-              fontSize: isMarquee ? 22 : isMap ? 24 : 28,
+              fontSize: isMarquee ? 22 : 28,
               lineHeight: 1,
             }}
           >
@@ -240,148 +224,6 @@ export function ChiropractorCard({
     ) : null;
 
   const href = profileHref ?? `/chiropractor/${chiropractor.id}`;
-
-  if (isMap) {
-    const mapNameDesktop = { fontSize: 18, lineHeight: '18px' } as const;
-    const mapSpecialtyDesktop = { fontSize: 15, lineHeight: '15px' } as const;
-    const mapMetaDesktop = { fontSize: 15, lineHeight: '15px' } as const;
-
-    const mapMatchBadgeEl =
-      showMatch && matchPillColors ? (
-        <Box
-          className="chiropractor-card-map-match"
-          style={{
-            ...matchPillColors,
-            borderRadius: 9,
-            padding: '4px 8px',
-            flexShrink: 0,
-            alignSelf: 'flex-start',
-          }}
-        >
-          <Text
-            style={{
-              color: matchPillColors.color,
-              fontFamily: 'var(--font-body)',
-              fontWeight: 400,
-              lineHeight: 1,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {matchPercent}% Match
-          </Text>
-        </Box>
-      ) : null;
-
-    const nameAndSpecialtyMap = (
-      <Flex direction="column" align="start" style={{ width: '100%', minWidth: 0, gap: 4 }}>
-        <Text
-          as="p"
-          className="chiropractor-card-map-name"
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontWeight: 500,
-            color: '#030302',
-            margin: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            width: '100%',
-            ...mapNameDesktop,
-          }}
-        >
-          {displayName}
-        </Text>
-        {specialtyLine ? (
-          <Text
-            as="p"
-            className="chiropractor-card-map-specialty"
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontWeight: 400,
-              color: '#6b7280',
-              margin: 0,
-              width: '100%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              ...mapSpecialtyDesktop,
-            }}
-          >
-            {specialtyLine}
-          </Text>
-        ) : null}
-      </Flex>
-    );
-
-    return (
-      <Link
-        href={href}
-        prefetch={false}
-        className="mapview-card-link"
-        onClick={(e) => e.stopPropagation()}
-        aria-label={`View profile: ${displayName}`}
-      >
-        <Box className="mapview-card" data-variant="map">
-          <Flex align="stretch" className="chiropractor-card-map-top" style={{ width: '100%' }}>
-            <Box style={{ alignSelf: 'flex-start', flexShrink: 0 }}>{avatarBlock}</Box>
-            <Flex
-              direction="column"
-              justify={mapMatchBadgeEl ? 'between' : 'start'}
-              className="chiropractor-card-map-text-col"
-              style={{ flex: '1 1 auto', minWidth: 0 }}
-            >
-              {mapMatchBadgeEl}
-              {nameAndSpecialtyMap}
-            </Flex>
-          </Flex>
-          {(locationLine || distanceText) && (
-            <Flex align="center" justify="between" gap="2" style={{ width: '100%' }} className="chiropractor-card-map-bottom">
-              {locationLine ? (
-                <Flex align="center" className="chiropractor-card-map-location-row" style={{ minWidth: 0, gap: 4 }}>
-                  <LocationPinIcon className="chiropractor-card-map-pin" />
-                  <Text
-                    as="p"
-                    className="chiropractor-card-map-location"
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontWeight: 400,
-                      color: '#9ca3af',
-                      margin: 0,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      ...mapMetaDesktop,
-                    }}
-                  >
-                    {locationLine}
-                  </Text>
-                </Flex>
-              ) : (
-                <span />
-              )}
-              {distanceText ? (
-                <Text
-                  as="p"
-                  className="chiropractor-card-map-distance"
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontWeight: 400,
-                    color: '#9ca3af',
-                    margin: 0,
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    ...mapMetaDesktop,
-                  }}
-                >
-                  {distanceText}
-                </Text>
-              ) : null}
-            </Flex>
-          )}
-        </Box>
-      </Link>
-    );
-  }
 
   const cardInner = (
     <Box
