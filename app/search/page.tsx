@@ -451,8 +451,8 @@ function SearchPageContent() {
       <Box style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <Container>
           <Flex direction="column" style={{ gap: 'var(--space-8)' }}>
-            {/* View toggle — always visible when there are results */}
-            {filtersReady && !loading && chiropractors.length > 0 && (
+            {/* View toggle — stays mounted once results exist (no flicker on reload) */}
+            {filtersReady && chiropractors.length > 0 && (
               <Flex justify="center">
                 <ViewToggle mode={viewMode} onChange={setViewMode} />
               </Flex>
@@ -476,18 +476,19 @@ function SearchPageContent() {
                   onPaymentChange={handlePaymentChange}
                 />
 
-                {!filtersReady || loading ? (
+                {!filtersReady ? (
                   <Flex justify="center" py="6">
-                    <Text style={{ color: 'rgba(0,0,0,0.61)' }}>
-                      {!filtersReady ? 'Loading your search…' : 'Loading results…'}
-                    </Text>
+                    <Text style={{ color: 'rgba(0,0,0,0.61)' }}>Loading your search…</Text>
                   </Flex>
                 ) : chiropractors.length > 0 ? (
-                  <MapView
-                    chiropractors={chiropractors}
-                    profileHrefBuilder={(chiro) => appendSearchFiltersToQuery(`/chiropractor/${chiro.id}`, filters)}
-                    resultsMatchAverage={resultsMatchAverage}
-                  />
+                  <div className="search-results-live-region" style={{ position: 'relative' }}>
+                    {loading && <div className="search-loading-overlay" />}
+                    <MapView
+                      chiropractors={chiropractors}
+                      profileHrefBuilder={(chiro) => appendSearchFiltersToQuery(`/chiropractor/${chiro.id}`, filters)}
+                      resultsMatchAverage={resultsMatchAverage}
+                    />
+                  </div>
                 ) : (
                   <Flex direction="column" align="center" gap="3" py="6">
                     <Text size="3" color="gray" align="center">
@@ -541,9 +542,9 @@ function SearchPageContent() {
                         size="5"
                         style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: '#1d1d1f', margin: 0 }}
                       >
-                        {!filtersReady ? 'Loading…' : loading ? 'Searching…' : `${chiropractors.length} Results`}
+                        {!filtersReady ? 'Loading…' : `${chiropractors.length} Results`}
                       </Heading>
-                      {filtersReady && !loading && chiropractors.length > 0 && (
+                      {filtersReady && chiropractors.length > 0 && (
                         <Flex align="center" gap="3" wrap="wrap">
                           <Text size="2" style={{ color: 'rgba(0,0,0,0.61)' }}>
                             Sorted by match score
@@ -560,21 +561,22 @@ function SearchPageContent() {
                       )}
                     </div>
 
-                    {!filtersReady || loading ? (
+                    {!filtersReady ? (
                       <Flex justify="center" py="6">
-                        <Text style={{ color: 'rgba(0,0,0,0.61)' }}>
-                          {!filtersReady ? 'Loading your search…' : 'Loading results…'}
-                        </Text>
+                        <Text style={{ color: 'rgba(0,0,0,0.61)' }}>Loading your search…</Text>
                       </Flex>
                     ) : chiropractors.length > 0 ? (
-                      <div className="search-results-grid">
-                        {chiropractors.map((chiropractor) => (
-                          <ChiropractorCard
-                            key={chiropractor.id}
-                            chiropractor={chiropractor}
-                            profileHref={appendSearchFiltersToQuery(`/chiropractor/${chiropractor.id}`, filters)}
-                          />
-                        ))}
+                      <div className="search-results-live-region" style={{ position: 'relative' }}>
+                        {loading && <div className="search-loading-overlay" />}
+                        <div className="search-results-grid">
+                          {chiropractors.map((chiropractor) => (
+                            <ChiropractorCard
+                              key={chiropractor.id}
+                              chiropractor={chiropractor}
+                              profileHref={appendSearchFiltersToQuery(`/chiropractor/${chiropractor.id}`, filters)}
+                            />
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       <Flex direction="column" align="center" gap="3" py="6">

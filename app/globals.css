@@ -646,6 +646,23 @@ header.fmc-site-header .join-network-button,
   background: var(--color-surface) !important;
 }
 
+/* Loading overlay — dims content without unmounting it */
+.search-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(1px);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: search-fade-in 0.15s ease;
+}
+
+@keyframes search-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .search-results-heading-row {
   display: flex;
   flex-wrap: wrap;
