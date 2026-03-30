@@ -277,6 +277,7 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filters, limit }),
+      cache: 'no-store',
     });
 
     if (!res.ok) {

@@ -10,13 +10,17 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     }
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const service = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
-    if (!url || !key || url === 'https://placeholder.supabase.co') {
+    if (!url || !anon || url === 'https://placeholder.supabase.co') {
       return NextResponse.json({ error: 'Not configured' }, { status: 503 });
     }
 
-    const supabase = createClient(url, key);
+    const key = service || anon;
+    const supabase = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
     const { data, error } = await supabase
       .from('chiropractors')
       .select(
