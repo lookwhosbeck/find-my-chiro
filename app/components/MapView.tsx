@@ -403,15 +403,16 @@ export function MapView({
       onZipChange={onZipChange}
       onRadiusChange={onRadiusChange}
       onSubmit={onSearchSubmit}
-      className={isMobile ? 'mapview-proximity--mobile-strip' : undefined}
+      className={isMobile ? 'mapview-proximity--mobile-standalone' : undefined}
     />
   );
 
   return (
-    <div className="mapview-container">
-      {loading && <div className="search-loading-overlay" />}
+    <div className="mapview-root">
+      {isMobile && <div className="mapview-mobile-search-outer">{proximityBar}</div>}
 
-      {isMobile && <div className="mapview-mobile-search">{proximityBar}</div>}
+      <div className="mapview-container">
+      {loading && <div className="search-loading-overlay" />}
 
       <div className="mapview-map-stack">
         <div ref={mapContainerRef} className="mapview-map" />
@@ -519,8 +520,9 @@ export function MapView({
         </div>
       )}
       </div>
+      </div>
 
-      {/* Filter flyout — sibling of map stack so backdrop covers mobile search strip */}
+      {/* Covers map + mobile search row */}
       {filtersOpen && (
         <div className="mapview-filter-backdrop" onClick={handleCloseFilters}>
           <div
