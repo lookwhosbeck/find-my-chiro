@@ -309,6 +309,23 @@ export interface SignUpResult {
   userId?: string;
 }
 
+export async function checkLicenseExists(licenseNumber: string): Promise<boolean> {
+  if (!licenseNumber?.trim()) return false;
+  try {
+    const supabase = createSupabaseClient();
+    const { data } = await supabase
+      .from('chiropractors')
+      .select('license_number')
+      .ilike('license_number', licenseNumber.trim())
+      .limit(1)
+      .maybeSingle();
+    return !!data;
+  } catch (err) {
+    console.error('Error checking license exists:', err);
+    return false;
+  }
+}
+
 /**
  * Register a new chiropractor user
  * Creates auth user and stores all data in chiropractors table
@@ -317,6 +334,13 @@ export interface SignUpResult {
 export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult> {
   try {
     const supabase = createSupabaseClient();
+
+    if (data.licenseNumber?.trim()) {
+      const isTaken = await checkLicenseExists(data.licenseNumber);
+      if (isTaken) {
+        return { success: false, error: 'A chiropractor with this license number is already registered.' };
+      }
+    }
 
     // Step 1: Create auth user
     // Note: If email confirmation is required, the user will be created but not confirmed
