@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getSupabaseClientApiKey } from './supabase-keys';
 
 export interface Chiropractor {
   id: string;
@@ -80,8 +81,8 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
   try {
     // Check if Supabase is properly configured
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
+    const supabaseAnonKey = getSupabaseClientApiKey();
+
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
       console.warn('Supabase not configured. Returning empty array.');
       return [];
@@ -252,7 +253,7 @@ export interface ChiropracticCollege {
 export async function searchChiropractors(filters: PatientSearchFilters, limit: number = 20): Promise<Chiropractor[]> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseAnonKey = getSupabaseClientApiKey();
 
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
       console.warn('Supabase not configured. Returning empty array.');
@@ -298,7 +299,7 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
 export async function getChiropracticColleges(): Promise<ChiropracticCollege[]> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseAnonKey = getSupabaseClientApiKey();
 
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
       console.warn('Supabase not configured. Returning empty array.');

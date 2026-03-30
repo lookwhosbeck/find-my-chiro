@@ -1,16 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { geocodeOrganizationWithAdmin } from '@/app/lib/geocode-organization.server';
+import { getSupabaseClientApiKey, getSupabaseServiceApiKey } from '@/app/lib/supabase-keys';
 
 /**
  * Links signup clinic → organizations + chiropractors.organization_id using the service role.
  * Use when client-side insert returns no row id (RLS SELECT) or insert fails.
- * Requires SUPABASE_SERVICE_ROLE_KEY (server only — never expose to the client).
+ * Requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY (server only — never expose to the client).
  */
 export async function POST(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anon = getSupabaseClientApiKey();
+  const service = getSupabaseServiceApiKey();
 
   if (!url || !anon || !service || url === 'https://placeholder.supabase.co') {
     return NextResponse.json({ ok: false, error: 'not_configured' }, { status: 501 });

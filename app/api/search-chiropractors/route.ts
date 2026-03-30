@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchChiropractorsWithClient } from '@/app/lib/chiropractor-search.server';
 import { clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import type { PatientSearchFilters } from '@/app/lib/queries';
+import { getSupabaseClientApiKey, getSupabaseServiceApiKey } from '@/app/lib/supabase-keys';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,15 +23,15 @@ export async function POST(req: NextRequest) {
     };
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const service = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+    const anon = getSupabaseClientApiKey();
+    const service = getSupabaseServiceApiKey();
 
     if (!url || !anon || url === 'https://placeholder.supabase.co') {
       return NextResponse.json([]);
     }
 
-    // Prefer service role so organization.latitude/longitude are returned even when RLS
-    // hides those columns from the anon role (common on directory-style projects).
+    // Prefer secret / service_role key so organization.latitude/longitude are returned even when RLS
+    // hides those columns from the publishable / anon role (common on directory-style projects).
     const key = service || anon;
     const supabase = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },

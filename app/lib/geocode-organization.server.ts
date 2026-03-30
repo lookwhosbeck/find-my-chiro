@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { mapboxForwardGeocodeUs } from './mapbox-geocode.server';
+import { getSupabaseServiceApiKey } from './supabase-keys';
 
 export type GeocodeOrganizationResult =
   | { ok: true; latitude: number; longitude: number }
@@ -79,7 +80,7 @@ export async function geocodeOrganizationWithAdmin(
 
 export function createSupabaseAdmin(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const service = getSupabaseServiceApiKey();
   if (!url || !service || url === 'https://placeholder.supabase.co') {
     return null;
   }

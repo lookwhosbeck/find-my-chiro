@@ -4,7 +4,7 @@
  *
  * Prerequisites:
  * - Migration applied (organizations.latitude, longitude, geocoded_at, geocode_error).
- * - .env.local or env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+ * - .env.local or env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY,
  *   and MAPBOX_ACCESS_TOKEN (or NEXT_PUBLIC_MAPBOX_TOKEN).
  *
  * Usage (from repo root):
@@ -92,11 +92,12 @@ function sleep(ms) {
 
 async function main() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const service =
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || process.env.SUPABASE_SECRET_KEY?.trim() || '';
   const token = getMapboxToken();
 
   if (!url || !service || url.includes('placeholder')) {
-    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
+    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY.');
     process.exit(1);
   }
   if (!token) {

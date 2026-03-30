@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { mapChiropractorDataFromNormalizedSchema } from '@/app/lib/queries';
+import { getSupabaseClientApiKey, getSupabaseServiceApiKey } from '@/app/lib/supabase-keys';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -10,8 +11,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     }
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const service = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+    const anon = getSupabaseClientApiKey();
+    const service = getSupabaseServiceApiKey();
 
     if (!url || !anon || url === 'https://placeholder.supabase.co') {
       return NextResponse.json({ error: 'Not configured' }, { status: 503 });
