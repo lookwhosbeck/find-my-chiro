@@ -325,6 +325,15 @@ export function MapView({
   }, [mapReady, chiropractors]);
 
   useEffect(() => {
+    if (!mapReady || !mapContainerRef.current || !mapRef.current) return;
+    const ro = new ResizeObserver(() => {
+      mapRef.current?.resize();
+    });
+    ro.observe(mapContainerRef.current);
+    return () => ro.disconnect();
+  }, [mapReady]);
+
+  useEffect(() => {
     markersRef.current.forEach((marker, id) => {
       const el = marker.getElement();
       if (activeId === id) el.classList.add('mapview-marker--selected');
@@ -385,11 +394,27 @@ export function MapView({
     );
   }
 
+  const proximityBar = (
+    <ProximitySearchBar
+      variant="onLight"
+      navigate={false}
+      zipCode={zipCode}
+      searchRadius={searchRadius}
+      onZipChange={onZipChange}
+      onRadiusChange={onRadiusChange}
+      onSubmit={onSearchSubmit}
+      className={isMobile ? 'mapview-proximity--mobile-strip' : undefined}
+    />
+  );
+
   return (
     <div className="mapview-container">
       {loading && <div className="search-loading-overlay" />}
 
-      <div ref={mapContainerRef} className="mapview-map" />
+      {isMobile && <div className="mapview-mobile-search">{proximityBar}</div>}
+
+      <div className="mapview-map-stack">
+        <div ref={mapContainerRef} className="mapview-map" />
 
       {/* Desktop: card list on the left */}
       {!isMobile && chiropractors.length > 0 && (
@@ -422,15 +447,7 @@ export function MapView({
       {/* Right column: search bar (top) + map controls (bottom) */}
       <div className="mapview-overlay-right">
         <div className="mapview-overlay-search">
-          <ProximitySearchBar
-            variant="onLight"
-            navigate={false}
-            zipCode={zipCode}
-            searchRadius={searchRadius}
-            onZipChange={onZipChange}
-            onRadiusChange={onRadiusChange}
-            onSubmit={onSearchSubmit}
-          />
+          {!isMobile && proximityBar}
         </div>
 
         <div className="mapview-overlay-controls">
@@ -493,7 +510,17 @@ export function MapView({
         </div>
       )}
 
-      {/* Filter flyout */}
+      {/* Empty state */}
+      {chiropractors.length === 0 && !loading && (
+        <div className="mapview-empty-state">
+          <Text size="3" style={{ color: '#6b7280', textAlign: 'center' }}>
+            No chiropractors found. Try adjusting your search.
+          </Text>
+        </div>
+      )}
+      </div>
+
+      {/* Filter flyout — sibling of map stack so backdrop covers mobile search strip */}
       {filtersOpen && (
         <div className="mapview-filter-backdrop" onClick={handleCloseFilters}>
           <div
@@ -524,15 +551,6 @@ export function MapView({
               />
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {chiropractors.length === 0 && !loading && (
-        <div className="mapview-empty-state">
-          <Text size="3" style={{ color: '#6b7280', textAlign: 'center' }}>
-            No chiropractors found. Try adjusting your search.
-          </Text>
         </div>
       )}
     </div>

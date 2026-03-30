@@ -14,39 +14,39 @@ function ChevronDownIcon() {
 
 export type FilterDropdownLayout = 'row' | 'column';
 
+type FilterDropdownKey = 'modalities' | 'focusAreas' | 'philosophies' | 'payment';
+
 interface MultiSelectDropdownProps {
   label: string;
   options: string[];
   selected: string[];
   onChange: (option: string, checked: boolean) => void;
   layout: FilterDropdownLayout;
+  isOpen: boolean;
+  onTriggerClick: () => void;
 }
 
-function MultiSelectDropdown({ label, options, selected, onChange, layout }: MultiSelectDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
+function MultiSelectDropdown({
+  label,
+  options,
+  selected,
+  onChange,
+  layout,
+  isOpen,
+  onTriggerClick,
+}: MultiSelectDropdownProps) {
   const count = selected.length;
   const displayLabel = count > 0 ? `${label} (${count})` : label;
   const layoutClass = layout === 'column' ? 'filter-dropdown--column' : 'filter-dropdown--row';
 
   return (
-    <div className={`filter-dropdown ${layoutClass}`} ref={ref}>
-      <div className={`filter-dropdown-surface${open ? ' filter-dropdown-surface--open' : ''}`}>
+    <div className={`filter-dropdown ${layoutClass}`}>
+      <div className={`filter-dropdown-surface${isOpen ? ' filter-dropdown-surface--open' : ''}`}>
         <button
           type="button"
-          className={`filter-dropdown-trigger${open ? ' filter-dropdown-trigger--open' : ''}`}
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
+          className={`filter-dropdown-trigger${isOpen ? ' filter-dropdown-trigger--open' : ''}`}
+          onClick={onTriggerClick}
+          aria-expanded={isOpen}
           aria-haspopup="listbox"
         >
           <span className="filter-dropdown-label">{displayLabel}</span>
@@ -54,21 +54,23 @@ function MultiSelectDropdown({ label, options, selected, onChange, layout }: Mul
             <ChevronDownIcon />
           </span>
         </button>
-        {open && (
-          <div className="filter-dropdown-list" role="listbox" aria-multiselectable="true">
-            {options.map((option) => (
-              <label key={option} className="filter-dropdown-option">
-                <input
-                  type="checkbox"
-                  className="filter-dropdown-checkbox"
-                  checked={selected.includes(option)}
-                  onChange={(e) => onChange(option, e.target.checked)}
-                />
-                <span className="filter-dropdown-option-label">{option}</span>
-              </label>
-            ))}
+        <div className={`filter-dropdown-list-clip${isOpen ? ' filter-dropdown-list-clip--open' : ''}`}>
+          <div className="filter-dropdown-list-clip-inner">
+            <div className="filter-dropdown-list" role="listbox" aria-multiselectable="true">
+              {options.map((option) => (
+                <label key={option} className="filter-dropdown-option">
+                  <input
+                    type="checkbox"
+                    className="filter-dropdown-checkbox"
+                    checked={selected.includes(option)}
+                    onChange={(e) => onChange(option, e.target.checked)}
+                  />
+                  <span className="filter-dropdown-option-label">{option}</span>
+                </label>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -125,6 +127,22 @@ export function FilterDropdowns({
   onPaymentChange,
 }: FilterDropdownsProps) {
   const rowClass = layout === 'column' ? 'filter-dropdowns-row filter-dropdowns-row--column' : 'filter-dropdowns-row';
+  const [openId, setOpenId] = useState<FilterDropdownKey | null>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handlePointerDown(e: PointerEvent) {
+      const root = rowRef.current;
+      if (!root || root.contains(e.target as Node)) return;
+      setOpenId(null);
+    }
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
+  }, []);
+
+  const toggle = (id: FilterDropdownKey) => {
+    setOpenId((prev) => (prev === id ? null : id));
+  };
 
   const showMobileBar =
     mobileFilterBar &&
@@ -134,13 +152,20 @@ export function FilterDropdowns({
 
   return (
     <div className={showMobileBar ? 'filter-dropdowns-with-mobile-bar' : undefined}>
-      <Flex className={rowClass} align={layout === 'column' ? 'stretch' : 'center'} gap={layout === 'column' ? '0' : '1'}>
+      <Flex
+        ref={rowRef}
+        className={rowClass}
+        align={layout === 'column' ? 'stretch' : 'center'}
+        gap={layout === 'column' ? '0' : '1'}
+      >
         <MultiSelectDropdown
           layout={layout}
           label="Techniques"
           options={modalityOptions}
           selected={selectedModalities}
           onChange={onModalityChange}
+          isOpen={openId === 'modalities'}
+          onTriggerClick={() => toggle('modalities')}
         />
         <MultiSelectDropdown
           layout={layout}
@@ -148,6 +173,8 @@ export function FilterDropdowns({
           options={focusAreaOptions}
           selected={selectedFocusAreas}
           onChange={onFocusAreaChange}
+          isOpen={openId === 'focusAreas'}
+          onTriggerClick={() => toggle('focusAreas')}
         />
         <MultiSelectDropdown
           layout={layout}
@@ -155,6 +182,8 @@ export function FilterDropdowns({
           options={philosophyOptions}
           selected={selectedPhilosophies}
           onChange={onPhilosophyChange}
+          isOpen={openId === 'philosophies'}
+          onTriggerClick={() => toggle('philosophies')}
         />
         <MultiSelectDropdown
           layout={layout}
@@ -162,6 +191,8 @@ export function FilterDropdowns({
           options={paymentOptions}
           selected={selectedPayment}
           onChange={onPaymentChange}
+          isOpen={openId === 'payment'}
+          onTriggerClick={() => toggle('payment')}
         />
       </Flex>
       {showMobileBar && (

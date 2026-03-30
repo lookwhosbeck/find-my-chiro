@@ -700,6 +700,7 @@ header.fmc-site-header .join-network-button,
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-sizing: border-box;
+  transition: gap 0.22s ease;
 }
 
 .filter-dropdown--row .filter-dropdown-surface--open {
@@ -716,6 +717,7 @@ header.fmc-site-header .join-network-button,
   border-top: 1px solid #e5e7eb;
   border-radius: 0;
   box-sizing: border-box;
+  transition: gap 0.22s ease;
 }
 
 .filter-dropdown--column .filter-dropdown-surface--open {
@@ -759,11 +761,33 @@ header.fmc-site-header .join-network-button,
   justify-content: center;
   flex-shrink: 0;
   color: #86868b;
-  transition: transform 0.15s ease;
+  transition: transform 0.22s ease;
 }
 
 .filter-dropdown-trigger--open .filter-dropdown-chevron {
   transform: rotate(180deg);
+}
+
+/* Animate open/close height without abrupt layout jumps */
+.filter-dropdown-list-clip {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+  pointer-events: none;
+}
+
+.filter-dropdown-list-clip--open {
+  grid-template-rows: 1fr;
+  pointer-events: auto;
+}
+
+.filter-dropdown-list-clip-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.filter-dropdown-list-clip--open .filter-dropdown-list-clip-inner {
+  overflow-y: auto;
 }
 
 .filter-dropdown-list {
@@ -772,8 +796,9 @@ header.fmc-site-header .join-network-button,
   align-items: flex-start;
   gap: 8px;
   max-height: 280px;
-  overflow-y: auto;
   width: 100%;
+  padding-bottom: 2px;
+  box-sizing: border-box;
 }
 
 .filter-dropdown-option {
@@ -911,10 +936,52 @@ header.fmc-site-header .join-network-button,
 
 @media (max-width: 768px) {
   .mapview-container {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
     height: auto;
     border-radius: 16px;
+  }
+}
+
+/* Map + overlays: fills container on desktop; on mobile, flexes below the zip strip */
+.mapview-map-stack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .mapview-map-stack {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+}
+
+.mapview-mobile-search {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mapview-mobile-search {
+    display: block;
+    flex-shrink: 0;
+    width: 100%;
+    padding: 8px 8px 0;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 4;
+    background: #ffffff;
+    border-bottom: 1px solid var(--fmc-filter-border, #e5e7eb);
+  }
+
+  .mapview-mobile-search .mapview-proximity--mobile-strip {
+    max-width: none;
+    width: 100%;
   }
 }
 
