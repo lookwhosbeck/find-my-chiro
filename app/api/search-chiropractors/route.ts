@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchChiropractorsWithClient } from '@/app/lib/chiropractor-search.server';
 import { clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import type { PatientSearchFilters } from '@/app/lib/queries';
-import { getSupabaseClientApiKey, getSupabaseServiceApiKey } from '@/app/lib/supabase-keys';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,26 +22,15 @@ export async function POST(req: NextRequest) {
     };
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = getSupabaseClientApiKey();
-    const service = getSupabaseServiceApiKey();
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!url || !anon || url === 'https://placeholder.supabase.co') {
+    if (!url || !key || url === 'https://placeholder.supabase.co') {
       return NextResponse.json([]);
     }
 
-    // Prefer secret / service_role key so organization.latitude/longitude are returned even when RLS
-    // hides those columns from the publishable / anon role (common on directory-style projects).
-    const key = service || anon;
-    const supabase = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const supabase = createClient(url, key);
     const results = await searchChiropractorsWithClient(supabase, filters, limit);
-
-    return NextResponse.json(results, {
-      headers: {
-        'Cache-Control': 'no-store, must-revalidate',
-      },
-    });
+    return NextResponse.json(results);
   } catch (e) {
     console.error('search-chiropractors route:', e);
     return NextResponse.json({ error: 'Search failed' }, { status: 500 });

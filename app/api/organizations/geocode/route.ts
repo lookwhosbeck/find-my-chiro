@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdmin, geocodeOrganizationWithAdmin } from '@/app/lib/geocode-organization.server';
-import { getSupabaseClientApiKey } from '@/app/lib/supabase-keys';
 
 /**
  * POST JSON { organizationId: string }
@@ -9,7 +8,7 @@ import { getSupabaseClientApiKey } from '@/app/lib/supabase-keys';
  */
 export async function POST(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = getSupabaseClientApiKey();
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const admin = createSupabaseAdmin();
 
   if (!url || !anon || !admin || url === 'https://placeholder.supabase.co') {

@@ -1,8 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseClientApiKey } from './supabase-keys';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = getSupabaseClientApiKey();
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Use a global variable to ensure singleton across module boundaries
 declare global {
@@ -17,9 +16,7 @@ export function createSupabaseClient(): SupabaseClient {
   if (typeof window !== 'undefined') {
     if (!global.__supabaseClient) {
       if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
-        throw new Error(
-          'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) in your .env.local file',
-        );
+        throw new Error('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file');
       }
       
       global.__supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -34,11 +31,9 @@ export function createSupabaseClient(): SupabaseClient {
 
   // Server-side: create new instance (shouldn't happen in client components)
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
-    throw new Error(
-      'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) in your .env.local file',
-    );
+    throw new Error('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file');
   }
-
+  
   return createClient(supabaseUrl, supabaseAnonKey);
 }
 

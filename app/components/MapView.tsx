@@ -1,11 +1,10 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { Flex, Text } from '@radix-ui/themes';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-line';
-import { withChiropractorMapCoordinates } from '../lib/chiropractor-map-coords';
 import type { Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { ChiropractorCard } from './ChiropractorCard';
@@ -109,12 +108,7 @@ export function MapView({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  /** Org geocode from API when present; otherwise ZIP centroid — used for all map markers and list fly-to. */
-  const mapChiropractors = useMemo(
-    () => chiropractors.map(withChiropractorMapCoordinates),
-    [chiropractors],
-  );
-  const mappable = mapChiropractors.filter(hasCoords);
+  const mappable = chiropractors.filter(hasCoords);
 
   activeIdRef.current = activeId;
 
@@ -294,7 +288,7 @@ export function MapView({
       addSimpleMarkers(map, mappable);
     }
     fitBounds(map, mappable);
-  }, [mapReady, mapChiropractors, mappable.length, fitBounds, addSimpleMarkers, addClusteredMarkers]);
+  }, [mapReady, chiropractors, mappable.length, fitBounds, addSimpleMarkers, addClusteredMarkers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -315,7 +309,7 @@ export function MapView({
           const id = best.target.getAttribute('data-chiro-id');
           if (!id || id === activeIdRef.current) return;
           setActiveId(id);
-          const chiro = mapChiropractors.find((c) => c.id === id);
+          const chiro = chiropractors.find((c) => c.id === id);
           if (chiro && hasCoords(chiro)) {
             popupRef.current?.remove();
             map.flyTo({ center: [chiro.longitude, chiro.latitude], zoom: Math.max(map.getZoom(), 12) });
@@ -328,7 +322,7 @@ export function MapView({
     let rafInner = 0;
     const rafOuter = requestAnimationFrame(() => { rafInner = requestAnimationFrame(connect); });
     return () => { cancelled = true; cancelAnimationFrame(rafOuter); cancelAnimationFrame(rafInner); observer?.disconnect(); };
-  }, [mapReady, mapChiropractors]);
+  }, [mapReady, chiropractors]);
 
   useEffect(() => {
     markersRef.current.forEach((marker, id) => {
@@ -336,19 +330,18 @@ export function MapView({
       if (activeId === id) el.classList.add('mapview-marker--selected');
       else el.classList.remove('mapview-marker--selected');
     });
-  }, [activeId, mapReady, mapChiropractors]);
+  }, [activeId, mapReady, chiropractors]);
 
   const handleListItemClick = useCallback((chiro: Chiropractor) => {
-    const resolved = withChiropractorMapCoordinates(chiro);
-    if (!hasCoords(resolved) || !mapRef.current) return;
+    if (!hasCoords(chiro) || !mapRef.current) return;
     setActiveId(chiro.id);
     const map = mapRef.current;
-    map.flyTo({ center: [resolved.longitude, resolved.latitude], zoom: Math.max(map.getZoom(), 12) });
+    map.flyTo({ center: [chiro.longitude, chiro.latitude], zoom: Math.max(map.getZoom(), 12) });
     popupRef.current?.remove();
     const score = chiro.matchScore ?? 0;
     const pillColors = matchScorePillColors(score);
     const popup = new mapboxgl.Popup({ offset: 25, closeButton: true, maxWidth: '260px' })
-      .setLngLat([resolved.longitude, resolved.latitude])
+      .setLngLat([chiro.longitude, chiro.latitude])
       .setHTML(`
         <div class="mapview-popup">
           <strong>Dr. ${chiro.firstName} ${chiro.lastName}</strong>
@@ -363,7 +356,7 @@ export function MapView({
   }, []);
 
   const handleListItemHover = useCallback((chiro: Chiropractor) => {
-    if (!hasCoords(withChiropractorMapCoordinates(chiro))) return;
+    if (!hasCoords(chiro)) return;
     const markerEl = markersRef.current.get(chiro.id)?.getElement();
     if (markerEl) markerEl.classList.add('mapview-marker--hover');
   }, []);
@@ -399,10 +392,10 @@ export function MapView({
       <div ref={mapContainerRef} className="mapview-map" />
 
       {/* Desktop: card list on the left */}
-      {!isMobile && mapChiropractors.length > 0 && (
+      {!isMobile && chiropractors.length > 0 && (
         <div className="mapview-overlay-left">
           <div ref={listScrollRef} className="mapview-overlay-cards">
-            {mapChiropractors.map((chiro) => (
+            {chiropractors.map((chiro) => (
               <div
                 key={chiro.id}
                 data-chiro-id={chiro.id}
@@ -475,10 +468,10 @@ export function MapView({
       </div>
 
       {/* Mobile: horizontal card carousel at the bottom */}
-      {isMobile && mapChiropractors.length > 0 && (
+      {isMobile && chiropractors.length > 0 && (
         <div className="mapview-overlay-bottom">
           <div ref={!isMobile ? undefined : listScrollRef} className="mapview-overlay-cards-mobile">
-            {mapChiropractors.map((chiro) => (
+            {chiropractors.map((chiro) => (
               <div
                 key={chiro.id}
                 data-chiro-id={chiro.id}
