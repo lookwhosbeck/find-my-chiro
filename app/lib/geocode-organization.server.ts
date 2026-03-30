@@ -22,7 +22,7 @@ export async function geocodeOrganizationWithAdmin(
 ): Promise<GeocodeOrganizationResult> {
   const { data: row, error } = await admin
     .from('organizations')
-    .select('id, address_line_1, city, state, zip_code')
+    .select('id, address_line_1, address_line_2, city, state, zip_code')
     .eq('id', organizationId)
     .maybeSingle();
 
@@ -42,6 +42,7 @@ export async function geocodeOrganizationWithAdmin(
 
   const coords = await mapboxForwardGeocodeUs({
     address_line_1: row.address_line_1,
+    address_line_2: row.address_line_2 ?? null,
     city: row.city,
     state: row.state,
     zip_code: row.zip_code,

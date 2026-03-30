@@ -63,12 +63,13 @@ function getMapboxToken() {
 
 function buildUsAddressQuery(row) {
   const line1 = row.address_line_1?.trim?.() ?? '';
+  const line2 = row.address_line_2?.trim?.() ?? '';
   const city = row.city?.trim?.() ?? '';
   const state = row.state?.trim?.() ?? '';
   const zip = row.zip_code?.trim?.() ?? '';
   if (!line1 && !city && !zip) return null;
   const cityState = [city, state].filter(Boolean).join(', ').trim();
-  const segments = [line1, cityState, zip].filter((s) => s && s.length > 0);
+  const segments = [line1, line2, cityState, zip].filter((s) => s && s.length > 0);
   const q = segments.join(', ');
   return q.length > 0 ? q : null;
 }
@@ -106,18 +107,19 @@ async function main() {
 
   const admin = createClient(url, service);
   const pageSize = 200;
-  let from = 0;
   let totalOk = 0;
   let totalFail = 0;
   let totalSkip = 0;
 
+  // Always take the first N rows still missing coords (no offset). Using offset would skip
+  // rows after earlier pages are updated, because the result set shrinks.
   for (;;) {
     const { data: rows, error } = await admin
       .from('organizations')
-      .select('id, address_line_1, city, state, zip_code, latitude, longitude')
+      .select('id, address_line_1, address_line_2, city, state, zip_code, latitude, longitude')
       .or('latitude.is.null,longitude.is.null')
       .order('id', { ascending: true })
-      .range(from, from + pageSize - 1);
+      .limit(pageSize);
 
     if (error) {
       console.error('Supabase query failed:', error.message);
@@ -179,7 +181,6 @@ async function main() {
     }
 
     if (rows.length < pageSize) break;
-    from += pageSize;
   }
 
   console.log(
