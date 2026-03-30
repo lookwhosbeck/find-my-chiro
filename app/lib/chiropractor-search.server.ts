@@ -34,9 +34,12 @@ export async function searchChiropractorsWithClient(
         chiropractor_philosophies(philosophy_id, philosophies!inner(name))
       `
     )
-    .eq('accepting_new_patients', true);
+    .eq('accepting_new_patients', true)
+    .order('updated_at', { ascending: false });
 
-  const fetchCap = baseZip ? GEO_CANDIDATE_CAP : limit * 3;
+  // With a search ZIP we over-fetch for radius filtering. Without a ZIP, "browse" mode must load
+  // enough rows for the map; limit*3 used to cap at 60 which hid almost all seed data.
+  const fetchCap = baseZip ? GEO_CANDIDATE_CAP : Math.max(limit, GEO_CANDIDATE_CAP);
   const { data, error } = await query.limit(fetchCap);
 
   if (error) {

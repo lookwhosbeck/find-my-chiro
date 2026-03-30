@@ -6,6 +6,7 @@ import { Flex } from '@radix-ui/themes';
 import { Header } from '../components/Header';
 import { MapView } from '../components/MapView';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
+import { normalizeUsZip } from '../lib/geo';
 import {
   appendSearchFiltersToQuery,
   filtersMatchCurrentUrl,
@@ -92,7 +93,10 @@ function SearchPageContent() {
   const performSearch = useCallback(async () => {
     setLoading(true);
     try {
-      const results = await searchChiropractors(filters);
+      const hasSearchZip = Boolean(normalizeUsZip(filters.zipCode));
+      // Browse (no ZIP): return enough rows for the national map. With ZIP: keep a tighter list for radius search.
+      const searchLimit = hasSearchZip ? 20 : 500;
+      const results = await searchChiropractors(filters, searchLimit);
       setChiropractors(results);
     } catch (error) {
       console.error('Search error:', error);

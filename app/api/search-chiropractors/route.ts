@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { searchChiropractorsWithClient } from '@/app/lib/chiropractor-search.server';
+
+export const dynamic = 'force-dynamic';
 import { clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import type { PatientSearchFilters } from '@/app/lib/queries';
 

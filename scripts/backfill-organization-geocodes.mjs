@@ -11,7 +11,8 @@
  *   node scripts/backfill-organization-geocodes.mjs
  *   node scripts/backfill-organization-geocodes.mjs --dry-run
  *
- * Optional: node --env-file=.env.local scripts/backfill-organization-geocodes.mjs
+ * Loads `.env.local` then `.env` from the repo root (same parser as before). Optional:
+ *   node --env-file=.env.local scripts/backfill-organization-geocodes.mjs
  *
  * Using env vars from Vercel (linked project: `vercel link`):
  *   npm run backfill:geocode-orgs:vercel:dry   # pull production env, dry-run
@@ -27,28 +28,37 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function loadEnvLocal() {
-  try {
-    const p = join(__dirname, '..', '.env.local');
-    const raw = readFileSync(p, 'utf8');
-    for (const line of raw.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq <= 0) continue;
-      const k = trimmed.slice(0, eq).trim();
-      let v = trimmed.slice(eq + 1).trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-        v = v.slice(1, -1);
-      }
-      if (process.env[k] === undefined) process.env[k] = v;
+function parseEnvFileIntoEnv(raw) {
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    const k = trimmed.slice(0, eq).trim();
+    let v = trimmed.slice(eq + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+      v = v.slice(1, -1);
     }
-  } catch {
-    /* no .env.local */
+    if (process.env[k] === undefined) process.env[k] = v;
   }
 }
 
-loadEnvLocal();
+function loadEnvFiles() {
+  const root = join(__dirname, '..');
+  for (const name of ['.env.local', '.env']) {
+    try {
+      parseEnvFileIntoEnv(readFileSync(join(root, name), 'utf8'));
+    } catch {
+      /* missing */
+    }
+  }
+  // Some projects only set SUPABASE_URL (Dashboard "Project URL")
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && process.env.SUPABASE_URL?.trim()) {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.SUPABASE_URL.trim();
+  }
+}
+
+loadEnvFiles();
 
 const dryRun = process.argv.includes('--dry-run');
 const DELAY_MS = 200;
@@ -97,7 +107,15 @@ async function main() {
   const token = getMapboxToken();
 
   if (!url || !service || url.includes('placeholder')) {
-    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
+    console.error('Missing Supabase credentials for the backfill script.');
+    console.error('Required in .env.local or .env (or pass via environment):');
+    console.error('  NEXT_PUBLIC_SUPABASE_URL   — same as in your Next app');
+    console.error('  SUPABASE_SERVICE_ROLE_KEY  — Dashboard → Settings → API → service_role (secret)');
+    console.error('Optional alias: SUPABASE_URL is copied to NEXT_PUBLIC_SUPABASE_URL if the latter is unset.');
+    console.error('Present:', {
+      NEXT_PUBLIC_SUPABASE_URL: Boolean(url && !url.includes('placeholder')),
+      SUPABASE_SERVICE_ROLE_KEY: Boolean(service),
+    });
     process.exit(1);
   }
   if (!token) {
