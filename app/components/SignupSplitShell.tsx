@@ -7,9 +7,12 @@ export type SignupSplitStep = { number: number; label: string };
 type SignupSplitShellProps = {
   currentStep: number;
   steps: SignupSplitStep[];
-  headline: string;
-  subtext: string;
+  headline: ReactNode;
+  subtext: ReactNode;
+  /** Shown in the “Why this detail?” block when `asideFooter` is omitted */
   whyDetail: string;
+  /** When set, replaces the default “Why this detail?” block (e.g. membership step rail) */
+  asideFooter?: ReactNode;
   children: ReactNode;
 };
 
@@ -19,6 +22,7 @@ export function SignupSplitShell({
   headline,
   subtext,
   whyDetail,
+  asideFooter,
   children,
 }: SignupSplitShellProps) {
   return (
@@ -48,12 +52,14 @@ export function SignupSplitShell({
                   })}
                 </ol>
                 <div className={styles.signupAsideRule} aria-hidden />
-                <div className={styles.signupWhy}>
-                  <p className={styles.signupWhyLead}>
-                    <strong>Why this detail?</strong>
-                  </p>
-                  <p className={styles.signupWhyBody}>{whyDetail}</p>
-                </div>
+                {asideFooter ?? (
+                  <div className={styles.signupWhy}>
+                    <p className={styles.signupWhyLead}>
+                      <strong>Why this detail?</strong>
+                    </p>
+                    <p className={styles.signupWhyBody}>{whyDetail}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
