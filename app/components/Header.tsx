@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Button, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
@@ -94,7 +94,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
   const pathname = usePathname();
 
   const loadProfile = useCallback(async (userId: string) => {
@@ -165,11 +165,21 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   }, [mobileMenuOpen]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
+    if (signingOut) return;
+    setSigningOut(true);
     setMobileMenuOpen(false);
-    router.push("/");
+    try {
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("signOutTimeout")), 6000);
+        }),
+      ]);
+    } catch {
+      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    }
+    // Full reload so "/" still visibly resets when already on the homepage (soft push is a no-op).
+    window.location.assign("/");
   };
 
   const toggleMobileMenu = () => {
@@ -206,8 +216,10 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                   type="button"
                   className={styles.navTextButton}
                   onClick={handleSignOut}
+                  disabled={signingOut}
+                  aria-busy={signingOut}
                 >
-                  Sign Out
+                  {signingOut ? "Signing out…" : "Sign Out"}
                 </button>
                 <Button
                   size="2"
@@ -401,9 +413,11 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                       size="2"
                       variant="outline"
                       onClick={handleSignOut}
+                      disabled={signingOut}
+                      aria-busy={signingOut}
                       style={{ width: "100%" }}
                     >
-                      Sign Out
+                      {signingOut ? "Signing out…" : "Sign Out"}
                     </Button>
                   </div>
                 ) : (

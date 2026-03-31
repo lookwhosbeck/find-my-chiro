@@ -155,6 +155,11 @@
   opacity: 0.85;
 }
 
+.navTextButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 /* Inner link for Join Network–style My Account (solid black CTA) */
 .myAccountCtaLink {
   display: inline-flex;
