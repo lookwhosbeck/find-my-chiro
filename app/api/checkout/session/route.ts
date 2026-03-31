@@ -37,10 +37,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await req.json().catch(() => null)) as { plan?: string; priceId?: string } | null;
+  const body = (await req.json().catch(() => null)) as {
+    plan?: string;
+    priceId?: string;
+    embedded?: boolean;
+  } | null;
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
   }
+
+  const embedded = body.embedded === true;
 
   let priceId = typeof body.priceId === 'string' ? body.priceId.trim() : '';
   if (!priceId && typeof body.plan === 'string') {
@@ -70,14 +76,21 @@ export async function POST(req: NextRequest) {
     mode: 'subscription',
     client_reference_id: user.id,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/account?checkout=success`,
-    cancel_url: `${origin}/account?checkout=canceled`,
     metadata: { supabase_user_id: user.id },
     subscription_data: {
       metadata: { supabase_user_id: user.id },
     },
     allow_promotion_codes: true,
   };
+
+  if (embedded) {
+    sessionParams.ui_mode = 'embedded';
+    sessionParams.return_url = `${origin}/signup?session_id={CHECKOUT_SESSION_ID}`;
+    sessionParams.redirect_on_completion = 'if_required';
+  } else {
+    sessionParams.success_url = `${origin}/account?checkout=success`;
+    sessionParams.cancel_url = `${origin}/account?checkout=canceled`;
+  }
 
   const existingCustomer =
     typeof profile.stripe_customer_id === 'string' ? profile.stripe_customer_id.trim() : '';
@@ -88,6 +101,13 @@ export async function POST(req: NextRequest) {
   }
 
   const session = await stripe.checkout.sessions.create(sessionParams);
+
+  if (embedded) {
+    if (!session.client_secret) {
+      return NextResponse.json({ error: 'No client secret returned' }, { status: 500 });
+    }
+    return NextResponse.json({ clientSecret: session.client_secret });
+  }
 
   if (!session.url) {
     return NextResponse.json({ error: 'No checkout URL returned' }, { status: 500 });

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import type { StripeEmbeddedCheckout } from '@stripe/stripe-js';
 import { Grid, Flex, Text, Heading, TextField, Button, Select, TextArea, Tabs, Checkbox, RadioGroup, Box, Callout } from '@radix-ui/themes';
 import { GlobeIcon, InstagramLogoIcon, MagicWandIcon, InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
@@ -28,6 +30,14 @@ export default function SignUpPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [premiumNeedsEmailVerify, setPremiumNeedsEmailVerify] = useState(false);
+  const [checkoutReturnChecking, setCheckoutReturnChecking] = useState(false);
+  const [embeddedClientSecret, setEmbeddedClientSecret] = useState<string | null>(null);
+  const [embeddedError, setEmbeddedError] = useState<string | null>(null);
+  const [isPreparingEmbedded, setIsPreparingEmbedded] = useState(false);
+  const [premiumSignupActive, setPremiumSignupActive] = useState(false);
+  const embeddedMountRef = useRef<HTMLDivElement | null>(null);
+  const embeddedCheckoutRef = useRef<StripeEmbeddedCheckout | null>(null);
+  const premiumFinishRef = useRef(false);
   const [colleges, setColleges] = useState<ChiropracticCollege[]>([]);
   const [isLoadingColleges, setIsLoadingColleges] = useState(true);
   const [formData, setFormData] = useState({
@@ -83,6 +93,121 @@ export default function SignUpPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const finishPremiumAfterPayment = useCallback(() => {
+    if (premiumFinishRef.current) return;
+    premiumFinishRef.current = true;
+    embeddedCheckoutRef.current?.destroy();
+    embeddedCheckoutRef.current = null;
+    setEmbeddedClientSecret(null);
+    setPremiumSignupActive(false);
+    setSubmitSuccess(true);
+    setStep(5);
+    setTimeout(() => router.push('/account'), 2000);
+  }, [router]);
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('session_id');
+    if (!sid?.startsWith('cs_')) return;
+
+    let cancelled = false;
+    setCheckoutReturnChecking(true);
+
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          if (!cancelled) {
+            window.history.replaceState({}, '', '/signup');
+            setCheckoutReturnChecking(false);
+          }
+          return;
+        }
+        const res = await fetch(
+          `/api/checkout/session-status?session_id=${encodeURIComponent(sid)}`,
+          { headers: { Authorization: `Bearer ${session.access_token}` } },
+        );
+        const json = (await res.json().catch(() => ({}))) as { status?: string; error?: string };
+        if (cancelled) return;
+        window.history.replaceState({}, '', '/signup');
+        setCheckoutReturnChecking(false);
+        if (res.ok && json.status === 'complete') {
+          finishPremiumAfterPayment();
+        } else {
+          setSubmitError(
+            json.error ||
+              'Payment was not completed. You can subscribe from your account under Membership.',
+          );
+          setStep(5);
+        }
+      } catch {
+        if (!cancelled) {
+          window.history.replaceState({}, '', '/signup');
+          setCheckoutReturnChecking(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [finishPremiumAfterPayment]);
+
+  useEffect(() => {
+    if (!embeddedClientSecret) return;
+    const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim();
+    if (!pk) {
+      setEmbeddedError('Stripe publishable key is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.');
+      return;
+    }
+
+    setEmbeddedError(null);
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const stripe = await loadStripe(pk);
+        if (!stripe || cancelled) return;
+
+        const checkout = await stripe.initEmbeddedCheckout({
+          clientSecret: embeddedClientSecret,
+          onComplete: () => {
+            finishPremiumAfterPayment();
+          },
+        });
+        if (cancelled) {
+          checkout.destroy();
+          return;
+        }
+        embeddedCheckoutRef.current = checkout;
+        const el = embeddedMountRef.current;
+        if (el) {
+          checkout.mount(el);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setEmbeddedError(e instanceof Error ? e.message : 'Could not load checkout.');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      embeddedCheckoutRef.current?.destroy();
+      embeddedCheckoutRef.current = null;
+    };
+  }, [embeddedClientSecret, finishPremiumAfterPayment]);
+
+  const dismissEmbeddedCheckout = () => {
+    embeddedCheckoutRef.current?.destroy();
+    embeddedCheckoutRef.current = null;
+    setEmbeddedClientSecret(null);
+    setEmbeddedError(null);
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -107,6 +232,11 @@ export default function SignUpPage() {
   };
 
   const handleNext = () => {
+    if (step === 2 && !formData.licenseNumber?.trim()) {
+      setSubmitError('License number is required.');
+      return;
+    }
+    setSubmitError(null);
     if (step < 5) setStep(step + 1);
   };
 
@@ -137,9 +267,17 @@ export default function SignUpPage() {
       return;
     }
 
+    if (!formData.licenseNumber?.trim()) {
+      setSubmitError('Please enter your license number (Professional Details).');
+      setStep(2);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
     setPremiumNeedsEmailVerify(false);
+    setPremiumSignupActive(false);
+    premiumFinishRef.current = false;
 
     try {
       const { signupPlan: chosenPlan, ...signupFields } = formData;
@@ -150,15 +288,16 @@ export default function SignUpPage() {
         return;
       }
 
-      setSubmitSuccess(true);
-
       const plan = chosenPlan;
       if (plan === 'free') {
+        setSubmitSuccess(true);
         setTimeout(() => {
           router.push('/account');
         }, 2000);
         return;
       }
+
+      setPremiumSignupActive(true);
 
       const {
         data: { session },
@@ -168,16 +307,20 @@ export default function SignUpPage() {
         return;
       }
 
+      setIsPreparingEmbedded(true);
       const checkoutRes = await fetch('/api/checkout/session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, embedded: true }),
       });
-      const checkoutJson = (await checkoutRes.json().catch(() => ({}))) as { url?: string; error?: string };
-      if (!checkoutRes.ok || !checkoutJson.url) {
+      const checkoutJson = (await checkoutRes.json().catch(() => ({}))) as {
+        clientSecret?: string;
+        error?: string;
+      };
+      if (!checkoutRes.ok || !checkoutJson.clientSecret) {
         setSubmitError(
           checkoutJson.error ||
             'Account created, but checkout could not start. You can subscribe anytime from your account.',
@@ -185,12 +328,13 @@ export default function SignUpPage() {
         setTimeout(() => router.push('/account'), 3000);
         return;
       }
-      window.location.href = checkoutJson.url;
+      setEmbeddedClientSecret(checkoutJson.clientSecret);
     } catch (error: any) {
       console.error('Signup error:', error);
       setSubmitError(error.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
+      setIsPreparingEmbedded(false);
     }
   };
 
@@ -211,14 +355,32 @@ export default function SignUpPage() {
     }
   };
 
+  const showEmbeddedCheckoutUi =
+    premiumSignupActive &&
+    !premiumNeedsEmailVerify &&
+    (isPreparingEmbedded || !!embeddedClientSecret || !!embeddedError);
+
   return (
     <SignupSplitShell
-      currentStep={step}
+      currentStep={checkoutReturnChecking ? 5 : step}
       steps={steps}
       headline="Let's build your profile."
       subtext="Completing this application allows our algorithms to match you with ideal patients."
       whyDetail={getWhyDetailText()}
     >
+      {checkoutReturnChecking ? (
+        <div className={`${layoutStyles.signupCard} ${layoutStyles.signupCardWide}`}>
+          <div className={layoutStyles.signupWideBody}>
+            <Flex direction="column" gap="3" align="center">
+              <Heading size="6">Confirming your payment…</Heading>
+              <Text size="2" color="gray">
+                This takes just a moment.
+              </Text>
+            </Flex>
+          </div>
+        </div>
+      ) : (
+        <>
       <h1 className={layoutStyles.signupTitle}>Create your account</h1>
 
       {step === 1 ? (
@@ -336,10 +498,24 @@ export default function SignUpPage() {
                 <Callout.Text>
                   {formData.signupPlan === 'free'
                     ? 'Account created successfully! Redirecting...'
-                    : 'Redirecting to secure checkout...'}
+                    : 'You are subscribed! Redirecting to your account...'}
                 </Callout.Text>
               </Callout.Root>
             )}
+
+            {premiumSignupActive &&
+              !premiumNeedsEmailVerify &&
+              !submitSuccess &&
+              showEmbeddedCheckoutUi &&
+              isPreparingEmbedded &&
+              !embeddedClientSecret && (
+                <Callout.Root color="blue">
+                  <Callout.Icon>
+                    <InfoCircledIcon />
+                  </Callout.Icon>
+                  <Callout.Text>Account created. Loading secure checkout…</Callout.Text>
+                </Callout.Root>
+              )}
 
             {premiumNeedsEmailVerify && (
               <Callout.Root color="blue">
@@ -408,12 +584,17 @@ export default function SignUpPage() {
                       />
                     </Flex>
                     <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">License Number</Text>
+                      <Text as="label" size="2" weight="bold" htmlFor="signup-chiro-license">
+                        License number <Text as="span" color="red">*</Text>
+                      </Text>
                       <TextField.Root
+                        id="signup-chiro-license"
                         size="3"
+                        required
                         value={formData.licenseNumber}
                         onChange={handleTextFieldChange('licenseNumber')}
                         placeholder="DC12345"
+                        aria-required="true"
                       />
                     </Flex>
                     <Flex direction="column" gap="1">
@@ -640,7 +821,34 @@ export default function SignUpPage() {
                 </Flex>
               )}
 
-              {step === 5 && (
+              {step === 5 && showEmbeddedCheckoutUi && (
+                <Flex direction="column" gap="4">
+                  <Heading size="6">Complete your subscription</Heading>
+                  <Text size="2" color="gray">
+                    Your account is ready. Enter payment details below — you stay on this page until checkout
+                    finishes.
+                  </Text>
+                  {embeddedError && (
+                    <Callout.Root color="red">
+                      <Callout.Icon>
+                        <InfoCircledIcon />
+                      </Callout.Icon>
+                      <Callout.Text>{embeddedError}</Callout.Text>
+                    </Callout.Root>
+                  )}
+                  <div ref={embeddedMountRef} className={layoutStyles.embeddedCheckout} />
+                  <Button
+                    size="3"
+                    variant="ghost"
+                    onClick={dismissEmbeddedCheckout}
+                    style={{ color: 'var(--gray-11)', alignSelf: 'flex-start' }}
+                  >
+                    Cancel and choose a different plan
+                  </Button>
+                </Flex>
+              )}
+
+              {step === 5 && !showEmbeddedCheckoutUi && (
                 <Flex direction="column" gap="4">
                   <Heading size="6">Choose your membership</Heading>
                   <Text size="2" color="gray">
@@ -690,7 +898,7 @@ export default function SignUpPage() {
                           ? 'Done'
                           : formData.signupPlan === 'free'
                             ? 'Complete sign-up'
-                            : 'Continue to checkout'}
+                            : 'Continue to secure checkout'}
                     </Button>
                   </Flex>
                 </Flex>
@@ -702,6 +910,8 @@ export default function SignUpPage() {
       <Link href="/" className={layoutStyles.signupBack}>
         Back to home
       </Link>
+        </>
+      )}
     </SignupSplitShell>
   );
 }

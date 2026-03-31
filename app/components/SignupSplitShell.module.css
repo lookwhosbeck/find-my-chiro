@@ -410,6 +410,11 @@
   align-items: stretch;
 }
 
+.embeddedCheckout {
+  width: 100%;
+  min-height: 480px;
+}
+
 @media (min-width: 900px) {
   .signupSplit {
     flex-direction: row;
