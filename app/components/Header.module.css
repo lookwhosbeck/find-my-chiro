@@ -134,6 +134,37 @@
   flex-shrink: 0;
 }
 
+/* Single status line replaces Sign out + My Account while navigating away */
+.signingOutStatus {
+  font-size: 16px;
+  letter-spacing: -0.32px;
+  font-family: var(--font-body);
+  line-height: 22.4px;
+  color: var(--color-hero-ink);
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+/* Desktop cluster is hidden <768px; show centered status in the bar instead */
+.signingOutMobileOnly {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .signingOutMobileOnly {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 15px;
+    letter-spacing: -0.32px;
+    font-family: var(--font-body);
+    line-height: 22.4px;
+    color: var(--color-hero-ink);
+    opacity: 0.72;
+  }
+}
+
 /* Matches plain "Log in" nav link (text, hero ink) */
 .navTextButton {
   margin: 0;
@@ -225,6 +256,11 @@
   .mobileMenuButton {
     display: none !important;
   }
+}
+
+.mobileMenuButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* —— Mobile flyout (portaled next to <header>, not inside it) —— */

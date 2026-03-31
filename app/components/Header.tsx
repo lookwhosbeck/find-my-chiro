@@ -164,22 +164,25 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
     };
   }, [mobileMenuOpen]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     if (signingOut) return;
     setSigningOut(true);
     setMobileMenuOpen(false);
-    try {
-      await Promise.race([
-        supabase.auth.signOut(),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("signOutTimeout")), 6000);
-        }),
-      ]);
-    } catch {
-      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-    }
-    // Full reload so "/" still visibly resets when already on the homepage (soft push is a no-op).
-    window.location.assign("/");
+    // Global signOut() can wait on the network indefinitely; local clears storage immediately.
+    const goHome = () => {
+      window.location.assign("/");
+    };
+    const safetyNav = window.setTimeout(goHome, 1200);
+    void (async () => {
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        /* still navigate */
+      } finally {
+        window.clearTimeout(safetyNav);
+        goHome();
+      }
+    })();
   };
 
   const toggleMobileMenu = () => {
@@ -200,6 +203,16 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
           <FindMyChiroLogo variant="standard" className={styles.headerLogo} />
         </Link>
 
+        {signingOut ? (
+          <span
+            className={styles.signingOutMobileOnly}
+            role="status"
+            aria-live="polite"
+          >
+            Signing out…
+          </span>
+        ) : null}
+
         <div className={styles.desktopCluster}>
           <nav className={styles.navLinks} aria-label="Primary">
             <Link href="/search" className={styles.navTextLink}>
@@ -210,16 +223,22 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
             </Link>
           </nav>
           <div className={styles.authActions}>
-            {user ? (
+            {signingOut ? (
+              <span
+                className={styles.signingOutStatus}
+                role="status"
+                aria-live="polite"
+              >
+                Signing out…
+              </span>
+            ) : user ? (
               <>
                 <button
                   type="button"
                   className={styles.navTextButton}
                   onClick={handleSignOut}
-                  disabled={signingOut}
-                  aria-busy={signingOut}
                 >
-                  {signingOut ? "Signing out…" : "Sign Out"}
+                  Sign Out
                 </button>
                 <Button
                   size="2"
@@ -274,8 +293,10 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
           variant="ghost"
           onClick={toggleMobileMenu}
           className={styles.mobileMenuButton}
+          disabled={signingOut}
           aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileMenuOpen}
+          aria-busy={signingOut}
         >
           <svg
             width="24"
@@ -413,11 +434,9 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                       size="2"
                       variant="outline"
                       onClick={handleSignOut}
-                      disabled={signingOut}
-                      aria-busy={signingOut}
                       style={{ width: "100%" }}
                     >
-                      {signingOut ? "Signing out…" : "Sign Out"}
+                      Sign Out
                     </Button>
                   </div>
                 ) : (
