@@ -23,6 +23,20 @@ async function fetchWithTimeout(input: RequestInfo, init: RequestInit, ms = 2800
   }
 }
 
+/** If the user already signed up on this device (e.g. switched Monthly → Annual), reuse the session instead of signing up again. */
+async function getAccessTokenIfSessionMatchesEmail(
+  email: string,
+): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const sessionEmail = session?.user?.email?.trim().toLowerCase();
+  if (!session?.access_token || !sessionEmail || sessionEmail !== normalized) return null;
+  return session.access_token;
+}
+
 const steps = [
   { number: 1, label: 'Account' },
   { number: 2, label: 'Professional Details' },
@@ -279,6 +293,14 @@ export default function SignUpPage() {
     premiumFinishRef.current = false;
 
     try {
+      const existingToken = await getAccessTokenIfSessionMatchesEmail(freePayload.email);
+      if (existingToken) {
+        // Already created this account (e.g. tried premium first) — do not sign up again.
+        setSubmitSuccess(true);
+        setTimeout(() => router.push('/account'), 1500);
+        return;
+      }
+
       const { signupPlan: _, ...signupFields } = freePayload;
       const result = await signUpChiropractor(signupFields as SignUpData);
       if (!result.success) {
@@ -314,20 +336,27 @@ export default function SignUpPage() {
 
     try {
       const { signupPlan: _, ...signupFields } = premiumPayload;
-      const result = await signUpChiropractor(signupFields as SignUpData);
+
+      let accessToken = await getAccessTokenIfSessionMatchesEmail(premiumPayload.email);
       if (premiumRunId.current !== runId) return;
 
-      if (!result.success) {
-        setSubmitError(result.error || 'Failed to create account. Please try again.');
-        return;
+      if (!accessToken) {
+        const result = await signUpChiropractor(signupFields as SignUpData);
+        if (premiumRunId.current !== runId) return;
+
+        if (!result.success) {
+          setSubmitError(result.error || 'Failed to create account. Please try again.');
+          return;
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (premiumRunId.current !== runId) return;
+        accessToken = session?.access_token ?? null;
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (premiumRunId.current !== runId) return;
-
-      if (!session?.access_token) {
+      if (!accessToken) {
         setPremiumNeedsEmailVerify(true);
         return;
       }
@@ -338,7 +367,7 @@ export default function SignUpPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ plan, embedded: true }),
         });
