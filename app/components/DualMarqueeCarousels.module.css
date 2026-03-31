@@ -1,7 +1,6 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   width: 100%;
 }
 
@@ -10,19 +9,22 @@
   overflow-x: clip;
   overflow-y: visible;
   position: relative;
-  /* Large card shadow extends past the box; padding keeps blur + corners inside the clip */
-  padding-block: 40px;
-  margin-block: -40px;
+  padding-block: 28px;
+  margin-block: -28px;
 }
 
-/* Outer track: two copies flush (no gap between copies) so translateX(-50%) == exactly one cycle */
-.trackLeft,
-.trackRight {
+/* Two copies flush; translateX(-50%) == exactly one cycle */
+.track {
   display: flex;
   flex-direction: row;
   gap: 0;
   width: max-content;
   will-change: transform;
+  animation: homeMarqueeLeft 70s linear infinite;
+}
+
+.track:hover {
+  animation-play-state: paused;
 }
 
 .trackSet {
@@ -32,20 +34,7 @@
   gap: 12px;
 }
 
-.trackLeft {
-  animation: marqueeLeft 55s linear infinite;
-}
-
-.trackRight {
-  animation: marqueeRight 55s linear infinite;
-}
-
-.trackLeft:hover,
-.trackRight:hover {
-  animation-play-state: paused;
-}
-
-@keyframes marqueeLeft {
+@keyframes homeMarqueeLeft {
   from {
     transform: translateX(0);
   }
@@ -54,40 +43,39 @@
   }
 }
 
-@keyframes marqueeRight {
-  from {
-    transform: translateX(-50%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
+/* Match map list card width (desktop column ~380px; tighter on small screens) */
 .cardSlot {
-  width: 200px;
-  height: 200px;
+  flex: 0 0 360px;
+  width: 360px;
+  max-width: min(360px, calc(100vw - 40px));
   flex-shrink: 0;
   display: flex;
   align-items: stretch;
   box-sizing: border-box;
 }
 
-.cardSlot :global(.chiropractor-card) {
-  min-height: 0 !important;
-  height: 100%;
-  box-shadow: var(--shadow-chiropractor-profile);
+.cardSlot :global(.mapview-card-link) {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cardSlot :global(.mapview-card) {
+  width: 100%;
+  min-height: 0;
 }
 
 @media (max-width: 640px) {
   .cardSlot {
-    width: 220px;
-    height: 220px;
+    flex-basis: 280px;
+    width: 280px;
+    max-width: min(280px, calc(100vw - 32px));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trackLeft,
-  .trackRight {
+  .track {
     animation: none;
     transform: none;
   }
