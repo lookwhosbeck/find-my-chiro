@@ -711,8 +711,346 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   align-items: stretch;
+}
+
+/* Profile / wizard steps — match membership card + Figma 118:1778 */
+.signupFormStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.signupFormSectionTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: -0.48px;
+  color: #202020;
+}
+
+.signupFormSubtext {
+  margin: -8px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #9ca3af;
+}
+
+.signupTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  font-family: inherit;
+  color: #202020;
+  background: #ffffff;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.signupTextarea::placeholder {
+  color: #e8e8e8;
+}
+
+.signupTextarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.signupSelect {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  font-family: inherit;
+  color: #202020;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.signupSelect:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.signupSelect:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.signupFormActions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.signupFormActions .signupSubmit {
+  flex: 1;
+  max-width: 280px;
+}
+
+.signupButtonGhost {
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  font-family: inherit;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.signupButtonGhost:hover {
+  color: #202020;
+}
+
+.signupButtonGhost:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.signupFooterNote {
+  margin: 0;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: -0.48px;
+  color: #0f172a;
+  text-align: center;
+  width: 100%;
+  max-width: 261px;
+  align-self: center;
+}
+
+.signupFormTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: #f3f3f3;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.signupFormTab {
+  flex: 1;
+  min-width: min(100%, 140px);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  font-family: inherit;
+  cursor: pointer;
+  background: transparent;
+  color: #202020;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.signupFormTab:hover {
+  color: #0f172a;
+}
+
+.signupFormTab:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.signupFormTabActive {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.signupFormTabActive:hover {
+  color: #ffffff;
+}
+
+.signupFormTabPanel {
+  padding-top: 16px;
+}
+
+.signupGrid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  width: 100%;
+}
+
+.signupGrid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 540px) {
+  .signupGrid2,
+  .signupGrid3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.signupCheckRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #202020;
+  cursor: pointer;
+}
+
+.signupCheckRow input[type="checkbox"],
+.signupCheckRow input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.signupRadioStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.signupFieldRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.signupInputWithIconWrap {
+  position: relative;
+  width: 100%;
+}
+
+.signupInputIconPad {
+  padding-left: 38px;
+}
+
+.signupFieldIconLeft {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.signupAlert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  border: 1px solid transparent;
+}
+
+.signupAlertIcon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.signupAlertInfo {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.signupAlertSuccess {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.signupAlertError {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.signupButtonLink {
+  border: none;
+  background: none;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #2563eb;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+}
+
+.signupButtonLink:hover {
+  text-decoration: underline;
+}
+
+.signupButtonLink:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.signupButtonOutline {
+  margin-top: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+  background: #f9fafb;
+  color: #202020;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.signupButtonOutline:hover {
+  background: #f3f4f6;
+}
+
+.signupButtonOutline:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .embeddedCheckout {

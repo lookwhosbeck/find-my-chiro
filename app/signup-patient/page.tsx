@@ -1,20 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Grid,
-  Flex,
-  Text,
-  Heading,
-  TextField,
-  Button,
-  Select,
-  Tabs,
-  Checkbox,
-  RadioGroup,
-  Box,
-  Callout,
-} from "@radix-ui/themes";
+import { useState } from "react";
 import {
   CalendarIcon,
   InfoCircledIcon,
@@ -41,6 +27,9 @@ export default function PatientSignUpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [patientPrefsTab, setPatientPrefsTab] = useState<
+    "modalities" | "focus" | "payment"
+  >("modalities");
   const [formData, setFormData] = useState({
     // Step 1
     firstName: "",
@@ -81,8 +70,7 @@ export default function PatientSignUpPage() {
       | "preferredModalities"
       | "focusAreas"
       | "preferredDays"
-      | "preferredTimes"
-      | "focusAreas",
+      | "preferredTimes",
     value: string,
   ) => {
     setFormData((prev) => {
@@ -303,11 +291,11 @@ export default function PatientSignUpPage() {
                 </div>
 
                 <button type="submit" className={layoutStyles.signupSubmit}>
-                  Next Step
+                  Next step
                 </button>
               </form>
 
-              <p className={layoutStyles.signupCardFooter}>
+              <p className={layoutStyles.signupFooterNote}>
                 Already have an account?{" "}
                 <Link href="/signin" className={layoutStyles.signupInlineLink}>
                   Sign in
@@ -332,390 +320,468 @@ export default function PatientSignUpPage() {
           >
             <div className={layoutStyles.signupWideBody}>
               {submitSuccess && (
-                <Callout.Root color="green">
-                  <Callout.Icon>
-                    <CheckCircledIcon />
-                  </Callout.Icon>
-                  <Callout.Text>
-                    Account created successfully! Redirecting...
-                  </Callout.Text>
-                </Callout.Root>
+                <div
+                  className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertSuccess}`}
+                >
+                  <CheckCircledIcon className={layoutStyles.signupAlertIcon} />
+                  <span>Account created successfully! Redirecting...</span>
+                </div>
               )}
 
               {submitError && (
-                <Callout.Root color="red">
-                  <Callout.Icon>
-                    <InfoCircledIcon />
-                  </Callout.Icon>
-                  <Callout.Text>{submitError}</Callout.Text>
-                </Callout.Root>
+                <div
+                  className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertError}`}
+                >
+                  <InfoCircledIcon className={layoutStyles.signupAlertIcon} />
+                  <span>{submitError}</span>
+                </div>
               )}
 
-              {/* Step 2: Personal Details */}
               {step === 2 && (
-                <Flex direction="column" gap="4">
-                  <Heading size="6">Personal Information</Heading>
-                  <Flex direction="column" gap="3">
-                    <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">
+                <div className={layoutStyles.signupFormStack}>
+                  <h2 className={layoutStyles.signupFormSectionTitle}>
+                    Personal Information
+                  </h2>
+                  <div className={layoutStyles.signupFields}>
+                    <div className={layoutStyles.signupField}>
+                      <label
+                        className={layoutStyles.signupLabel}
+                        htmlFor="signup-patient-phone"
+                      >
                         Phone Number
-                      </Text>
-                      <TextField.Root
-                        size="3"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleTextFieldChange("phone")}
-                        placeholder="(555) 123-4567"
+                      </label>
+                      <div className={layoutStyles.signupInputWithIconWrap}>
+                        <PersonIcon
+                          className={layoutStyles.signupFieldIconLeft}
+                          aria-hidden
+                        />
+                        <input
+                          id="signup-patient-phone"
+                          className={`${layoutStyles.signupInput} ${layoutStyles.signupInputIconPad}`}
+                          type="tel"
+                          value={formData.phone}
+                          onChange={handleTextFieldChange("phone")}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                    </div>
+                    <div className={layoutStyles.signupField}>
+                      <label
+                        className={layoutStyles.signupLabel}
+                        htmlFor="signup-patient-dob"
                       >
-                        <TextField.Slot>
-                          <PersonIcon />
-                        </TextField.Slot>
-                      </TextField.Root>
-                    </Flex>
-                    <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">
                         Date of Birth
-                      </Text>
-                      <TextField.Root
-                        size="3"
-                        type="date"
-                        value={formData.dateOfBirth}
-                        onChange={handleTextFieldChange("dateOfBirth")}
+                      </label>
+                      <div className={layoutStyles.signupInputWithIconWrap}>
+                        <CalendarIcon
+                          className={layoutStyles.signupFieldIconLeft}
+                          aria-hidden
+                        />
+                        <input
+                          id="signup-patient-dob"
+                          className={`${layoutStyles.signupInput} ${layoutStyles.signupInputIconPad}`}
+                          type="date"
+                          value={formData.dateOfBirth}
+                          onChange={handleTextFieldChange("dateOfBirth")}
+                        />
+                      </div>
+                    </div>
+                    <div className={layoutStyles.signupField}>
+                      <label
+                        className={layoutStyles.signupLabel}
+                        htmlFor="signup-patient-em-name"
                       >
-                        <TextField.Slot>
-                          <CalendarIcon />
-                        </TextField.Slot>
-                      </TextField.Root>
-                    </Flex>
-                    <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">
                         Emergency Contact Name
-                      </Text>
-                      <TextField.Root
-                        size="3"
+                      </label>
+                      <input
+                        id="signup-patient-em-name"
+                        className={layoutStyles.signupInput}
                         value={formData.emergencyContact}
                         onChange={handleTextFieldChange("emergencyContact")}
                         placeholder="Jane Doe"
                       />
-                    </Flex>
-                    <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">
-                        Emergency Contact Phone
-                      </Text>
-                      <TextField.Root
-                        size="3"
-                        type="tel"
-                        value={formData.emergencyPhone}
-                        onChange={handleTextFieldChange("emergencyPhone")}
-                        placeholder="(555) 123-4567"
+                    </div>
+                    <div className={layoutStyles.signupField}>
+                      <label
+                        className={layoutStyles.signupLabel}
+                        htmlFor="signup-patient-em-phone"
                       >
-                        <TextField.Slot>
-                          <PersonIcon />
-                        </TextField.Slot>
-                      </TextField.Root>
-                    </Flex>
-                  </Flex>
-                  <Flex gap="3" justify="between" mt="4">
-                    <Button
-                      size="3"
-                      variant="ghost"
+                        Emergency Contact Phone
+                      </label>
+                      <div className={layoutStyles.signupInputWithIconWrap}>
+                        <PersonIcon
+                          className={layoutStyles.signupFieldIconLeft}
+                          aria-hidden
+                        />
+                        <input
+                          id="signup-patient-em-phone"
+                          className={`${layoutStyles.signupInput} ${layoutStyles.signupInputIconPad}`}
+                          type="tel"
+                          value={formData.emergencyPhone}
+                          onChange={handleTextFieldChange("emergencyPhone")}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className={layoutStyles.signupFormActions}>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupButtonGhost}
                       onClick={handleBack}
-                      style={{ color: "var(--gray-11)" }}
                     >
                       Back
-                    </Button>
-                    <Button size="3" variant="solid" onClick={handleNext}>
-                      Next Step
-                    </Button>
-                  </Flex>
-                </Flex>
+                    </button>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupSubmit}
+                      onClick={handleNext}
+                    >
+                      Next step
+                    </button>
+                  </div>
+                </div>
               )}
 
-              {/* Step 3: Matching Preferences */}
               {step === 3 && (
-                <Flex direction="column" gap="4">
-                  <Flex direction="column" gap="2">
-                    <Heading size="6">Your Preferences</Heading>
-                    <Text size="2" color="gray">
+                <div className={layoutStyles.signupFormStack}>
+                  <div>
+                    <h2 className={layoutStyles.signupFormSectionTitle}>
+                      Your Preferences
+                    </h2>
+                    <p className={layoutStyles.signupFormSubtext}>
                       Select what matters most to you in a chiropractor. This
                       helps us find the best matches.
-                    </Text>
-                  </Flex>
+                    </p>
+                  </div>
 
-                  <Tabs.Root defaultValue="modalities">
-                    <Tabs.List>
-                      <Tabs.Trigger value="modalities">
-                        Treatment Styles
-                      </Tabs.Trigger>
-                      <Tabs.Trigger value="focus">Specialties</Tabs.Trigger>
-                      <Tabs.Trigger value="payment">
-                        Payment & Insurance
-                      </Tabs.Trigger>
-                    </Tabs.List>
+                  <div
+                    className={layoutStyles.signupFormTabs}
+                    role="tablist"
+                    aria-label="Preference categories"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={patientPrefsTab === "modalities"}
+                      className={`${layoutStyles.signupFormTab} ${patientPrefsTab === "modalities" ? layoutStyles.signupFormTabActive : ""}`}
+                      onClick={() => setPatientPrefsTab("modalities")}
+                    >
+                      Treatment Styles
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={patientPrefsTab === "focus"}
+                      className={`${layoutStyles.signupFormTab} ${patientPrefsTab === "focus" ? layoutStyles.signupFormTabActive : ""}`}
+                      onClick={() => setPatientPrefsTab("focus")}
+                    >
+                      Specialties
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={patientPrefsTab === "payment"}
+                      className={`${layoutStyles.signupFormTab} ${patientPrefsTab === "payment" ? layoutStyles.signupFormTabActive : ""}`}
+                      onClick={() => setPatientPrefsTab("payment")}
+                    >
+                      Payment &amp; Insurance
+                    </button>
+                  </div>
 
-                    <Box pt="4">
-                      <Tabs.Content value="modalities">
-                        <Flex direction="column" gap="4">
-                          <Text size="2" weight="medium">
-                            Which chiropractic techniques interest you?
-                          </Text>
-                          <Grid columns="2" gap="3">
-                            {[
-                              "Gonstead",
-                              "Diversified",
-                              "Activator",
-                              "TRT",
-                              "SOT",
-                              "Thompson",
-                              "Webster",
-                              "Cox",
-                            ].map((modality) => (
-                              <Flex key={modality} gap="2" align="center">
-                                <Checkbox
-                                  checked={formData.preferredModalities.includes(
+                  <div className={layoutStyles.signupFormTabPanel}>
+                    {patientPrefsTab === "modalities" && (
+                      <div className={layoutStyles.signupFormStack}>
+                        <p className={layoutStyles.signupLabel}>
+                          Which chiropractic techniques interest you?
+                        </p>
+                        <div className={layoutStyles.signupGrid2}>
+                          {[
+                            "Gonstead",
+                            "Diversified",
+                            "Activator",
+                            "TRT",
+                            "SOT",
+                            "Thompson",
+                            "Webster",
+                            "Cox",
+                          ].map((modality) => (
+                            <label
+                              key={modality}
+                              className={layoutStyles.signupCheckRow}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.preferredModalities.includes(
+                                  modality,
+                                )}
+                                onChange={() =>
+                                  handleCheckboxChange(
+                                    "preferredModalities",
                                     modality,
-                                  )}
-                                  onCheckedChange={() =>
-                                    handleCheckboxChange(
-                                      "preferredModalities",
-                                      modality,
-                                    )
-                                  }
-                                />
-                                <Text size="2">{modality}</Text>
-                              </Flex>
-                            ))}
-                          </Grid>
-                        </Flex>
-                      </Tabs.Content>
+                                  )
+                                }
+                              />
+                              <span>{modality}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                      <Tabs.Content value="focus">
-                        <Flex direction="column" gap="4">
-                          <Text size="2" weight="medium">
-                            Do you need care for specific conditions or life
-                            stages?
-                          </Text>
-                          <Grid columns="2" gap="3">
-                            {[
-                              "Pediatrics",
-                              "Sports",
-                              "Auto Injury",
-                              "Wellness",
-                              "Prenatal",
-                              "Geriatric",
-                            ].map((area) => (
-                              <Flex key={area} gap="2" align="center">
-                                <Checkbox
-                                  checked={formData.focusAreas.includes(area)}
-                                  onCheckedChange={() =>
-                                    handleCheckboxChange("focusAreas", area)
-                                  }
-                                />
-                                <Text size="2">{area}</Text>
-                              </Flex>
-                            ))}
-                          </Grid>
-                        </Flex>
-                      </Tabs.Content>
-
-                      <Tabs.Content value="payment">
-                        <Flex direction="column" gap="4">
-                          <Flex direction="column" gap="3">
-                            <Text size="2" weight="bold">
-                              Preferred Payment Method
-                            </Text>
-                            <RadioGroup.Root
-                              value={formData.preferredBusinessModel}
-                              onValueChange={(value) =>
-                                handleInputChange(
-                                  "preferredBusinessModel",
-                                  value,
-                                )
-                              }
+                    {patientPrefsTab === "focus" && (
+                      <div className={layoutStyles.signupFormStack}>
+                        <p className={layoutStyles.signupLabel}>
+                          Do you need care for specific conditions or life
+                          stages?
+                        </p>
+                        <div className={layoutStyles.signupGrid2}>
+                          {[
+                            "Pediatrics",
+                            "Sports",
+                            "Auto Injury",
+                            "Wellness",
+                            "Prenatal",
+                            "Geriatric",
+                          ].map((area) => (
+                            <label
+                              key={area}
+                              className={layoutStyles.signupCheckRow}
                             >
-                              <Flex direction="column" gap="2">
-                                <Flex gap="2" align="center">
-                                  <RadioGroup.Item value="cash" id="cash" />
-                                  <Text as="label" htmlFor="cash" size="2">
-                                    Cash-Based (Direct Pay)
-                                  </Text>
-                                </Flex>
-                                <Flex gap="2" align="center">
-                                  <RadioGroup.Item
-                                    value="insurance"
-                                    id="insurance"
-                                  />
-                                  <Text as="label" htmlFor="insurance" size="2">
-                                    Insurance-Based
-                                  </Text>
-                                </Flex>
-                                <Flex gap="2" align="center">
-                                  <RadioGroup.Item value="hybrid" id="hybrid" />
-                                  <Text as="label" htmlFor="hybrid" size="2">
-                                    Either (Cash or Insurance)
-                                  </Text>
-                                </Flex>
-                              </Flex>
-                            </RadioGroup.Root>
-                          </Flex>
+                              <input
+                                type="checkbox"
+                                checked={formData.focusAreas.includes(area)}
+                                onChange={() =>
+                                  handleCheckboxChange("focusAreas", area)
+                                }
+                              />
+                              <span>{area}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                          <Flex direction="column" gap="3">
-                            <Text size="2" weight="bold">
-                              Insurance Type (if applicable)
-                            </Text>
-                            <Select.Root
-                              value={formData.insuranceType}
-                              onValueChange={(value) =>
-                                handleInputChange("insuranceType", value)
-                              }
-                            >
-                              <Select.Trigger />
-                              <Select.Content>
-                                <Select.Item value="none">
-                                  No Insurance / Self-Pay
-                                </Select.Item>
-                                <Select.Item value="BCBS">
-                                  Blue Cross Blue Shield
-                                </Select.Item>
-                                <Select.Item value="Aetna">Aetna</Select.Item>
-                                <Select.Item value="Cigna">Cigna</Select.Item>
-                                <Select.Item value="UnitedHealthcare">
-                                  UnitedHealthcare
-                                </Select.Item>
-                                <Select.Item value="Medicare">
-                                  Medicare
-                                </Select.Item>
-                                <Select.Item value="Medicaid">
-                                  Medicaid
-                                </Select.Item>
-                              </Select.Content>
-                            </Select.Root>
-                          </Flex>
+                    {patientPrefsTab === "payment" && (
+                      <div className={layoutStyles.signupFormStack}>
+                        <div className={layoutStyles.signupField}>
+                          <p className={layoutStyles.signupLabel}>
+                            Preferred Payment Method
+                          </p>
+                          <div className={layoutStyles.signupRadioStack}>
+                            <label className={layoutStyles.signupCheckRow}>
+                              <input
+                                type="radio"
+                                name="patient-pay-model"
+                                value="cash"
+                                checked={
+                                  formData.preferredBusinessModel === "cash"
+                                }
+                                onChange={() =>
+                                  handleInputChange(
+                                    "preferredBusinessModel",
+                                    "cash",
+                                  )
+                                }
+                              />
+                              <span>Cash-Based (Direct Pay)</span>
+                            </label>
+                            <label className={layoutStyles.signupCheckRow}>
+                              <input
+                                type="radio"
+                                name="patient-pay-model"
+                                value="insurance"
+                                checked={
+                                  formData.preferredBusinessModel ===
+                                  "insurance"
+                                }
+                                onChange={() =>
+                                  handleInputChange(
+                                    "preferredBusinessModel",
+                                    "insurance",
+                                  )
+                                }
+                              />
+                              <span>Insurance-Based</span>
+                            </label>
+                            <label className={layoutStyles.signupCheckRow}>
+                              <input
+                                type="radio"
+                                name="patient-pay-model"
+                                value="hybrid"
+                                checked={
+                                  formData.preferredBusinessModel === "hybrid"
+                                }
+                                onChange={() =>
+                                  handleInputChange(
+                                    "preferredBusinessModel",
+                                    "hybrid",
+                                  )
+                                }
+                              />
+                              <span>Either (Cash or Insurance)</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div className={layoutStyles.signupField}>
+                          <label
+                            className={layoutStyles.signupLabel}
+                            htmlFor="signup-patient-insurance"
+                          >
+                            Insurance Type (if applicable)
+                          </label>
+                          <select
+                            id="signup-patient-insurance"
+                            className={layoutStyles.signupSelect}
+                            value={formData.insuranceType}
+                            onChange={(e) =>
+                              handleInputChange("insuranceType", e.target.value)
+                            }
+                          >
+                            <option value="none">
+                              No Insurance / Self-Pay
+                            </option>
+                            <option value="BCBS">Blue Cross Blue Shield</option>
+                            <option value="Aetna">Aetna</option>
+                            <option value="Cigna">Cigna</option>
+                            <option value="UnitedHealthcare">
+                              UnitedHealthcare
+                            </option>
+                            <option value="Medicare">Medicare</option>
+                            <option value="Medicaid">Medicaid</option>
+                          </select>
+                        </div>
+                        <div className={layoutStyles.signupField}>
+                          <label
+                            className={layoutStyles.signupLabel}
+                            htmlFor="signup-patient-budget"
+                          >
+                            Budget Range (Monthly)
+                          </label>
+                          <select
+                            id="signup-patient-budget"
+                            className={layoutStyles.signupSelect}
+                            value={formData.budgetRange}
+                            onChange={(e) =>
+                              handleInputChange("budgetRange", e.target.value)
+                            }
+                          >
+                            <option value="none">No Preference</option>
+                            <option value="under-50">Under $50</option>
+                            <option value="50-100">$50 - $100</option>
+                            <option value="100-150">$100 - $150</option>
+                            <option value="over-150">Over $150</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                          <Flex direction="column" gap="3">
-                            <Text size="2" weight="bold">
-                              Budget Range (Monthly)
-                            </Text>
-                            <Select.Root
-                              value={formData.budgetRange}
-                              onValueChange={(value) =>
-                                handleInputChange("budgetRange", value)
-                              }
-                            >
-                              <Select.Trigger />
-                              <Select.Content>
-                                <Select.Item value="none">
-                                  No Preference
-                                </Select.Item>
-                                <Select.Item value="under-50">
-                                  Under $50
-                                </Select.Item>
-                                <Select.Item value="50-100">
-                                  $50 - $100
-                                </Select.Item>
-                                <Select.Item value="100-150">
-                                  $100 - $150
-                                </Select.Item>
-                                <Select.Item value="over-150">
-                                  Over $150
-                                </Select.Item>
-                              </Select.Content>
-                            </Select.Root>
-                          </Flex>
-                        </Flex>
-                      </Tabs.Content>
-                    </Box>
-                  </Tabs.Root>
-
-                  <Flex gap="3" justify="between" mt="4">
-                    <Button
-                      size="3"
-                      variant="ghost"
+                  <div className={layoutStyles.signupFormActions}>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupButtonGhost}
                       onClick={handleBack}
-                      style={{ color: "var(--gray-11)" }}
                     >
                       Back
-                    </Button>
-                    <Button size="3" variant="solid" onClick={handleNext}>
-                      Next Step
-                    </Button>
-                  </Flex>
-                </Flex>
+                    </button>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupSubmit}
+                      onClick={handleNext}
+                    >
+                      Next step
+                    </button>
+                  </div>
+                </div>
               )}
 
-              {/* Step 4: Location & Schedule */}
               {step === 4 && (
-                <Flex direction="column" gap="4">
-                  <Heading size="6">Location & Availability</Heading>
-                  <Flex direction="column" gap="3">
-                    <Grid columns="3" gap="3">
-                      <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">
+                <div className={layoutStyles.signupFormStack}>
+                  <h2 className={layoutStyles.signupFormSectionTitle}>
+                    Location & Availability
+                  </h2>
+                  <div className={layoutStyles.signupFields}>
+                    <div className={layoutStyles.signupGrid3}>
+                      <div className={layoutStyles.signupField}>
+                        <label
+                          className={layoutStyles.signupLabel}
+                          htmlFor="signup-patient-city"
+                        >
                           City
-                        </Text>
-                        <TextField.Root
-                          size="3"
+                        </label>
+                        <input
+                          id="signup-patient-city"
+                          className={layoutStyles.signupInput}
                           value={formData.city}
                           onChange={handleTextFieldChange("city")}
                           placeholder="City"
                           required
                         />
-                      </Flex>
-                      <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">
+                      </div>
+                      <div className={layoutStyles.signupField}>
+                        <label
+                          className={layoutStyles.signupLabel}
+                          htmlFor="signup-patient-state"
+                        >
                           State
-                        </Text>
-                        <TextField.Root
-                          size="3"
+                        </label>
+                        <input
+                          id="signup-patient-state"
+                          className={layoutStyles.signupInput}
                           value={formData.state}
                           onChange={handleTextFieldChange("state")}
                           placeholder="State"
                           required
                         />
-                      </Flex>
-                      <Flex direction="column" gap="1">
-                        <Text as="label" size="2" weight="bold">
+                      </div>
+                      <div className={layoutStyles.signupField}>
+                        <label
+                          className={layoutStyles.signupLabel}
+                          htmlFor="signup-patient-zip"
+                        >
                           Zip Code
-                        </Text>
-                        <TextField.Root
-                          size="3"
+                        </label>
+                        <input
+                          id="signup-patient-zip"
+                          className={layoutStyles.signupInput}
                           value={formData.zipCode}
                           onChange={handleTextFieldChange("zipCode")}
                           placeholder="12345"
                           required
                         />
-                      </Flex>
-                    </Grid>
-
-                    <Flex direction="column" gap="1">
-                      <Text as="label" size="2" weight="bold">
+                      </div>
+                    </div>
+                    <div className={layoutStyles.signupField}>
+                      <label
+                        className={layoutStyles.signupLabel}
+                        htmlFor="signup-patient-radius"
+                      >
                         Search Radius (miles)
-                      </Text>
-                      <Select.Root
+                      </label>
+                      <select
+                        id="signup-patient-radius"
+                        className={layoutStyles.signupSelect}
                         value={formData.searchRadius.toString()}
-                        onValueChange={(value) =>
+                        onChange={(e) =>
                           handleInputChange(
                             "searchRadius",
-                            parseInt(value).toString(),
+                            parseInt(e.target.value, 10).toString(),
                           )
                         }
                       >
-                        <Select.Trigger />
-                        <Select.Content>
-                          {SEARCH_RADIUS_MILES_OPTIONS.map((n) => (
-                            <Select.Item key={n} value={String(n)}>
-                              {n} miles
-                            </Select.Item>
-                          ))}
-                        </Select.Content>
-                      </Select.Root>
-                    </Flex>
-
-                    <Flex direction="column" gap="3">
-                      <Text size="2" weight="bold">
+                        {SEARCH_RADIUS_MILES_OPTIONS.map((n) => (
+                          <option key={n} value={String(n)}>
+                            {n} miles
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={layoutStyles.signupField}>
+                      <p className={layoutStyles.signupLabel}>
                         Preferred Days (optional)
-                      </Text>
-                      <Grid columns="2" gap="3">
+                      </p>
+                      <div className={layoutStyles.signupGrid2}>
                         {[
                           "Monday",
                           "Tuesday",
@@ -725,65 +791,71 @@ export default function PatientSignUpPage() {
                           "Saturday",
                           "Sunday",
                         ].map((day) => (
-                          <Flex key={day} gap="2" align="center">
-                            <Checkbox
+                          <label
+                            key={day}
+                            className={layoutStyles.signupCheckRow}
+                          >
+                            <input
+                              type="checkbox"
                               checked={formData.preferredDays.includes(day)}
-                              onCheckedChange={() =>
+                              onChange={() =>
                                 handleCheckboxChange("preferredDays", day)
                               }
                             />
-                            <Text size="2">{day}</Text>
-                          </Flex>
+                            <span>{day}</span>
+                          </label>
                         ))}
-                      </Grid>
-                    </Flex>
-
-                    <Flex direction="column" gap="3">
-                      <Text size="2" weight="bold">
+                      </div>
+                    </div>
+                    <div className={layoutStyles.signupField}>
+                      <p className={layoutStyles.signupLabel}>
                         Preferred Times (optional)
-                      </Text>
-                      <Grid columns="2" gap="3">
+                      </p>
+                      <div className={layoutStyles.signupGrid2}>
                         {[
                           "Morning (8-12)",
                           "Afternoon (12-5)",
                           "Evening (5-8)",
                         ].map((time) => (
-                          <Flex key={time} gap="2" align="center">
-                            <Checkbox
+                          <label
+                            key={time}
+                            className={layoutStyles.signupCheckRow}
+                          >
+                            <input
+                              type="checkbox"
                               checked={formData.preferredTimes.includes(time)}
-                              onCheckedChange={() =>
+                              onChange={() =>
                                 handleCheckboxChange("preferredTimes", time)
                               }
                             />
-                            <Text size="2">{time}</Text>
-                          </Flex>
+                            <span>{time}</span>
+                          </label>
                         ))}
-                      </Grid>
-                    </Flex>
-                  </Flex>
-                  <Flex gap="3" justify="between" mt="4">
-                    <Button
-                      size="3"
-                      variant="ghost"
+                      </div>
+                    </div>
+                  </div>
+                  <div className={layoutStyles.signupFormActions}>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupButtonGhost}
                       onClick={handleBack}
-                      style={{ color: "var(--gray-11)" }}
                     >
                       Back
-                    </Button>
-                    <Button
-                      size="3"
-                      variant="solid"
+                    </button>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupSubmit}
                       onClick={handleSubmit}
                       disabled={isSubmitting || submitSuccess}
                     >
                       {isSubmitting
-                        ? "Creating Account..."
+                        ? "Creating account…"
                         : submitSuccess
                           ? "Success!"
-                          : "Complete Sign-Up"}
-                    </Button>
-                  </Flex>
-                </Flex>
+                          : "Complete sign-up"}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

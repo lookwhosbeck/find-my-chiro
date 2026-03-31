@@ -86,12 +86,12 @@
 }
 
 .signinTab:focus-visible {
-  outline: 2px solid #0072de;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
 .signinTabActive {
-  background: #0072de;
+  background: #2563eb;
   color: #ffffff;
 }
 
@@ -153,8 +153,8 @@
 
 .signinInput:focus {
   outline: none;
-  border-color: #0072de;
-  box-shadow: 0 0 0 1px #0072de;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 
 .signinError {
@@ -175,7 +175,7 @@
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
-  background: #0072de;
+  background: #2563eb;
   color: #ffffff;
   font-size: 14px;
   font-weight: 500;
@@ -190,7 +190,7 @@
 }
 
 .signinSubmit:hover:not(:disabled) {
-  background: #0066c7;
+  background: #1d4ed8;
 }
 
 .signinSubmit:disabled {
@@ -199,7 +199,7 @@
 }
 
 .signinSubmit:focus-visible {
-  outline: 2px solid #0072de;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
@@ -217,7 +217,7 @@
 }
 
 .signinInlineLink {
-  color: #0072de;
+  color: #2563eb;
   text-decoration: none;
   font-weight: 400;
 }
@@ -236,7 +236,7 @@
   font-weight: 400;
   line-height: 20px;
   letter-spacing: -0.48px;
-  color: #0072de;
+  color: #2563eb;
   text-align: center;
   text-decoration: none;
   background: none;
@@ -251,7 +251,7 @@
 }
 
 .signinBack:focus-visible {
-  outline: 2px solid #0072de;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
   border-radius: 6px;
 }
