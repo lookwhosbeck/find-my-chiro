@@ -9,13 +9,17 @@ import { SignupSplitShell } from '../components/SignupSplitShell';
 import layoutStyles from '../components/SignupSplitShell.module.css';
 import { signUpChiropractor, type SignUpData } from '../lib/auth';
 import { getChiropracticColleges, type ChiropracticCollege } from '../lib/queries';
+import { supabase } from '../lib/supabase';
 
 const steps = [
   { number: 1, label: 'Account' },
   { number: 2, label: 'Professional Details' },
   { number: 3, label: 'Matching' },
   { number: 4, label: 'Organization' },
+  { number: 5, label: 'Membership' },
 ];
+
+type SignupPlan = 'free' | 'monthly' | 'annual';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -23,6 +27,7 @@ export default function SignUpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [premiumNeedsEmailVerify, setPremiumNeedsEmailVerify] = useState(false);
   const [colleges, setColleges] = useState<ChiropracticCollege[]>([]);
   const [isLoadingColleges, setIsLoadingColleges] = useState(true);
   const [formData, setFormData] = useState({
@@ -49,6 +54,7 @@ export default function SignUpPage() {
     zip: '',
     website: '',
     instagram: '',
+    signupPlan: 'free' as SignupPlan,
   });
 
   // Fetch colleges on component mount
@@ -101,7 +107,7 @@ export default function SignUpPage() {
   };
 
   const handleNext = () => {
-    if (step < 4) setStep(step + 1);
+    if (step < 5) setStep(step + 1);
   };
 
   const handleBack = () => {
@@ -133,19 +139,53 @@ export default function SignUpPage() {
 
     setIsSubmitting(true);
     setSubmitError(null);
+    setPremiumNeedsEmailVerify(false);
 
     try {
-      const result = await signUpChiropractor(formData as SignUpData);
-      
-      if (result.success) {
-        setSubmitSuccess(true);
-        // Redirect to account page after successful signup
+      const { signupPlan: chosenPlan, ...signupFields } = formData;
+      const result = await signUpChiropractor(signupFields as SignUpData);
+
+      if (!result.success) {
+        setSubmitError(result.error || 'Failed to create account. Please try again.');
+        return;
+      }
+
+      setSubmitSuccess(true);
+
+      const plan = chosenPlan;
+      if (plan === 'free') {
         setTimeout(() => {
           router.push('/account');
         }, 2000);
-      } else {
-        setSubmitError(result.error || 'Failed to create account. Please try again.');
+        return;
       }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setPremiumNeedsEmailVerify(true);
+        return;
+      }
+
+      const checkoutRes = await fetch('/api/checkout/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const checkoutJson = (await checkoutRes.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!checkoutRes.ok || !checkoutJson.url) {
+        setSubmitError(
+          checkoutJson.error ||
+            'Account created, but checkout could not start. You can subscribe anytime from your account.',
+        );
+        setTimeout(() => router.push('/account'), 3000);
+        return;
+      }
+      window.location.href = checkoutJson.url;
     } catch (error: any) {
       console.error('Signup error:', error);
       setSubmitError(error.message || 'An unexpected error occurred. Please try again.');
@@ -164,6 +204,8 @@ export default function SignUpPage() {
         return 'Detailed matching preferences ensure patients find exactly what they need.';
       case 4:
         return 'Location data enables geo-search so patients can find nearby care.';
+      case 5:
+        return 'Choose a free listing or upgrade to premium for the full provider experience.';
       default:
         return '';
     }
@@ -286,12 +328,31 @@ export default function SignUpPage() {
       ) : (
         <div className={`${layoutStyles.signupCard} ${layoutStyles.signupCardWide}`}>
           <div className={layoutStyles.signupWideBody}>
-            {submitSuccess && (
+            {submitSuccess && !premiumNeedsEmailVerify && (
               <Callout.Root color="green">
                 <Callout.Icon>
                   <CheckCircledIcon />
                 </Callout.Icon>
-                <Callout.Text>Account created successfully! Redirecting...</Callout.Text>
+                <Callout.Text>
+                  {formData.signupPlan === 'free'
+                    ? 'Account created successfully! Redirecting...'
+                    : 'Redirecting to secure checkout...'}
+                </Callout.Text>
+              </Callout.Root>
+            )}
+
+            {premiumNeedsEmailVerify && (
+              <Callout.Root color="blue">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  Account created. Confirm your email from the message we sent, then sign in and open{' '}
+                  <Link href="/account" className={layoutStyles.signupInlineLink}>
+                    your account
+                  </Link>{' '}
+                  to complete premium checkout.
+                </Callout.Text>
               </Callout.Root>
             )}
 
@@ -572,13 +633,64 @@ export default function SignUpPage() {
                     <Button size="3" variant="ghost" onClick={handleBack} style={{ color: 'var(--gray-11)' }}>
                       Back
                     </Button>
-                    <Button 
-                      size="3" 
-                      variant="solid" 
+                    <Button size="3" variant="solid" onClick={handleNext}>
+                      Next Step
+                    </Button>
+                  </Flex>
+                </Flex>
+              )}
+
+              {step === 5 && (
+                <Flex direction="column" gap="4">
+                  <Heading size="6">Choose your membership</Heading>
+                  <Text size="2" color="gray">
+                    Start free with core listing features, or subscribe to unlock premium tools as we roll them
+                    out.
+                  </Text>
+                  <RadioGroup.Root
+                    value={formData.signupPlan}
+                    onValueChange={(value) =>
+                      handleInputChange('signupPlan', value as SignupPlan)
+                    }
+                  >
+                    <Flex direction="column" gap="3">
+                      <Flex gap="2" align="center">
+                        <RadioGroup.Item value="free" id="plan-free" />
+                        <Text as="label" htmlFor="plan-free" size="2" weight="medium">
+                          Free — limited features
+                        </Text>
+                      </Flex>
+                      <Flex gap="2" align="center">
+                        <RadioGroup.Item value="monthly" id="plan-monthly" />
+                        <Text as="label" htmlFor="plan-monthly" size="2" weight="medium">
+                          Premium — monthly billing
+                        </Text>
+                      </Flex>
+                      <Flex gap="2" align="center">
+                        <RadioGroup.Item value="annual" id="plan-annual" />
+                        <Text as="label" htmlFor="plan-annual" size="2" weight="medium">
+                          Premium — annual billing
+                        </Text>
+                      </Flex>
+                    </Flex>
+                  </RadioGroup.Root>
+                  <Flex gap="3" justify="between" mt="4">
+                    <Button size="3" variant="ghost" onClick={handleBack} style={{ color: 'var(--gray-11)' }}>
+                      Back
+                    </Button>
+                    <Button
+                      size="3"
+                      variant="solid"
                       onClick={handleSubmit}
-                      disabled={isSubmitting || submitSuccess}
+                      disabled={isSubmitting || submitSuccess || premiumNeedsEmailVerify}
                     >
-                      {isSubmitting ? 'Creating Account...' : submitSuccess ? 'Success!' : 'Complete Sign-Up'}
+                      {isSubmitting
+                        ? 'Working...'
+                        : submitSuccess
+                          ? 'Done'
+                          : formData.signupPlan === 'free'
+                            ? 'Complete sign-up'
+                            : 'Continue to checkout'}
                     </Button>
                   </Flex>
                 </Flex>

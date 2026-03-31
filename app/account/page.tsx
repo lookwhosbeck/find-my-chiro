@@ -21,6 +21,7 @@ import {
   CHIRO_BUDGET_RANGE_OPTIONS,
 } from './constants';
 import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
+import { isPremiumProfile } from '@/app/lib/subscription';
 import styles from './page.module.css';
 
 function supabaseErrorMessage(err: unknown): string {
@@ -38,6 +39,7 @@ type NavKey =
   | 'profile'
   | 'practice'
   | 'specialties'
+  | 'membership'
   | 'preferences'
   | 'referrals'
   | 'messages'
@@ -58,6 +60,8 @@ function accountPageTitle(nav: NavKey): string {
       return 'Your Practice';
     case 'specialties':
       return 'Specialties';
+    case 'membership':
+      return 'Membership';
     case 'preferences':
       return 'Your Preferences';
     case 'referrals':
@@ -82,6 +86,10 @@ interface UserProfile {
   avatar_url?: string;
   created_at: string;
   updated_at: string;
+  stripe_customer_id?: string | null;
+  subscription_status?: string | null;
+  subscription_price_id?: string | null;
+  current_period_end?: string | null;
 }
 
 interface ChiropractorProfile {
@@ -133,6 +141,8 @@ export default function AccountPage() {
   const [practiceEditing, setPracticeEditing] = useState(false);
   const [preferencesEditing, setPreferencesEditing] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [checkoutBanner, setCheckoutBanner] = useState<string | null>(null);
 
   const [chiroModalityNames, setChiroModalityNames] = useState<string[]>([]);
   const [chiroFocusNames, setChiroFocusNames] = useState<string[]>([]);
@@ -282,6 +292,22 @@ export default function AccountPage() {
 
   useEffect(() => {
     checkUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const c = new URLSearchParams(window.location.search).get('checkout');
+    if (c === 'success') {
+      setCheckoutBanner(
+        'Payment received. Your subscription status may take a few seconds to update after you return from Stripe.',
+      );
+      window.history.replaceState({}, '', '/account');
+      void checkUser();
+    } else if (c === 'canceled') {
+      setCheckoutBanner('Checkout was canceled. You can subscribe anytime from this page.');
+      window.history.replaceState({}, '', '/account');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -438,6 +464,60 @@ export default function AccountPage() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push('/');
+  };
+
+  const startSubscriptionCheckout = async (plan: 'monthly' | 'annual') => {
+    setBillingBusy(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('You need to be signed in to subscribe.');
+
+      const res = await fetch('/api/checkout/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !json.url) {
+        throw new Error(json.error || 'Could not start checkout. Check Stripe env vars and price IDs.');
+      }
+      window.location.href = json.url;
+    } catch (e) {
+      alert(supabaseErrorMessage(e));
+    } finally {
+      setBillingBusy(false);
+    }
+  };
+
+  const openBillingPortal = async () => {
+    setBillingBusy(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('You need to be signed in.');
+
+      const res = await fetch('/api/billing/portal', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !json.url) {
+        throw new Error(
+          json.error || 'Could not open the billing portal. Enable the Customer Portal in Stripe.',
+        );
+      }
+      window.location.href = json.url;
+    } catch (e) {
+      alert(supabaseErrorMessage(e));
+    } finally {
+      setBillingBusy(false);
+    }
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -723,6 +803,8 @@ export default function AccountPage() {
     { key: 'practice', label: 'Your practice' },
     { key: 'profile', label: 'Your profile' },
     { key: 'specialties', label: 'Specialties' },
+    { key: 'membership', label: 'Membership' },
+    { key: 'referrals', label: 'Referrals' },
   ];
 
   const patientNavAvailable: { key: NavKey; label: string }[] = [
@@ -738,6 +820,9 @@ export default function AccountPage() {
   ];
 
   const navAvailable = isChiro ? chiroNavAvailable : patientNavAvailable;
+  const navComingSoonFiltered = isChiro
+    ? navComingSoon.filter((i) => i.key !== 'referrals')
+    : navComingSoon;
 
   const displayName =
     [profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'there';
@@ -748,11 +833,13 @@ export default function AccountPage() {
     year: 'numeric',
   });
 
-  const toolbarEditDisabled = isComingSoonNavKey(activeNav) || activeNav === 'specialties';
+  const toolbarEditDisabled =
+    isComingSoonNavKey(activeNav) || activeNav === 'specialties' || activeNav === 'membership';
 
   const toolbarSaveDisabled =
     saving ||
     isComingSoonNavKey(activeNav) ||
+    activeNav === 'membership' ||
     (activeNav === 'profile' && !profileEditing) ||
     (activeNav === 'practice' && (!isChiro || !practiceEditing)) ||
     (activeNav === 'preferences' && (!isPatient || !preferencesEditing));
@@ -1462,6 +1549,61 @@ export default function AccountPage() {
     <div className={styles.placeholderPanel}>This section is coming soon.</div>
   );
 
+  const renderMembershipPanel = () => {
+    const premium = isPremiumProfile(profile);
+    const renews = profile.current_period_end
+      ? new Date(profile.current_period_end).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : null;
+    const statusLabel = profile.subscription_status || 'free';
+
+    return (
+      <>
+        {checkoutBanner && <p className={styles.mutedNote}>{checkoutBanner}</p>}
+        <p className={styles.sectionTitle}>Current plan</p>
+        <p className={styles.mutedNote}>
+          {premium
+            ? `Premium — status: ${statusLabel}${renews ? ` · Renews or ends next on ${renews}` : ''}`
+            : `Free — status: ${statusLabel}. Upgrade for premium features as they launch.`}
+        </p>
+        <div className={styles.actionsRow} style={{ flexWrap: 'wrap', gap: '12px' }}>
+          {!premium ? (
+            <>
+              <button
+                type="button"
+                className={styles.secondaryBtn}
+                disabled={billingBusy}
+                onClick={() => void startSubscriptionCheckout('monthly')}
+              >
+                {billingBusy ? 'Please wait…' : 'Subscribe monthly'}
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryBtn}
+                disabled={billingBusy}
+                onClick={() => void startSubscriptionCheckout('annual')}
+              >
+                {billingBusy ? 'Please wait…' : 'Subscribe annual'}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              disabled={billingBusy}
+              onClick={() => void openBillingPortal()}
+            >
+              {billingBusy ? 'Please wait…' : 'Manage subscription'}
+            </button>
+          )}
+        </div>
+      </>
+    );
+  };
+
   let mainContent: ReactNode = null;
   if (activeNav === 'profile') {
     mainContent = renderProfilePanel();
@@ -1471,6 +1613,20 @@ export default function AccountPage() {
     mainContent = renderSpecialtiesPanel();
   } else if (activeNav === 'preferences' && isPatient) {
     mainContent = renderPreferencesPanel();
+  } else if (activeNav === 'membership' && isChiro) {
+    mainContent = renderMembershipPanel();
+  } else if (activeNav === 'referrals' && isChiro) {
+    mainContent =
+      !isPremiumProfile(profile) ? (
+        <div className={styles.placeholderPanel}>
+          <p>Referrals are a premium capability.</p>
+          <p className={styles.mutedNote} style={{ marginTop: '12px' }}>
+            Open <strong>Membership</strong> in the sidebar to subscribe.
+          </p>
+        </div>
+      ) : (
+        renderPlaceholder()
+      );
   } else if (isComingSoonNavKey(activeNav)) {
     mainContent = renderPlaceholder();
   } else {
@@ -1502,7 +1658,7 @@ export default function AccountPage() {
                 <span className={styles.navComingSoonLine} aria-hidden />
               </div>
               <div className={styles.navComingSoonList} role="group" aria-label="Coming soon">
-                {navComingSoon.map((item) => (
+                {navComingSoonFiltered.map((item) => (
                   <button
                     key={item.key}
                     type="button"
