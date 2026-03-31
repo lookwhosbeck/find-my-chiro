@@ -238,7 +238,7 @@ function getPrimaryModality(modalities: string[] | null | undefined): string {
 }
 
 export interface ChiropracticCollege {
-  id: number;
+  id: string;
   name: string;
   state?: string;
   websiteUrl?: string;
@@ -292,32 +292,33 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
 }
 
 /**
- * Fetch chiropractic colleges from the database
+ * Fetch chiropractic colleges (browser → API route so RLS/service role is handled server-side).
  */
 export async function getChiropracticColleges(): Promise<ChiropracticCollege[]> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
-      console.warn('Supabase not configured. Returning empty array.');
+    if (typeof window === 'undefined') {
       return [];
     }
 
-    const { data, error } = await supabase
-      .from('chiropractic_colleges')
-      .select('id, name, state, website_url, logo_url')
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching chiropractic colleges:', error);
+    const res = await fetch(`${window.location.origin}/api/chiropractic-colleges`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      console.error('Error fetching chiropractic colleges:', res.status);
       return [];
-    }    return (data || []).map((item) => ({
-      id: item.id,
-      name: item.name,
-      state: item.state || undefined,
-      websiteUrl: item.website_url || undefined,
-      logoUrl: item.logo_url || undefined,
+    }
+
+    const raw = (await res.json()) as unknown;
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+
+    return raw.map((item: Record<string, unknown>) => ({
+      id: item.id != null ? String(item.id) : '',
+      name: String(item.name ?? ''),
+      state: item.state ? String(item.state) : undefined,
+      websiteUrl: item.websiteUrl ? String(item.websiteUrl) : undefined,
+      logoUrl: item.logoUrl ? String(item.logoUrl) : undefined,
     }));
   } catch (error) {
     console.error('Error fetching chiropractic colleges:', error);

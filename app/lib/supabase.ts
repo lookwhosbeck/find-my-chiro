@@ -1,20 +1,32 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createSupabaseClient } from './supabase-client';
+
+const placeholder = createClient('https://placeholder.supabase.co', 'placeholder-key');
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Create a dummy client if env vars are not set to prevent errors
-// This allows the app to run without Supabase configured (useful for development)
-let supabase: SupabaseClient;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase environment variables are not set. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file');
-  // Create a client with placeholder values to prevent runtime errors
-  // This will fail on actual queries, but won't crash the app
-  supabase = createClient('https://placeholder.supabase.co', 'placeholder-key');
-} else {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-}
-
-export { supabase };
-
+/**
+ * Browser: same singleton as `createSupabaseClient()` (avoids multiple GoTrue clients).
+ * Server: anon client for SSR / server code paths, or placeholder when unset.
+ */
+export const supabase: SupabaseClient =
+  typeof window !== 'undefined'
+    ? (() => {
+        try {
+          return createSupabaseClient();
+        } catch {
+          console.warn(
+            'Supabase environment variables are not set. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file',
+          );
+          return placeholder;
+        }
+      })()
+    : !supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co'
+      ? (() => {
+          console.warn(
+            'Supabase environment variables are not set. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file',
+          );
+          return placeholder;
+        })()
+      : createClient(supabaseUrl, supabaseAnonKey);

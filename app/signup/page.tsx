@@ -13,6 +13,16 @@ import { signUpChiropractor, type SignUpData } from '../lib/auth';
 import { getChiropracticColleges, type ChiropracticCollege } from '../lib/queries';
 import { supabase } from '../lib/supabase';
 
+async function fetchWithTimeout(input: RequestInfo, init: RequestInit, ms = 28000): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(input, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 const steps = [
   { number: 1, label: 'Account' },
   { number: 2, label: 'Professional Details' },
@@ -26,18 +36,18 @@ type SignupPlan = 'free' | 'monthly' | 'annual';
 export default function SignUpPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [premiumNeedsEmailVerify, setPremiumNeedsEmailVerify] = useState(false);
   const [checkoutReturnChecking, setCheckoutReturnChecking] = useState(false);
   const [embeddedClientSecret, setEmbeddedClientSecret] = useState<string | null>(null);
   const [embeddedError, setEmbeddedError] = useState<string | null>(null);
-  const [isPreparingEmbedded, setIsPreparingEmbedded] = useState(false);
-  const [premiumSignupActive, setPremiumSignupActive] = useState(false);
+  const [premiumFlowLoading, setPremiumFlowLoading] = useState(false);
+  const [freeSubmitLoading, setFreeSubmitLoading] = useState(false);
   const embeddedMountRef = useRef<HTMLDivElement | null>(null);
   const embeddedCheckoutRef = useRef<StripeEmbeddedCheckout | null>(null);
   const premiumFinishRef = useRef(false);
+  const premiumRunId = useRef(0);
   const [colleges, setColleges] = useState<ChiropracticCollege[]>([]);
   const [isLoadingColleges, setIsLoadingColleges] = useState(true);
   const [formData, setFormData] = useState({
@@ -67,31 +77,32 @@ export default function SignUpPage() {
     signupPlan: 'free' as SignupPlan,
   });
 
-  // Fetch colleges on component mount
-  useEffect(() => {
-    async function fetchColleges() {
-      setIsLoadingColleges(true);
-      try {
-        const collegesData = await getChiropracticColleges();
-        setColleges(collegesData);
-        // Set default college if available and not already set
-        if (collegesData.length > 0) {
-          setFormData(prev => {
-            if (!prev.college) {
-              return { ...prev, college: collegesData[0].name };
-            }
-            return prev;
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching colleges:', error);
-      } finally {
-        setIsLoadingColleges(false);
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
+  const loadColleges = useCallback(async () => {
+    setIsLoadingColleges(true);
+    try {
+      const collegesData = await getChiropracticColleges();
+      setColleges(collegesData);
+      if (collegesData.length > 0) {
+        setFormData(prev => {
+          if (!prev.college) {
+            return { ...prev, college: collegesData[0].name };
+          }
+          return prev;
+        });
       }
+    } catch (error) {
+      console.error('Error fetching colleges:', error);
+    } finally {
+      setIsLoadingColleges(false);
     }
-    fetchColleges();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    void loadColleges();
+  }, [loadColleges]);
 
   const finishPremiumAfterPayment = useCallback(() => {
     if (premiumFinishRef.current) return;
@@ -99,7 +110,7 @@ export default function SignUpPage() {
     embeddedCheckoutRef.current?.destroy();
     embeddedCheckoutRef.current = null;
     setEmbeddedClientSecret(null);
-    setPremiumSignupActive(false);
+    setPremiumFlowLoading(false);
     setSubmitSuccess(true);
     setStep(5);
     setTimeout(() => router.push('/account'), 2000);
@@ -183,10 +194,26 @@ export default function SignUpPage() {
           return;
         }
         embeddedCheckoutRef.current = checkout;
-        const el = embeddedMountRef.current;
-        if (el) {
-          checkout.mount(el);
-        }
+        const tryMount = () => {
+          if (cancelled) return;
+          const el = embeddedMountRef.current;
+          if (el) {
+            checkout.mount(el);
+            return;
+          }
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (cancelled) return;
+              const el2 = embeddedMountRef.current;
+              if (el2) {
+                checkout.mount(el2);
+              } else if (!cancelled) {
+                setEmbeddedError('Checkout could not be displayed. Refresh the page or try again.');
+              }
+            });
+          });
+        };
+        tryMount();
       } catch (e) {
         if (!cancelled) {
           setEmbeddedError(e instanceof Error ? e.message : 'Could not load checkout.');
@@ -206,6 +233,150 @@ export default function SignUpPage() {
     embeddedCheckoutRef.current = null;
     setEmbeddedClientSecret(null);
     setEmbeddedError(null);
+  };
+
+  const clearPremiumSelection = () => {
+    dismissEmbeddedCheckout();
+    setFormData(prev => ({ ...prev, signupPlan: 'free' }));
+    setPremiumFlowLoading(false);
+    setPremiumNeedsEmailVerify(false);
+  };
+
+  const validateForSignup = (): string | null => {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      setStep(1);
+      return 'Please complete all required fields in Step 1';
+    }
+    if (formData.password.length < 6) {
+      setStep(1);
+      return 'Password must be at least 6 characters long';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setStep(1);
+      return 'Please enter a valid email address';
+    }
+    if (!formData.licenseNumber?.trim()) {
+      setStep(2);
+      return 'Please enter your license number (Professional Details).';
+    }
+    return null;
+  };
+
+  const handleFreeSignup = async () => {
+    const err = validateForSignup();
+    if (err) {
+      setSubmitError(err);
+      return;
+    }
+    dismissEmbeddedCheckout();
+    const freePayload = { ...formDataRef.current, signupPlan: 'free' as SignupPlan };
+    formDataRef.current = freePayload;
+    setFormData(freePayload);
+    setFreeSubmitLoading(true);
+    setSubmitError(null);
+    setPremiumNeedsEmailVerify(false);
+    premiumFinishRef.current = false;
+
+    try {
+      const { signupPlan: _, ...signupFields } = freePayload;
+      const result = await signUpChiropractor(signupFields as SignUpData);
+      if (!result.success) {
+        setSubmitError(result.error || 'Failed to create account. Please try again.');
+        return;
+      }
+      setSubmitSuccess(true);
+      setTimeout(() => router.push('/account'), 2000);
+    } catch (error: unknown) {
+      console.error('Signup error:', error);
+      setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
+    } finally {
+      setFreeSubmitLoading(false);
+    }
+  };
+
+  const runPremiumSignup = async (plan: 'monthly' | 'annual') => {
+    const err = validateForSignup();
+    if (err) {
+      setSubmitError(err);
+      return;
+    }
+
+    const runId = ++premiumRunId.current;
+    dismissEmbeddedCheckout();
+    const premiumPayload = { ...formDataRef.current, signupPlan: plan };
+    formDataRef.current = premiumPayload;
+    setFormData(premiumPayload);
+    setPremiumFlowLoading(true);
+    setSubmitError(null);
+    setPremiumNeedsEmailVerify(false);
+    premiumFinishRef.current = false;
+
+    try {
+      const { signupPlan: _, ...signupFields } = premiumPayload;
+      const result = await signUpChiropractor(signupFields as SignUpData);
+      if (premiumRunId.current !== runId) return;
+
+      if (!result.success) {
+        setSubmitError(result.error || 'Failed to create account. Please try again.');
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (premiumRunId.current !== runId) return;
+
+      if (!session?.access_token) {
+        setPremiumNeedsEmailVerify(true);
+        return;
+      }
+
+      let checkoutRes: Response;
+      try {
+        checkoutRes = await fetchWithTimeout('/api/checkout/session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ plan, embedded: true }),
+        });
+      } catch (e) {
+        if (premiumRunId.current !== runId) return;
+        const msg =
+          e instanceof Error && e.name === 'AbortError'
+            ? 'Checkout timed out. Check your connection and try again, or subscribe from your account.'
+            : 'Could not reach checkout. Try again or subscribe from your account.';
+        setSubmitError(msg);
+        setTimeout(() => router.push('/account'), 4000);
+        return;
+      }
+
+      const checkoutJson = (await checkoutRes.json().catch(() => ({}))) as {
+        clientSecret?: string;
+        error?: string;
+      };
+      if (premiumRunId.current !== runId) return;
+
+      if (!checkoutRes.ok || !checkoutJson.clientSecret) {
+        setSubmitError(
+          checkoutJson.error ||
+            'Account created, but checkout could not start. You can subscribe anytime from your account.',
+        );
+        setTimeout(() => router.push('/account'), 3000);
+        return;
+      }
+      setEmbeddedClientSecret(checkoutJson.clientSecret);
+    } catch (error: unknown) {
+      if (premiumRunId.current !== runId) return;
+      console.error('Signup error:', error);
+      setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
+    } finally {
+      if (premiumRunId.current === runId) {
+        setPremiumFlowLoading(false);
+      }
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -244,100 +415,6 @@ export default function SignUpPage() {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setSubmitError('Please complete all required fields in Step 1');
-      setStep(1);
-      return;
-    }
-
-    // Validate password length
-    if (formData.password.length < 6) {
-      setSubmitError('Password must be at least 6 characters long');
-      setStep(1);
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setSubmitError('Please enter a valid email address');
-      setStep(1);
-      return;
-    }
-
-    if (!formData.licenseNumber?.trim()) {
-      setSubmitError('Please enter your license number (Professional Details).');
-      setStep(2);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmitError(null);
-    setPremiumNeedsEmailVerify(false);
-    setPremiumSignupActive(false);
-    premiumFinishRef.current = false;
-
-    try {
-      const { signupPlan: chosenPlan, ...signupFields } = formData;
-      const result = await signUpChiropractor(signupFields as SignUpData);
-
-      if (!result.success) {
-        setSubmitError(result.error || 'Failed to create account. Please try again.');
-        return;
-      }
-
-      const plan = chosenPlan;
-      if (plan === 'free') {
-        setSubmitSuccess(true);
-        setTimeout(() => {
-          router.push('/account');
-        }, 2000);
-        return;
-      }
-
-      setPremiumSignupActive(true);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setPremiumNeedsEmailVerify(true);
-        return;
-      }
-
-      setIsPreparingEmbedded(true);
-      const checkoutRes = await fetch('/api/checkout/session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ plan, embedded: true }),
-      });
-      const checkoutJson = (await checkoutRes.json().catch(() => ({}))) as {
-        clientSecret?: string;
-        error?: string;
-      };
-      if (!checkoutRes.ok || !checkoutJson.clientSecret) {
-        setSubmitError(
-          checkoutJson.error ||
-            'Account created, but checkout could not start. You can subscribe anytime from your account.',
-        );
-        setTimeout(() => router.push('/account'), 3000);
-        return;
-      }
-      setEmbeddedClientSecret(checkoutJson.clientSecret);
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      setSubmitError(error.message || 'An unexpected error occurred. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-      setIsPreparingEmbedded(false);
-    }
-  };
-
   const getWhyDetailText = () => {
     switch (step) {
       case 1:
@@ -355,10 +432,14 @@ export default function SignUpPage() {
     }
   };
 
-  const showEmbeddedCheckoutUi =
-    premiumSignupActive &&
+  const showPremiumCheckoutBlock =
+    step === 5 &&
     !premiumNeedsEmailVerify &&
-    (isPreparingEmbedded || !!embeddedClientSecret || !!embeddedError);
+    !submitSuccess &&
+    (formData.signupPlan === 'monthly' || formData.signupPlan === 'annual') &&
+    (premiumFlowLoading || !!embeddedClientSecret || !!embeddedError);
+
+  const step5Busy = freeSubmitLoading || premiumFlowLoading;
 
   return (
     <SignupSplitShell
@@ -503,19 +584,14 @@ export default function SignUpPage() {
               </Callout.Root>
             )}
 
-            {premiumSignupActive &&
-              !premiumNeedsEmailVerify &&
-              !submitSuccess &&
-              showEmbeddedCheckoutUi &&
-              isPreparingEmbedded &&
-              !embeddedClientSecret && (
-                <Callout.Root color="blue">
-                  <Callout.Icon>
-                    <InfoCircledIcon />
-                  </Callout.Icon>
-                  <Callout.Text>Account created. Loading secure checkout…</Callout.Text>
-                </Callout.Root>
-              )}
+            {showPremiumCheckoutBlock && premiumFlowLoading && !embeddedClientSecret && (
+              <Callout.Root color="blue">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>Creating your account and opening secure checkout…</Callout.Text>
+              </Callout.Root>
+            )}
 
             {premiumNeedsEmailVerify && (
               <Callout.Root color="blue">
@@ -551,26 +627,33 @@ export default function SignUpPage() {
                       {isLoadingColleges ? (
                         <TextField.Root size="3" disabled placeholder="Loading colleges..." />
                       ) : (
-                        <Select.Root 
-                          value={formData.college} 
-                          onValueChange={(value) => handleInputChange('college', value)}
-                        >
-                          <Select.Trigger />
-                          <Select.Content>
-                            {colleges.length > 0 ? (
-                              colleges.map((college) => (
-                                <Select.Item key={college.id} value={college.name}>
-                                  {college.name}
-                                  {college.state && ` (${college.state})`}
+                        <>
+                          <Select.Root
+                            value={formData.college}
+                            onValueChange={(value) => handleInputChange('college', value)}
+                          >
+                            <Select.Trigger />
+                            <Select.Content>
+                              {colleges.length > 0 ? (
+                                colleges.map((college) => (
+                                  <Select.Item key={college.id} value={college.name}>
+                                    {college.name}
+                                    {college.state && ` (${college.state})`}
+                                  </Select.Item>
+                                ))
+                              ) : (
+                                <Select.Item value="none" disabled>
+                                  No colleges available
                                 </Select.Item>
-                              ))
-                            ) : (
-                              <Select.Item value="none" disabled>
-                                No colleges available
-                              </Select.Item>
-                            )}
-                          </Select.Content>
-                        </Select.Root>
+                              )}
+                            </Select.Content>
+                          </Select.Root>
+                          {colleges.length === 0 && (
+                            <Button size="2" variant="soft" mt="2" type="button" onClick={() => void loadColleges()}>
+                              Retry loading colleges
+                            </Button>
+                          )}
+                        </>
                       )}
                     </Flex>
                     <Flex direction="column" gap="1">
@@ -821,84 +904,88 @@ export default function SignUpPage() {
                 </Flex>
               )}
 
-              {step === 5 && showEmbeddedCheckoutUi && (
+              {step === 5 && (
                 <Flex direction="column" gap="4">
-                  <Heading size="6">Complete your subscription</Heading>
+                  <Heading size="6">Membership &amp; checkout</Heading>
                   <Text size="2" color="gray">
-                    Your account is ready. Enter payment details below — you stay on this page until checkout
-                    finishes.
+                    Create a free listing, or pick a premium plan to open Stripe&apos;s secure checkout right here.
                   </Text>
-                  {embeddedError && (
-                    <Callout.Root color="red">
-                      <Callout.Icon>
-                        <InfoCircledIcon />
-                      </Callout.Icon>
-                      <Callout.Text>{embeddedError}</Callout.Text>
-                    </Callout.Root>
-                  )}
-                  <div ref={embeddedMountRef} className={layoutStyles.embeddedCheckout} />
-                  <Button
-                    size="3"
-                    variant="ghost"
-                    onClick={dismissEmbeddedCheckout}
-                    style={{ color: 'var(--gray-11)', alignSelf: 'flex-start' }}
-                  >
-                    Cancel and choose a different plan
-                  </Button>
-                </Flex>
-              )}
 
-              {step === 5 && !showEmbeddedCheckoutUi && (
-                <Flex direction="column" gap="4">
-                  <Heading size="6">Choose your membership</Heading>
-                  <Text size="2" color="gray">
-                    Start free with core listing features, or subscribe to unlock premium tools as we roll them
-                    out.
+                  <Flex direction="column" gap="3">
+                    <Text size="2" weight="bold">
+                      Free listing
+                    </Text>
+                    <Text size="2" color="gray">
+                      Core profile and matching — no card required.
+                    </Text>
+                    <Button
+                      size="3"
+                      variant="outline"
+                      disabled={step5Busy || submitSuccess || premiumNeedsEmailVerify}
+                      onClick={() => void handleFreeSignup()}
+                    >
+                      {freeSubmitLoading ? 'Working…' : 'Create free account'}
+                    </Button>
+                  </Flex>
+
+                  <Text size="2" color="gray" mt="2">
+                    Or subscribe below (checkout appears on this step).
                   </Text>
-                  <RadioGroup.Root
-                    value={formData.signupPlan}
-                    onValueChange={(value) =>
-                      handleInputChange('signupPlan', value as SignupPlan)
-                    }
-                  >
-                    <Flex direction="column" gap="3">
-                      <Flex gap="2" align="center">
-                        <RadioGroup.Item value="free" id="plan-free" />
-                        <Text as="label" htmlFor="plan-free" size="2" weight="medium">
-                          Free — limited features
-                        </Text>
-                      </Flex>
-                      <Flex gap="2" align="center">
-                        <RadioGroup.Item value="monthly" id="plan-monthly" />
-                        <Text as="label" htmlFor="plan-monthly" size="2" weight="medium">
-                          Premium — monthly billing
-                        </Text>
-                      </Flex>
-                      <Flex gap="2" align="center">
-                        <RadioGroup.Item value="annual" id="plan-annual" />
-                        <Text as="label" htmlFor="plan-annual" size="2" weight="medium">
-                          Premium — annual billing
-                        </Text>
-                      </Flex>
+
+                  <Flex direction="column" gap="2">
+                    <Text size="2" weight="bold">
+                      Premium
+                    </Text>
+                    <Flex gap="2" wrap="wrap">
+                      <Button
+                        size="3"
+                        variant={formData.signupPlan === 'monthly' ? 'solid' : 'outline'}
+                        disabled={step5Busy || submitSuccess || premiumNeedsEmailVerify}
+                        onClick={() => void runPremiumSignup('monthly')}
+                      >
+                        {premiumFlowLoading && formData.signupPlan === 'monthly' && !embeddedClientSecret
+                          ? 'Starting…'
+                          : 'Monthly'}
+                      </Button>
+                      <Button
+                        size="3"
+                        variant={formData.signupPlan === 'annual' ? 'solid' : 'outline'}
+                        disabled={step5Busy || submitSuccess || premiumNeedsEmailVerify}
+                        onClick={() => void runPremiumSignup('annual')}
+                      >
+                        {premiumFlowLoading && formData.signupPlan === 'annual' && !embeddedClientSecret
+                          ? 'Starting…'
+                          : 'Annual'}
+                      </Button>
                     </Flex>
-                  </RadioGroup.Root>
+                  </Flex>
+
+                  {showPremiumCheckoutBlock && (
+                    <>
+                      {embeddedError && (
+                        <Callout.Root color="red">
+                          <Callout.Icon>
+                            <InfoCircledIcon />
+                          </Callout.Icon>
+                          <Callout.Text>{embeddedError}</Callout.Text>
+                        </Callout.Root>
+                      )}
+                      <div ref={embeddedMountRef} className={layoutStyles.embeddedCheckout} />
+                      <Button
+                        size="3"
+                        variant="ghost"
+                        type="button"
+                        onClick={clearPremiumSelection}
+                        style={{ color: 'var(--gray-11)', alignSelf: 'flex-start' }}
+                      >
+                        Cancel premium — choose free or another plan
+                      </Button>
+                    </>
+                  )}
+
                   <Flex gap="3" justify="between" mt="4">
                     <Button size="3" variant="ghost" onClick={handleBack} style={{ color: 'var(--gray-11)' }}>
                       Back
-                    </Button>
-                    <Button
-                      size="3"
-                      variant="solid"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting || submitSuccess || premiumNeedsEmailVerify}
-                    >
-                      {isSubmitting
-                        ? 'Working...'
-                        : submitSuccess
-                          ? 'Done'
-                          : formData.signupPlan === 'free'
-                            ? 'Complete sign-up'
-                            : 'Continue to secure checkout'}
                     </Button>
                   </Flex>
                 </Flex>
