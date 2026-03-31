@@ -22,6 +22,7 @@ import {
   MagicWandIcon,
   InfoCircledIcon,
   CheckCircledIcon,
+  CheckIcon,
 } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -41,6 +42,21 @@ const steps = [
   { number: 4, label: "Matching" },
   { number: 5, label: "Organization" },
 ];
+
+/** Display copy aligned with Figma membership cards (117:1677 monthly, 117:1724 annual) */
+const CHIRO_MEMBERSHIP_FEATURES = [
+  "Profile and license verification",
+  "Chiropractor Network Messaging",
+  "Send and Receive Referrals",
+  "Chiropractor Community Groups",
+  "Boosted profile placement",
+  "Request new features",
+] as const;
+
+const CHIRO_PLAN_DISPLAY = {
+  monthly: { priceLine: "$30/month", billingNote: "(Billed monthly)" },
+  annual: { priceLine: "$24/month", billingNote: "(Billed annually)" },
+} as const;
 
 type SignupPlan = "free" | "monthly" | "annual";
 
@@ -538,10 +554,49 @@ export default function SignUpPage() {
                       </button>
                     </div>
 
-                    <div className={layoutStyles.signupStripePlaceholder}>
-                      You&apos;ll securely enter payment on Stripe — encrypted
-                      checkout, then you&apos;ll return here to finish your
-                      profile.
+                    <div className={layoutStyles.signupMembershipPlanBody}>
+                      <div className={layoutStyles.signupMembershipPriceWrap}>
+                        <span
+                          className={layoutStyles.signupMembershipPriceAmount}
+                        >
+                          {CHIRO_PLAN_DISPLAY[step1Billing].priceLine}
+                        </span>
+                        <span
+                          className={layoutStyles.signupMembershipPriceNote}
+                        >
+                          {CHIRO_PLAN_DISPLAY[step1Billing].billingNote}
+                        </span>
+                      </div>
+                      <div className={layoutStyles.signupMembershipFeatures}>
+                        <p
+                          className={
+                            layoutStyles.signupMembershipFeaturesHeading
+                          }
+                        >
+                          Membership Features
+                        </p>
+                        <ul
+                          className={layoutStyles.signupMembershipFeaturesList}
+                          aria-label="Membership features"
+                        >
+                          {CHIRO_MEMBERSHIP_FEATURES.map((label) => (
+                            <li
+                              key={label}
+                              className={
+                                layoutStyles.signupMembershipFeatureRow
+                              }
+                            >
+                              <CheckIcon
+                                className={
+                                  layoutStyles.signupMembershipFeatureCheck
+                                }
+                                aria-hidden
+                              />
+                              <span>{label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
 
                     <button
@@ -552,7 +607,7 @@ export default function SignUpPage() {
                     >
                       {checkoutStartLoading
                         ? "Redirecting to Stripe…"
-                        : "Continue to secure checkout"}
+                        : "Proceed to payment"}
                     </button>
                   </>
                 )}
@@ -569,10 +624,7 @@ export default function SignUpPage() {
               >
                 Start free
               </button>
-              <Link
-                href="/"
-                className={layoutStyles.signupMembershipBlueLink}
-              >
+              <Link href="/" className={layoutStyles.signupMembershipBlueLink}>
                 Back to home
               </Link>
             </div>

@@ -350,29 +350,86 @@
   color: #202020;
 }
 
-.signupStripePlaceholder {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 233px;
-  padding: 24px 20px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+/* Membership card — pricing + features (Figma 117:1677 / 117:1724) */
+.signupMembershipPlanBody {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.signupMembershipPriceWrap {
   text-align: center;
   font-size: 14px;
-  font-weight: 500;
-  line-height: 1.45;
+  line-height: 20px;
+  color: #202020;
+}
+
+.signupMembershipPriceAmount {
+  display: block;
+  font-weight: 700;
   letter-spacing: -0.14px;
-  color: #6b7280;
+}
+
+.signupMembershipPriceNote {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  color: #9ca3af;
+  letter-spacing: 0;
+}
+
+.signupMembershipFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.signupMembershipFeaturesHeading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #202020;
+}
+
+.signupMembershipFeaturesList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.signupMembershipFeatureRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: #202020;
+}
+
+.signupMembershipFeatureCheck {
+  flex-shrink: 0;
+  width: 14px;
+  height: 16px;
+  color: #16a34a;
 }
 
 .signupMembershipCardInner {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 32px;
   align-items: stretch;
 }
 
