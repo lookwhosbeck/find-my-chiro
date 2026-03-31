@@ -272,6 +272,9 @@ export interface SignUpData {
   zip: string;
   website: string;
   instagram: string;
+
+  /** After full signup wizard: mark profile ready for staff license review */
+  markReadyForReview?: boolean;
 }
 
 export interface PatientSignUpData {
@@ -483,6 +486,22 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
 
     const signupToken = authData.session?.access_token;
     await ensureSignupClinicLinked(supabase, userId, data, signupToken);
+
+    if (data.markReadyForReview) {
+      const now = new Date().toISOString();
+      const { error: reviewErr } = await supabase
+        .from('chiropractors')
+        .update({
+          license_verification_status: 'pending_review',
+          submitted_for_review_at: now,
+          onboarding_completed_at: now,
+          updated_at: now,
+        })
+        .eq('id', userId);
+      if (reviewErr) {
+        console.error('markReadyForReview update:', reviewErr);
+      }
+    }
 
     return { success: true, userId };
   } catch (error: any) {

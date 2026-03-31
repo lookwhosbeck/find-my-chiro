@@ -22,6 +22,7 @@ import {
 } from './constants';
 import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import { isPremiumProfile } from '@/app/lib/subscription';
+import { canUseTrustSensitiveFeatures } from '@/app/lib/capabilities';
 import styles from './page.module.css';
 
 function supabaseErrorMessage(err: unknown): string {
@@ -102,6 +103,9 @@ interface ChiropractorProfile {
   organization_id?: string | null;
   budget_range?: string | null;
   updated_at: string;
+  license_verification_status?: string | null;
+  onboarding_completed_at?: string | null;
+  submitted_for_review_at?: string | null;
 }
 
 interface PatientProfile {
@@ -1622,6 +1626,17 @@ export default function AccountPage() {
           <p>Referrals are a premium capability.</p>
           <p className={styles.mutedNote} style={{ marginTop: '12px' }}>
             Open <strong>Membership</strong> in the sidebar to subscribe.
+          </p>
+        </div>
+      ) : !canUseTrustSensitiveFeatures(profile, chiropractorProfile ?? {}) ? (
+        <div className={styles.placeholderPanel}>
+          <p>Referrals unlock after your license is verified by our team.</p>
+          <p className={styles.mutedNote} style={{ marginTop: '12px' }}>
+            Status:{' '}
+            <strong>{chiropractorProfile?.license_verification_status?.replace(/_/g, ' ') || 'draft'}</strong>
+            {chiropractorProfile?.license_verification_status === 'pending_review'
+              ? ' — we will notify you when review is complete.'
+              : ''}
           </p>
         </div>
       ) : (

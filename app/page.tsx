@@ -57,7 +57,7 @@ export default async function Home() {
                   Patient Signup
                   <ArrowUpRight />
                 </Link>
-                <Link href="/signup" className={styles.signupLink}>
+                <Link href="/join" className={styles.signupLink}>
                   Chiropractor Signup
                   <ArrowUpRight />
                 </Link>

@@ -167,7 +167,7 @@ export function Header({ embedded = false, surface = 'onDark' }: HeaderProps) {
                   Log in
                 </Link>
                 <Button size="2" variant="solid" asChild className={`join-network-button fmc-black-pill-cta ${styles.joinCta}`}>
-                  <Link href="/signup">Join Network</Link>
+                  <Link href="/join">Join Network</Link>
                 </Button>
               </>
             )}
@@ -265,7 +265,7 @@ export function Header({ embedded = false, surface = 'onDark' }: HeaderProps) {
                 ) : (
                   <div className={styles.mobileFlyoutActions}>
                     <Button size="2" variant="solid" asChild className={`join-network-button fmc-black-pill-cta ${styles.mobileJoinCta}`}>
-                      <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                      <Link href="/join" onClick={() => setMobileMenuOpen(false)}>
                         Join Network
                       </Link>
                     </Button>

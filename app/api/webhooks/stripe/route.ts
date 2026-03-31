@@ -23,25 +23,72 @@ async function resolveUserIdForCustomer(
   return id ?? null;
 }
 
+const GUEST_SIGNUP_FLOW = 'chiropractor_guest';
+
+async function upsertGuestCheckoutClaim(
+  admin: SupabaseClient,
+  session: Stripe.Checkout.Session,
+  customerId: string,
+  subId: string,
+  email: string,
+  priceId: string | null,
+): Promise<void> {
+  const { error } = await admin.from('checkout_signup_claims').upsert(
+    {
+      stripe_checkout_session_id: session.id,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subId,
+      email: email.toLowerCase(),
+      price_id: priceId,
+    },
+    { onConflict: 'stripe_checkout_session_id' },
+  );
+  if (error) {
+    console.error('checkout_signup_claims upsert:', error);
+    throw error;
+  }
+}
+
 async function handleCheckoutSessionCompleted(
   stripe: Stripe,
   admin: SupabaseClient,
   session: Stripe.Checkout.Session,
 ): Promise<void> {
   if (session.mode !== 'subscription') return;
-  const userId =
-    (session.client_reference_id?.trim() || session.metadata?.supabase_user_id?.trim()) ?? null;
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
   const subRef = session.subscription;
   const subId = typeof subRef === 'string' ? subRef : subRef?.id;
-  if (!userId || !customerId || !subId) {
-    console.warn('checkout.session.completed: missing userId, customer, or subscription', {
-      userId,
+  if (!customerId || !subId) {
+    console.warn('checkout.session.completed: missing customer or subscription', {
       customerId,
       subId,
     });
     return;
   }
+
+  const userId =
+    (session.client_reference_id?.trim() || session.metadata?.supabase_user_id?.trim()) ?? null;
+
+  if (!userId && session.metadata?.app_signup_flow === GUEST_SIGNUP_FLOW) {
+    const sub = await stripe.subscriptions.retrieve(subId);
+    const priceId = sub.items.data[0]?.price?.id ?? null;
+    const emailRaw =
+      session.customer_details?.email?.trim() ||
+      session.customer_email?.trim() ||
+      '';
+    if (!emailRaw) {
+      console.warn('checkout.session.completed: guest flow missing email', session.id);
+      return;
+    }
+    await upsertGuestCheckoutClaim(admin, session, customerId, subId, emailRaw, priceId);
+    return;
+  }
+
+  if (!userId) {
+    console.warn('checkout.session.completed: missing userId for non-guest session', session.id);
+    return;
+  }
+
   const sub = await stripe.subscriptions.retrieve(subId);
   await syncProfileFromStripeSubscription(admin, userId, customerId, sub);
 }
