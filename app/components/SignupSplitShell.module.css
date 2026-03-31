@@ -224,6 +224,16 @@
   width: 100%;
 }
 
+/* Card + secondary actions below it (Figma: links recede under the card) */
+.signupMembershipCardColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 433px;
+}
+
 .signupMembershipHeader {
   display: flex;
   flex-direction: column;
@@ -254,15 +264,19 @@
 
 .signupMembershipRoleTabs {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   margin-top: 4px;
 }
 
+/* Inactive = plain text; active = light pill (Figma floating selector) */
 .signupMembershipRoleTab {
   box-sizing: border-box;
-  width: 120px;
-  padding: 6px 12px;
+  width: auto;
+  min-width: 0;
+  padding: 6px 8px;
   border: none;
   border-radius: 6px;
   font-size: 14px;
@@ -277,7 +291,7 @@
 }
 
 .signupMembershipRoleTab:hover {
-  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
 }
 
 .signupMembershipRoleTab:focus-visible {
@@ -288,6 +302,8 @@
 .signupMembershipRoleTabActive {
   background: #f3f4f6;
   color: #0f172a;
+  padding: 6px 16px;
+  min-width: 120px;
 }
 
 .signupMembershipRoleTabActive:hover {
@@ -367,7 +383,11 @@
   align-items: center;
   justify-content: center;
   gap: 24px;
-  margin-top: 4px;
+  margin-top: 0;
+}
+
+.signupMembershipFooterBelowCard {
+  opacity: 0.88;
 }
 
 .signupMembershipMutedButton {

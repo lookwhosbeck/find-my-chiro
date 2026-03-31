@@ -482,95 +482,99 @@ export default function SignUpPage() {
             </div>
           </div>
 
-          <div className={layoutStyles.signupCard}>
-            <div className={layoutStyles.signupMembershipCardInner}>
-              {paidCheckoutInfo && (
-                <Callout.Root color="green">
-                  <Callout.Icon>
-                    <CheckCircledIcon />
-                  </Callout.Icon>
-                  <Callout.Text>
-                    Payment received ({paidCheckoutInfo.plan} ·{" "}
-                    {paidCheckoutInfo.subscriptionStatus}). Continue with your
-                    profile below.
-                  </Callout.Text>
-                </Callout.Root>
-              )}
+          <div className={layoutStyles.signupMembershipCardColumn}>
+            <div className={layoutStyles.signupCard}>
+              <div className={layoutStyles.signupMembershipCardInner}>
+                {paidCheckoutInfo && (
+                  <Callout.Root color="green">
+                    <Callout.Icon>
+                      <CheckCircledIcon />
+                    </Callout.Icon>
+                    <Callout.Text>
+                      Payment received ({paidCheckoutInfo.plan} ·{" "}
+                      {paidCheckoutInfo.subscriptionStatus}). Continue with your
+                      profile below.
+                    </Callout.Text>
+                  </Callout.Root>
+                )}
 
-              {submitError && (
-                <Callout.Root color="red">
-                  <Callout.Icon>
-                    <InfoCircledIcon />
-                  </Callout.Icon>
-                  <Callout.Text>{submitError}</Callout.Text>
-                </Callout.Root>
-              )}
+                {submitError && (
+                  <Callout.Root color="red">
+                    <Callout.Icon>
+                      <InfoCircledIcon />
+                    </Callout.Icon>
+                    <Callout.Text>{submitError}</Callout.Text>
+                  </Callout.Root>
+                )}
 
-              {!paidCheckoutInfo && (
-                <>
-                  <div
-                    className={layoutStyles.signupPlanSegment}
-                    role="group"
-                    aria-label="Billing period"
-                  >
+                {!paidCheckoutInfo && (
+                  <>
+                    <div
+                      className={layoutStyles.signupPlanSegment}
+                      role="group"
+                      aria-label="Billing period"
+                    >
+                      <button
+                        type="button"
+                        className={`${layoutStyles.signupPlanSegmentBtn} ${
+                          step1Billing === "monthly"
+                            ? layoutStyles.signupPlanSegmentBtnActive
+                            : layoutStyles.signupPlanSegmentBtnInactive
+                        }`}
+                        onClick={() => setStep1Billing("monthly")}
+                      >
+                        Monthly
+                      </button>
+                      <button
+                        type="button"
+                        className={`${layoutStyles.signupPlanSegmentBtn} ${
+                          step1Billing === "annual"
+                            ? layoutStyles.signupPlanSegmentBtnActive
+                            : layoutStyles.signupPlanSegmentBtnInactive
+                        }`}
+                        onClick={() => setStep1Billing("annual")}
+                      >
+                        Annual (Save 20%)
+                      </button>
+                    </div>
+
+                    <div className={layoutStyles.signupStripePlaceholder}>
+                      You&apos;ll securely enter payment on Stripe — encrypted
+                      checkout, then you&apos;ll return here to finish your
+                      profile.
+                    </div>
+
                     <button
                       type="button"
-                      className={`${layoutStyles.signupPlanSegmentBtn} ${
-                        step1Billing === "monthly"
-                          ? layoutStyles.signupPlanSegmentBtnActive
-                          : layoutStyles.signupPlanSegmentBtnInactive
-                      }`}
-                      onClick={() => setStep1Billing("monthly")}
+                      className={layoutStyles.signupSubmit}
+                      disabled={checkoutStartLoading}
+                      onClick={() => void startGuestCheckout(step1Billing)}
                     >
-                      Monthly
+                      {checkoutStartLoading
+                        ? "Redirecting to Stripe…"
+                        : "Continue to secure checkout"}
                     </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.signupPlanSegmentBtn} ${
-                        step1Billing === "annual"
-                          ? layoutStyles.signupPlanSegmentBtnActive
-                          : layoutStyles.signupPlanSegmentBtnInactive
-                      }`}
-                      onClick={() => setStep1Billing("annual")}
-                    >
-                      Annual (Save 20%)
-                    </button>
-                  </div>
-
-                  <div className={layoutStyles.signupStripePlaceholder}>
-                    You&apos;ll securely enter payment on Stripe — encrypted
-                    checkout, then you&apos;ll return here to finish your
-                    profile.
-                  </div>
-
-                  <button
-                    type="button"
-                    className={layoutStyles.signupSubmit}
-                    disabled={checkoutStartLoading}
-                    onClick={() => void startGuestCheckout(step1Billing)}
-                  >
-                    {checkoutStartLoading
-                      ? "Redirecting to Stripe…"
-                      : "Continue to secure checkout"}
-                  </button>
-                </>
-              )}
-
-              <div className={layoutStyles.signupMembershipFooterLinks}>
-                <button
-                  type="button"
-                  className={layoutStyles.signupMembershipMutedButton}
-                  onClick={handleStartFree}
-                >
-                  Start free
-                </button>
-                <Link
-                  href="/"
-                  className={layoutStyles.signupMembershipBlueLink}
-                >
-                  Back to home
-                </Link>
+                  </>
+                )}
               </div>
+            </div>
+
+            <div
+              className={`${layoutStyles.signupMembershipFooterLinks} ${layoutStyles.signupMembershipFooterBelowCard}`}
+            >
+              <button
+                type="button"
+                className={layoutStyles.signupMembershipMutedButton}
+                onClick={handleStartFree}
+              >
+                Start free
+              </button>
+              <Link
+                href="/"
+                className={layoutStyles.signupMembershipBlueLink}
+              >
+                Back to home
+              </Link>
             </div>
           </div>
         </div>
