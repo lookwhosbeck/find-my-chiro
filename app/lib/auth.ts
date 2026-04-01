@@ -97,6 +97,7 @@ async function attachClinicOrganizationFromSignup(
     city: data.city?.trim() || null,
     state: data.state?.trim() || null,
     zip_code: data.zip?.trim() || null,
+    created_by: userId,
   };
 
   const { data: insertedRows, error: orgErr } = await supabase
