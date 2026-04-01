@@ -18,6 +18,7 @@ import {
   PHILOSOPHY_OPTIONS,
   PAYMENT_MODEL_OPTIONS,
   CHIRO_INSURANCE_OPTIONS,
+  CHIRO_BUDGET_RANGE_OPTIONS,
 } from './constants';
 import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import { isPremiumProfile } from '@/app/lib/subscription';
@@ -100,6 +101,7 @@ interface ChiropractorProfile {
   license_number?: string;
   accepting_new_patients?: boolean;
   organization_id?: string | null;
+  budget_range?: string | null;
   updated_at: string;
   license_verification_status?: string | null;
   onboarding_completed_at?: string | null;
@@ -151,6 +153,7 @@ export default function AccountPage() {
   const [chiroPhilosophyNames, setChiroPhilosophyNames] = useState<string[]>([]);
   const [chiroPaymentNames, setChiroPaymentNames] = useState<string[]>([]);
   const [chiroInsuranceNames, setChiroInsuranceNames] = useState<string[]>([]);
+  const [chiroBudgetRange, setChiroBudgetRange] = useState('');
 
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [orgForm, setOrgForm] = useState({
@@ -376,6 +379,7 @@ export default function AccountPage() {
             license_number: row.license_number || '',
             accepting_new_patients: row.accepting_new_patients ?? true,
           });
+          setChiroBudgetRange(row.budget_range || '');
 
           const org = row.organizations;
           if (org) {
@@ -725,11 +729,14 @@ export default function AccountPage() {
       await sync('chiropractor_payment_models', 'payment_models', 'payment_model_id', chiroPaymentNames);
       await sync('chiropractor_insurances', 'insurances', 'insurance_id', chiroInsuranceNames);
 
-      const { error: tsErr } = await supabase
-        .from('chiropractors')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', user.id);
-      if (tsErr) throw tsErr;
+      const budgetPayload = {
+        id: user.id,
+        budget_range: chiroBudgetRange.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+      const { error: bErr } = await supabase.from('chiropractors').update(budgetPayload).eq('id', user.id);
+      if (bErr) throw bErr;
+      setChiropractorProfile((prev) => (prev ? { ...prev, budget_range: budgetPayload.budget_range ?? undefined } : prev));
     } catch (e) {
       console.error(e);
       alert(`Could not update specialties. ${supabaseErrorMessage(e)}`);
@@ -1259,6 +1266,24 @@ export default function AccountPage() {
                   {m}
                 </label>
               ))}
+            </div>,
+          )}
+          {column(
+            'Budget range',
+            <div className={styles.selectWrap}>
+              <span className={styles.selectChevron} />
+              <select
+                className={`${styles.specialtyBudgetSelect} ${styles.selectNative}`}
+                value={chiroBudgetRange}
+                onChange={(e) => setChiroBudgetRange(e.target.value)}
+                aria-label="Budget range"
+              >
+                {CHIRO_BUDGET_RANGE_OPTIONS.map((o) => (
+                  <option key={o.value || 'none'} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </div>,
           )}
         </div>
