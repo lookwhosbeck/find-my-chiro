@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Pulled from Vercel for one-off scripts (never commit)
 .env.vercel.pull
+schema.sql
+SECURITY_HARDENING_PLAN.md
+supabase/migrations/20260401120000_production_rls_policies.sql
