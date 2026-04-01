@@ -9,6 +9,12 @@ import styles from './page.module.css';
 
 type AccountTab = 'chiropractor' | 'patient';
 
+function getRedirectPath(): string {
+  if (typeof window === 'undefined') return '/account';
+  const raw = new URLSearchParams(window.location.search).get('redirect');
+  return raw?.startsWith('/') ? raw : '/account';
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -30,7 +36,8 @@ export default function SignInPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        router.push('/account');
+        router.refresh();
+        router.push(getRedirectPath());
         return;
       }
     } catch (err) {
@@ -55,7 +62,8 @@ export default function SignInPage() {
         throw signInError;
       }
 
-      router.push('/account');
+      router.refresh();
+      router.push(getRedirectPath());
     } catch (err: unknown) {
       console.error('Error signing in:', err);
       const message =

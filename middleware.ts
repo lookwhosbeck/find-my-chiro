@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!user && pathname.startsWith('/account')) {
+  if (!user && (pathname.startsWith('/account') || pathname.startsWith('/admin'))) {
     const url = request.nextUrl.clone();
     url.pathname = '/signin';
     url.searchParams.set('redirect', pathname);
@@ -46,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/signin', '/signup'],
+  matcher: ['/account/:path*', '/admin/:path*', '/signin', '/signup'],
 };
