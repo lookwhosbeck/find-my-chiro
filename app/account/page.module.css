@@ -66,8 +66,8 @@
 }
 
 .sidebarLogo {
-  width: 141px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 128px;
   height: auto;
   display: block;
 }

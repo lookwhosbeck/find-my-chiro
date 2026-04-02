@@ -318,14 +318,15 @@ export default function AccountPage() {
   const checkUser = async () => {
     try {
       const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!authUser) {
+      if (!session?.user) {
         router.push('/signin');
         return;
       }
 
+      const authUser = session.user;
       setUser(authUser);
 
       const { data: profileData, error: profileError } = await supabase
@@ -347,140 +348,152 @@ export default function AccountPage() {
         email: profileData.email || '',
       });
 
+      const promises: Promise<void>[] = [];
+
       if (profileData.role === 'chiropractor' || profileData.role === 'admin') {
-        const { data: chiroData, error: chiroError } = await supabase
-          .from('chiropractors')
-          .select(
-            `*,
-            organizations ( id, name, address_line_1, city, state, zip_code, phone )`,
-          )
-          .eq('id', authUser.id)
-          .maybeSingle();
-
-        if (!chiroError && chiroData) {
-          type OrgRow = {
-            id: string;
-            name?: string | null;
-            address_line_1?: string | null;
-            city?: string | null;
-            state?: string | null;
-            zip_code?: string | null;
-            phone?: string | null;
-          };
-          const row = chiroData as ChiropractorProfile & {
-            organizations?: OrgRow | null;
-          };
-
-          setChiropractorProfile(row);
-          setChiropractorForm({
-            bio: row.bio || '',
-            chiropractic_college: row.chiropractic_college || '',
-            graduation_year: row.graduation_year?.toString() || '',
-            license_number: row.license_number || '',
-            accepting_new_patients: row.accepting_new_patients ?? true,
-          });
-          setChiroBudgetRange(row.budget_range || '');
-
-          const org = row.organizations;
-          if (org) {
-            setOrganizationId(org.id);
-            setOrgForm({
-              name: org.name || '',
-              address_line_1: org.address_line_1 || '',
-              city: org.city || '',
-              state: org.state || '',
-              zip_code: org.zip_code || '',
-              phone: org.phone || '',
-            });
-          } else if (row.organization_id) {
-            setOrganizationId(row.organization_id);
-            const { data: orgOnly } = await supabase
-              .from('organizations')
-              .select('id, name, address_line_1, city, state, zip_code, phone')
-              .eq('id', row.organization_id)
-              .single();
-            if (orgOnly) {
-              setOrgForm({
-                name: orgOnly.name || '',
-                address_line_1: orgOnly.address_line_1 || '',
-                city: orgOnly.city || '',
-                state: orgOnly.state || '',
-                zip_code: orgOnly.zip_code || '',
-                phone: orgOnly.phone || '',
-              });
-            }
-          } else {
-            setOrganizationId(null);
-            setOrgForm({
-              name: '',
-              address_line_1: '',
-              city: '',
-              state: '',
-              zip_code: '',
-              phone: '',
-            });
-          }
-
-          await loadChiroAccountData(authUser.id);
-        } else if (profileData.role === 'admin') {
-          setChiropractorProfile(null);
-          setOrganizationId(null);
-          setChiropractorForm({
-            bio: '',
-            chiropractic_college: '',
-            graduation_year: '',
-            license_number: '',
-            accepting_new_patients: true,
-          });
-          setChiroBudgetRange('');
-          setOrgForm({
-            name: '',
-            address_line_1: '',
-            city: '',
-            state: '',
-            zip_code: '',
-            phone: '',
-          });
-          await loadChiroAccountData(authUser.id);
-        }
+        promises.push(loadChiroData(authUser.id, profileData.role));
       }
 
       if (profileData.role === 'patient' || profileData.role === 'admin') {
-        const { data: patientData, error: patientError } = await supabase
-          .from('patients')
-          .select('*')
-          .eq('id', authUser.id)
-          .maybeSingle();
-
-        if (!patientError && patientData) {
-          setPatientProfile(patientData as PatientProfile);
-          const pRow = patientData as PatientProfile;
-          setPatientForm({
-            phone: pRow.phone || '',
-            date_of_birth: pRow.date_of_birth?.slice(0, 10) || '',
-            emergency_contact: pRow.emergency_contact || '',
-            emergency_phone: pRow.emergency_phone || '',
-            preferred_modalities: pRow.preferred_modalities || [],
-            focus_areas: pRow.focus_areas || [],
-            preferred_business_model: pRow.preferred_business_model || '',
-            insurance_type: pRow.insurance_type || '',
-            budget_range: pRow.budget_range || '',
-            city: pRow.city || '',
-            state: pRow.state || '',
-            zip_code: pRow.zip_code || pRow.preferred_zip_code || '',
-            search_radius: clampSearchRadiusMiles(
-              pRow.search_radius ?? pRow.search_radius_miles ?? 25
-            ),
-            preferred_days: pRow.preferred_days || [],
-            preferred_times: pRow.preferred_times || [],
-          });
-        }
+        promises.push(loadPatientData(authUser.id));
       }
+
+      await Promise.all(promises);
     } catch (e) {
       console.error('Error checking user:', e);
       router.push('/');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadChiroData = async (userId: string, role: string) => {
+    const { data: chiroData, error: chiroError } = await supabase
+      .from('chiropractors')
+      .select(
+        `*,
+        organizations ( id, name, address_line_1, city, state, zip_code, phone )`,
+      )
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!chiroError && chiroData) {
+      type OrgRow = {
+        id: string;
+        name?: string | null;
+        address_line_1?: string | null;
+        city?: string | null;
+        state?: string | null;
+        zip_code?: string | null;
+        phone?: string | null;
+      };
+      const row = chiroData as ChiropractorProfile & {
+        organizations?: OrgRow | null;
+      };
+
+      setChiropractorProfile(row);
+      setChiropractorForm({
+        bio: row.bio || '',
+        chiropractic_college: row.chiropractic_college || '',
+        graduation_year: row.graduation_year?.toString() || '',
+        license_number: row.license_number || '',
+        accepting_new_patients: row.accepting_new_patients ?? true,
+      });
+      setChiroBudgetRange(row.budget_range || '');
+
+      const org = row.organizations;
+      if (org) {
+        setOrganizationId(org.id);
+        setOrgForm({
+          name: org.name || '',
+          address_line_1: org.address_line_1 || '',
+          city: org.city || '',
+          state: org.state || '',
+          zip_code: org.zip_code || '',
+          phone: org.phone || '',
+        });
+      } else if (row.organization_id) {
+        setOrganizationId(row.organization_id);
+        const { data: orgOnly } = await supabase
+          .from('organizations')
+          .select('id, name, address_line_1, city, state, zip_code, phone')
+          .eq('id', row.organization_id)
+          .single();
+        if (orgOnly) {
+          setOrgForm({
+            name: orgOnly.name || '',
+            address_line_1: orgOnly.address_line_1 || '',
+            city: orgOnly.city || '',
+            state: orgOnly.state || '',
+            zip_code: orgOnly.zip_code || '',
+            phone: orgOnly.phone || '',
+          });
+        }
+      } else {
+        setOrganizationId(null);
+        setOrgForm({
+          name: '',
+          address_line_1: '',
+          city: '',
+          state: '',
+          zip_code: '',
+          phone: '',
+        });
+      }
+
+      await loadChiroAccountData(userId);
+    } else if (role === 'admin') {
+      setChiropractorProfile(null);
+      setOrganizationId(null);
+      setChiropractorForm({
+        bio: '',
+        chiropractic_college: '',
+        graduation_year: '',
+        license_number: '',
+        accepting_new_patients: true,
+      });
+      setChiroBudgetRange('');
+      setOrgForm({
+        name: '',
+        address_line_1: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        phone: '',
+      });
+      await loadChiroAccountData(userId);
+    }
+  };
+
+  const loadPatientData = async (userId: string) => {
+    const { data: patientData, error: patientError } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!patientError && patientData) {
+      setPatientProfile(patientData as PatientProfile);
+      const pRow = patientData as PatientProfile;
+      setPatientForm({
+        phone: pRow.phone || '',
+        date_of_birth: pRow.date_of_birth?.slice(0, 10) || '',
+        emergency_contact: pRow.emergency_contact || '',
+        emergency_phone: pRow.emergency_phone || '',
+        preferred_modalities: pRow.preferred_modalities || [],
+        focus_areas: pRow.focus_areas || [],
+        preferred_business_model: pRow.preferred_business_model || '',
+        insurance_type: pRow.insurance_type || '',
+        budget_range: pRow.budget_range || '',
+        city: pRow.city || '',
+        state: pRow.state || '',
+        zip_code: pRow.zip_code || pRow.preferred_zip_code || '',
+        search_radius: clampSearchRadiusMiles(
+          pRow.search_radius ?? pRow.search_radius_miles ?? 25
+        ),
+        preferred_days: pRow.preferred_days || [],
+        preferred_times: pRow.preferred_times || [],
+      });
     }
   };
 

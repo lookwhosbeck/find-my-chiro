@@ -33,10 +33,9 @@ export default function SignInPage() {
   const checkUser = async () => {
     try {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        router.refresh();
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
         router.push(getRedirectPath());
         return;
       }
@@ -62,7 +61,6 @@ export default function SignInPage() {
         throw signInError;
       }
 
-      router.refresh();
       router.push(getRedirectPath());
     } catch (err: unknown) {
       console.error('Error signing in:', err);

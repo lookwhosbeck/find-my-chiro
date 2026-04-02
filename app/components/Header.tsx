@@ -109,8 +109,9 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   useEffect(() => {
     const init = async () => {
       const {
-        data: { user: u },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const u = session?.user ?? null;
       setUser(toHeaderAuthUser(u));
       if (u) await loadProfile(u.id);
       else setProfile(null);
@@ -130,16 +131,13 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   }, [loadProfile]);
 
   useEffect(() => {
-    const onProfileEvent = async () => {
-      const {
-        data: { user: u },
-      } = await supabase.auth.getUser();
-      if (u) await loadProfile(u.id);
+    const onProfileEvent = () => {
+      if (user) void loadProfile(user.id);
     };
     window.addEventListener(PROFILE_UPDATED_EVENT, onProfileEvent);
     return () =>
       window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileEvent);
-  }, [loadProfile]);
+  }, [loadProfile, user]);
 
   useEffect(() => {
     if (!user) return;
