@@ -67,7 +67,9 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth.ok === false) return auth.response;
 
-  const admin = createClient(url, service);
+  const admin = createClient(url, service, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
   const { data: rows, error } = await admin
     .from('chiropractors')
@@ -142,16 +144,34 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Expected { id: string, status: "approved" | "rejected" }' }, { status: 400 });
   }
 
-  const admin = createClient(url, service);
-  const { error } = await admin
+  const admin = createClient(url, service, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: updated, error } = await admin
     .from('chiropractors')
     .update({ license_verification_status: status, updated_at: new Date().toISOString() })
-    .eq('id', id);
+    .eq('id', id)
+    .select('license_verification_status')
+    .maybeSingle();
 
   if (error) {
     console.error('admin chiropractors PATCH:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, id, verificationStatus: status });
+  if (!updated) {
+    return NextResponse.json({ error: 'Chiropractor not found' }, { status: 404 });
+  }
+
+  if (updated.license_verification_status !== status) {
+    console.error(
+      `admin chiropractors PATCH: trigger reverted status. requested=${status}, actual=${updated.license_verification_status}`,
+    );
+    return NextResponse.json(
+      { error: 'Status change was blocked by a database trigger. Check PostgREST service-role configuration.' },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ ok: true, id, verificationStatus: updated.license_verification_status });
 }
