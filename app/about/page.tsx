@@ -1,7 +1,7 @@
 import { Flex, Text } from '@radix-ui/themes';
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
-import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import { MovynLogo } from '@/app/components/MovynLogo';
 import styles from './page.module.css';
 
 export default function AboutPage() {
@@ -11,7 +11,7 @@ export default function AboutPage() {
 
       <div className={styles.splash}>
         <div className={styles.logoWrap}>
-          <FindMyChiroLogo />
+          <MovynLogo />
         </div>
         <Text size="5" color="gray">
           Check back soon, more to come!

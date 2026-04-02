@@ -169,7 +169,7 @@ export function Footer() {
                 letterSpacing: 'var(--tracking-normal)',
               }}
             >
-              © 2026 Find My Chiro Directory. All rights reserved.
+              © 2026 Movyn. All rights reserved.
             </Text>
             <Flex gap="2" align="center">
               {/* Social icons placeholder */}

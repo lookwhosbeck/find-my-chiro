@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
-import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import { MovynLogo } from '@/app/components/MovynLogo';
 import styles from './page.module.css';
 
 type AccountTab = 'chiropractor' | 'patient';
@@ -171,7 +171,7 @@ export default function SignInPage() {
 
         <div className={styles.signinAsideWrap}>
           <div className={styles.signinAside}>
-            <FindMyChiroLogo variant="onDark" className={styles.signinLogoSvg} />
+            <MovynLogo variant="onDark" className={styles.signinLogoSvg} />
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { Button, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { PROFILE_UPDATED_EVENT } from "@/app/lib/profile-events";
-import { FindMyChiroLogo } from "@/app/components/FindMyChiroLogo";
+import { MovynLogo } from "@/app/components/MovynLogo";
 import { UserAvatar } from "@/app/components/UserAvatar";
 import styles from "./Header.module.css";
 
@@ -200,7 +200,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
     <>
       <header className={barClassName}>
         <Link href="/" className={styles.logoLink}>
-          <FindMyChiroLogo variant="standard" className={styles.headerLogo} />
+          <MovynLogo variant="standard" className={styles.headerLogo} />
         </Link>
 
         {signingOut ? (

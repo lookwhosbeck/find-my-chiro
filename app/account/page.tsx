@@ -8,7 +8,7 @@ import { EnvelopeClosedIcon } from '@radix-ui/react-icons';
 import { supabase } from '@/app/lib/supabase';
 import { uploadAvatar, deleteAvatar, updateProfileAvatarUrl } from '@/app/lib/avatar-upload';
 import { dispatchProfileUpdated } from '@/app/lib/profile-events';
-import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import { MovynLogo } from '@/app/components/MovynLogo';
 import { UserAvatar } from '@/app/components/UserAvatar';
 import {
   MODALITY_OPTIONS,
@@ -1690,7 +1690,7 @@ export default function AccountPage() {
         <aside className={styles.sidebarWrap}>
           <div className={styles.sidebar}>
             <Link href="/" style={{ lineHeight: 0 }}>
-              <FindMyChiroLogo variant="onDark" className={styles.sidebarLogo} />
+              <MovynLogo variant="onDark" className={styles.sidebarLogo} />
             </Link>
             <nav className={styles.nav} aria-label="Account sections">
               {navAvailable.map((item) => (

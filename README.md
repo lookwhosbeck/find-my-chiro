@@ -1,4 +1,4 @@
-# Find My Chiro
+# Movyn
 
 A Next.js application using Radix Themes for styling.
 

@@ -4,7 +4,7 @@ import { Theme } from '@radix-ui/themes';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Find My Chiro',
+  title: 'Movyn',
   description: 'Find a chiropractor near you',
 };
 

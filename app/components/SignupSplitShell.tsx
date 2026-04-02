@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FindMyChiroLogo } from '@/app/components/FindMyChiroLogo';
+import { MovynLogo } from '@/app/components/MovynLogo';
 import styles from './SignupSplitShell.module.css';
 
 export type SignupSplitStep = { number: number; label: string };
@@ -31,7 +31,7 @@ export function SignupSplitShell({
         <div className={styles.signupAsideWrap}>
           <div className={styles.signupAside}>
             <div className={styles.signupAsideInner}>
-              <FindMyChiroLogo variant="onDark" className={styles.signupLogo} />
+              <MovynLogo variant="onDark" className={styles.signupLogo} />
               <div className={styles.signupAsideStack}>
                 <h2 className={styles.signupAsideHeadline}>{headline}</h2>
                 <p className={styles.signupAsideSubtext}>{subtext}</p>
