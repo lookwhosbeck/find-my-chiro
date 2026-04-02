@@ -82,18 +82,12 @@
   text-decoration: none;
 }
 
-/* Wordmark scales with viewport; smaller on phones */
+/* Wordmark scales with viewport; capped at 128px */
 .headerLogo {
   display: block;
-  width: min(181px, 38vw);
-  max-width: 100%;
+  width: 100%;
+  max-width: 128px;
   height: auto;
-}
-
-@media (min-width: 768px) {
-  .headerLogo {
-    width: min(181px, 42vw);
-  }
 }
 
 /* Desktop: primary links + auth — hidden on small screens */
