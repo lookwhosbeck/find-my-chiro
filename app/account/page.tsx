@@ -347,7 +347,7 @@ export default function AccountPage() {
         email: profileData.email || '',
       });
 
-      if (profileData.role === 'chiropractor') {
+      if (profileData.role === 'chiropractor' || profileData.role === 'admin') {
         const { data: chiroData, error: chiroError } = await supabase
           .from('chiropractors')
           .select(
@@ -422,15 +422,35 @@ export default function AccountPage() {
           }
 
           await loadChiroAccountData(authUser.id);
+        } else if (profileData.role === 'admin') {
+          setChiropractorProfile(null);
+          setOrganizationId(null);
+          setChiropractorForm({
+            bio: '',
+            chiropractic_college: '',
+            graduation_year: '',
+            license_number: '',
+            accepting_new_patients: true,
+          });
+          setChiroBudgetRange('');
+          setOrgForm({
+            name: '',
+            address_line_1: '',
+            city: '',
+            state: '',
+            zip_code: '',
+            phone: '',
+          });
+          await loadChiroAccountData(authUser.id);
         }
       }
 
-      if (profileData.role === 'patient') {
+      if (profileData.role === 'patient' || profileData.role === 'admin') {
         const { data: patientData, error: patientError } = await supabase
           .from('patients')
           .select('*')
           .eq('id', authUser.id)
-          .single();
+          .maybeSingle();
 
         if (!patientError && patientData) {
           setPatientProfile(patientData as PatientProfile);
@@ -802,6 +822,10 @@ export default function AccountPage() {
 
   const isChiro = profile.role === 'chiropractor';
   const isPatient = profile.role === 'patient';
+  const isAdmin = profile.role === 'admin';
+  /** Admins see every account section while building (chiro + patient UI). */
+  const showChiroAccountUI = isChiro || isAdmin;
+  const showPatientAccountUI = isPatient || isAdmin;
 
   const chiroNavAvailable: { key: NavKey; label: string }[] = [
     { key: 'practice', label: 'Your practice' },
@@ -823,8 +847,17 @@ export default function AccountPage() {
     { key: 'groups', label: 'Groups' },
   ];
 
-  const navAvailable = isChiro ? chiroNavAvailable : patientNavAvailable;
-  const navComingSoonFiltered = isChiro
+  const patientOnlyNav: { key: NavKey; label: string }[] = [
+    { key: 'preferences', label: 'Your preferences' },
+  ];
+
+  const navAvailable = isAdmin
+    ? [...chiroNavAvailable, ...patientOnlyNav]
+    : isChiro
+      ? chiroNavAvailable
+      : patientNavAvailable;
+
+  const navComingSoonFiltered = isChiro || isAdmin
     ? navComingSoon.filter((i) => i.key !== 'referrals')
     : navComingSoon;
 
@@ -845,8 +878,8 @@ export default function AccountPage() {
     isComingSoonNavKey(activeNav) ||
     activeNav === 'membership' ||
     (activeNav === 'profile' && !profileEditing) ||
-    (activeNav === 'practice' && (!isChiro || !practiceEditing)) ||
-    (activeNav === 'preferences' && (!isPatient || !preferencesEditing));
+    (activeNav === 'practice' && (!showChiroAccountUI || !practiceEditing)) ||
+    (activeNav === 'preferences' && (!showPatientAccountUI || !preferencesEditing));
 
   const handleToolbarEdit = () => {
     if (toolbarEditDisabled) return;
@@ -863,7 +896,7 @@ export default function AccountPage() {
       }
       return;
     }
-    if (activeNav === 'practice' && isChiro) {
+    if (activeNav === 'practice' && showChiroAccountUI) {
       if (practiceEditing) {
         const snap = practiceSnapshotRef.current;
         if (snap) {
@@ -881,7 +914,7 @@ export default function AccountPage() {
       }
       return;
     }
-    if (activeNav === 'preferences' && isPatient) {
+    if (activeNav === 'preferences' && showPatientAccountUI) {
       if (preferencesEditing) {
         if (preferencesSnapshotRef.current) {
           setPatientForm(preferencesSnapshotRef.current);
@@ -901,13 +934,13 @@ export default function AccountPage() {
         void saveProfile();
         break;
       case 'practice':
-        if (isChiro) void saveChiropractorProfile();
+        if (showChiroAccountUI) void saveChiropractorProfile();
         break;
       case 'specialties':
-        void saveChiroSpecialties();
+        if (showChiroAccountUI) void saveChiroSpecialties();
         break;
       case 'preferences':
-        if (isPatient) void savePatientProfile();
+        if (showPatientAccountUI) void savePatientProfile();
         break;
       default:
         break;
@@ -1611,15 +1644,15 @@ export default function AccountPage() {
   let mainContent: ReactNode = null;
   if (activeNav === 'profile') {
     mainContent = renderProfilePanel();
-  } else if (activeNav === 'practice' && isChiro) {
+  } else if (activeNav === 'practice' && showChiroAccountUI) {
     mainContent = renderPracticePanel();
-  } else if (activeNav === 'specialties' && isChiro) {
+  } else if (activeNav === 'specialties' && showChiroAccountUI) {
     mainContent = renderSpecialtiesPanel();
-  } else if (activeNav === 'preferences' && isPatient) {
+  } else if (activeNav === 'preferences' && showPatientAccountUI) {
     mainContent = renderPreferencesPanel();
-  } else if (activeNav === 'membership' && isChiro) {
+  } else if (activeNav === 'membership' && showChiroAccountUI) {
     mainContent = renderMembershipPanel();
-  } else if (activeNav === 'referrals' && isChiro) {
+  } else if (activeNav === 'referrals' && showChiroAccountUI) {
     mainContent =
       !isPremiumProfile(profile) ? (
         <div className={styles.placeholderPanel}>
@@ -1687,6 +1720,11 @@ export default function AccountPage() {
               </div>
             </nav>
             <div className={styles.sidebarFooter}>
+              {isAdmin ? (
+                <Link href="/admin" className={styles.sidebarLink}>
+                  Admin panel
+                </Link>
+              ) : null}
               <Link href="/" className={styles.sidebarLink}>
                 Back to home
               </Link>
