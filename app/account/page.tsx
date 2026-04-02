@@ -629,7 +629,7 @@ export default function AccountPage() {
   };
 
   const saveChiropractorProfile = async () => {
-    if (!user) return;
+    if (!user || profile?.role === 'admin') return;
     setSaving(true);
     try {
       const orgBase = {
@@ -717,7 +717,7 @@ export default function AccountPage() {
   };
 
   const saveChiroSpecialties = async () => {
-    if (!user) return;
+    if (!user || profile?.role === 'admin') return;
     setSaving(true);
     try {
       const sync = async (
@@ -767,7 +767,7 @@ export default function AccountPage() {
   };
 
   const savePatientProfile = async () => {
-    if (!user) return;
+    if (!user || profile?.role === 'admin') return;
     setSaving(true);
     try {
       const updateData = {
@@ -870,13 +870,16 @@ export default function AccountPage() {
     year: 'numeric',
   });
 
+  const adminOnRoleSection =
+    isAdmin && (activeNav === 'practice' || activeNav === 'specialties' || activeNav === 'preferences');
   const toolbarEditDisabled =
-    isComingSoonNavKey(activeNav) || activeNav === 'specialties' || activeNav === 'membership';
+    isComingSoonNavKey(activeNav) || activeNav === 'specialties' || activeNav === 'membership' || adminOnRoleSection;
 
   const toolbarSaveDisabled =
     saving ||
     isComingSoonNavKey(activeNav) ||
     activeNav === 'membership' ||
+    adminOnRoleSection ||
     (activeNav === 'profile' && !profileEditing) ||
     (activeNav === 'practice' && (!showChiroAccountUI || !practiceEditing)) ||
     (activeNav === 'preferences' && (!showPatientAccountUI || !preferencesEditing));
