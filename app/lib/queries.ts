@@ -263,7 +263,10 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
       if (typeof window !== 'undefined') {
         return '/api/search-chiropractors';
       }
-      const explicit = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+      const explicit =
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.APP_URL;
       if (explicit) {
         return `${explicit.replace(/\/$/, '')}/api/search-chiropractors`;
       }

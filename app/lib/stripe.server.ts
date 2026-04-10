@@ -41,5 +41,7 @@ export function appOriginFromRequest(req: Request): string {
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
   const proto = req.headers.get('x-forwarded-proto') || 'https';
   if (host) return `${proto}://${host}`.replace(/\/$/, '');
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return `https://${vercel.replace(/\/$/, '')}`;
   return 'http://localhost:3000';
 }

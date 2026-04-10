@@ -39,8 +39,9 @@ git push -u origin main
 4. Add environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL` = `https://rioybgvxkbsmwgqonbaa.supabase.co`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (your anon key)
+   - `NEXT_PUBLIC_SITE_URL` = `https://movynalong.com` (canonical domain; no trailing slash)
 5. Click "Deploy"
-6. Done! Your site will be live at `https://your-project.vercel.app`
+6. In Vercel → Project → Settings → Domains, add **movynalong.com** (and www if you use it). The default `*.vercel.app` URL still works for previews.
 
 **Option B: Via CLI**
 ```bash
@@ -53,9 +54,10 @@ vercel
 
 After deployment, update Supabase:
 1. Go to: https://supabase.com/dashboard/project/rioybgvxkbsmwgqonbaa/auth/url-configuration
-2. Add your Vercel URL to:
-   - **Site URL**: `https://your-project.vercel.app`
-   - **Redirect URLs**: `https://your-project.vercel.app/**`
+2. Set:
+   - **Site URL**: `https://movynalong.com`
+   - **Redirect URLs**: `https://movynalong.com/auth/callback` (add `https://www.movynalong.com/auth/callback` if you use www; add each Vercel preview URL you use for testing, e.g. `https://your-app-git-branch-team.vercel.app/auth/callback`)
+3. If you use the Send Email hook: hook URL `https://movynalong.com/api/webhooks/supabase-auth-email` (or your preview URL while testing)
 
 ## That's It!
 

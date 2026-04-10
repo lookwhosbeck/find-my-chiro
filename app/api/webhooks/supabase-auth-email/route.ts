@@ -6,6 +6,7 @@ import {
   sendBrevoSignupVerificationEmail,
   sendBrevoSimpleTransactional,
 } from '@/app/lib/brevo-transactional.server';
+import { defaultAuthCallbackUrl } from '@/app/lib/app-origin.server';
 import {
   buildSupabaseAuthVerifyUrl,
   type SupabaseEmailActionType,
@@ -32,11 +33,7 @@ function hookSecretBytes(): string {
 }
 
 function defaultRedirectTo(): string {
-  const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
-  if (site) {
-    return `${site}/auth/callback`;
-  }
-  return 'http://localhost:3000/auth/callback';
+  return defaultAuthCallbackUrl();
 }
 
 function str(v: unknown): string {
