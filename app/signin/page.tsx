@@ -27,7 +27,20 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    checkUser();
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const qErr = sp.get('error');
+      if (qErr === 'auth_callback') {
+        setError('Sign-in was interrupted. Try again or use a fresh link from your email.');
+      } else if (qErr === 'auth_exchange') {
+        setError('We could not complete sign-in. Try again or contact support.');
+      } else if (qErr === 'email_not_confirmed' || sp.get('notice') === 'verify_email') {
+        setError(
+          'Confirm your email before signing in. Check your inbox for the Movyn verification message.',
+        );
+      }
+    }
+    void checkUser();
   }, []);
 
   const checkUser = async () => {
@@ -64,10 +77,15 @@ export default function SignInPage() {
       router.push(getRedirectPath());
     } catch (err: unknown) {
       console.error('Error signing in:', err);
-      const message =
+      let message =
         err instanceof Error
           ? err.message
           : 'Failed to sign in. Please check your credentials and try again.';
+      const low = message.toLowerCase();
+      if (low.includes('email not confirmed') || low.includes('not confirmed')) {
+        message =
+          'Confirm your email before signing in. Check your inbox for the Movyn verification message.';
+      }
       setError(message);
     } finally {
       setSigningIn(false);
