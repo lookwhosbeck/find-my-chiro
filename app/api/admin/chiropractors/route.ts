@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendChiropractorProfileLiveEmailIfNeeded } from '@/app/lib/chiropractor-welcome-email.server';
 
 type AdminAuthResult =
   | { ok: true }
@@ -147,6 +148,20 @@ export async function PATCH(req: NextRequest) {
   const admin = createClient(url, service, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const { data: beforeRow, error: beforeErr } = await admin
+    .from('chiropractors')
+    .select('license_verification_status')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (beforeErr) {
+    console.error('admin chiropractors PATCH preselect:', beforeErr);
+    return NextResponse.json({ error: beforeErr.message }, { status: 500 });
+  }
+  if (!beforeRow) {
+    return NextResponse.json({ error: 'Chiropractor not found' }, { status: 404 });
+  }
+
   const { data: updated, error } = await admin
     .from('chiropractors')
     .update({ license_verification_status: status, updated_at: new Date().toISOString() })
@@ -171,6 +186,10 @@ export async function PATCH(req: NextRequest) {
       { error: 'Status change was blocked by a database trigger. Check PostgREST service-role configuration.' },
       { status: 500 },
     );
+  }
+
+  if (status === 'approved' && beforeRow.license_verification_status !== 'approved') {
+    void sendChiropractorProfileLiveEmailIfNeeded(id);
   }
 
   return NextResponse.json({ ok: true, id, verificationStatus: updated.license_verification_status });

@@ -55,6 +55,79 @@ export async function sendBrevoSignupVerificationEmail(args: {
   });
 }
 
+/**
+ * E2 — Welcome + Loom (Chiropractor). Params: profileUrl, loomUrl (+ FIRSTNAME / LASTNAME for merge tags).
+ */
+export async function sendBrevoChiropractorWelcomeEmail(args: {
+  to: BrevoRecipient;
+  profileUrl: string;
+  loomUrl: string;
+  templateId: number;
+}): Promise<void> {
+  const { to, profileUrl, loomUrl, templateId } = args;
+  const display = to.name?.trim() || to.email;
+  const nameParts = display.split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] ?? display;
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+  await postBrevo({
+    to: [{ email: to.email, name: display }],
+    templateId,
+    params: {
+      profileUrl,
+      loomUrl,
+      FIRSTNAME: firstName,
+      LASTNAME: lastName,
+    },
+  });
+}
+
+/** E3 — Complete your profile nudge. Params: profileUrl (+ FIRSTNAME / LASTNAME). */
+export async function sendBrevoChiropractorProfileNudgeEmail(args: {
+  to: BrevoRecipient;
+  profileUrl: string;
+  templateId: number;
+}): Promise<void> {
+  const { to, profileUrl, templateId } = args;
+  const display = to.name?.trim() || to.email;
+  const nameParts = display.split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] ?? display;
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+  await postBrevo({
+    to: [{ email: to.email, name: display }],
+    templateId,
+    params: {
+      profileUrl,
+      FIRSTNAME: firstName,
+      LASTNAME: lastName,
+    },
+  });
+}
+
+/** E4 — Profile is live. Params: profileUrl (+ FIRSTNAME / LASTNAME). */
+export async function sendBrevoChiropractorProfileLiveEmail(args: {
+  to: BrevoRecipient;
+  profileUrl: string;
+  templateId: number;
+}): Promise<void> {
+  const { to, profileUrl, templateId } = args;
+  const display = to.name?.trim() || to.email;
+  const nameParts = display.split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] ?? display;
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+  await postBrevo({
+    to: [{ email: to.email, name: display }],
+    templateId,
+    params: {
+      profileUrl,
+      FIRSTNAME: firstName,
+      LASTNAME: lastName,
+    },
+  });
+}
+
 /** Movyn — Account Recovery; template uses params.reset_url */
 export async function sendBrevoPasswordResetEmail(args: {
   to: BrevoRecipient;

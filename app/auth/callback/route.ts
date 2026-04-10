@@ -2,6 +2,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+import { sendChiropractorWelcomeEmailIfNeeded } from '@/app/lib/chiropractor-welcome-email.server';
+
 /**
  * Supabase Auth email confirmation / OAuth redirect handler.
  * Set Site URL and Redirect URLs in Supabase Dashboard to include this path.
@@ -42,6 +44,25 @@ export async function GET(request: Request) {
   if (error) {
     console.error('auth callback exchange:', error.message);
     return NextResponse.redirect(`${origin}/signin?error=auth_exchange`);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const meta = user?.user_metadata as { role?: string; first_name?: string; last_name?: string } | undefined;
+  if (
+    user?.id &&
+    user.email &&
+    user.email_confirmed_at &&
+    meta?.role === 'chiropractor'
+  ) {
+    void sendChiropractorWelcomeEmailIfNeeded({
+      userId: user.id,
+      email: user.email,
+      firstName: meta.first_name ?? null,
+      lastName: meta.last_name ?? null,
+      emailConfirmedAt: user.email_confirmed_at,
+    });
   }
 
   return NextResponse.redirect(`${origin}${next}`);

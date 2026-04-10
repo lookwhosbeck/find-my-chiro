@@ -27,6 +27,7 @@ import {
 import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import { isPremiumProfile } from '@/app/lib/subscription';
 import { canUseTrustSensitiveFeatures } from '@/app/lib/capabilities';
+import { evaluateChiropractorSearchReadiness } from '@/app/lib/profile-completeness';
 import styles from './page.module.css';
 
 function supabaseErrorMessage(err: unknown): string {
@@ -41,6 +42,7 @@ function supabaseErrorMessage(err: unknown): string {
 }
 
 type NavKey =
+  | 'welcome'
   | 'profile'
   | 'practice'
   | 'specialties'
@@ -59,6 +61,8 @@ function isComingSoonNavKey(k: NavKey): boolean {
 
 function accountPageTitle(nav: NavKey): string {
   switch (nav) {
+    case 'welcome':
+      return 'Getting Started with Movyn';
     case 'profile':
       return 'Your Profile';
     case 'practice':
@@ -95,6 +99,8 @@ interface UserProfile {
   subscription_status?: string | null;
   subscription_price_id?: string | null;
   current_period_end?: string | null;
+  /** Set when Brevo E2 welcome email was sent */
+  chiropractor_welcome_email_sent_at?: string | null;
 }
 
 interface ChiropractorProfile {
@@ -206,6 +212,7 @@ export default function AccountPage() {
     chiro: typeof chiropractorForm;
   } | null>(null);
   const preferencesSnapshotRef = useRef<typeof patientForm | null>(null);
+  const initialNavSetRef = useRef(false);
 
   useEffect(() => {
     setProfileEditing(false);
@@ -214,6 +221,16 @@ export default function AccountPage() {
     practiceSnapshotRef.current = null;
     preferencesSnapshotRef.current = null;
   }, [activeNav]);
+
+  useEffect(() => {
+    if (!profile || initialNavSetRef.current) return;
+    if (profile.role === 'chiropractor' && !chiropractorProfile) return;
+    const status = chiropractorProfile?.license_verification_status ?? 'draft';
+    if (profile.role === 'chiropractor' && status !== 'approved') {
+      setActiveNav('welcome');
+    }
+    initialNavSetRef.current = true;
+  }, [profile, chiropractorProfile?.license_verification_status]);
 
   const loadChiroAccountData = useCallback(async (userId: string) => {
     const pickName = (rel: unknown): string | undefined => {
@@ -354,6 +371,17 @@ export default function AccountPage() {
         last_name: profileData.last_name || '',
         email: profileData.email || '',
       });
+
+      if (
+        profileData.role === 'chiropractor' &&
+        authUser.email_confirmed_at &&
+        !(profileData as UserProfile).chiropractor_welcome_email_sent_at
+      ) {
+        void fetch('/api/email/chiropractor-welcome', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      }
 
       const promises: Promise<void>[] = [];
 
@@ -848,6 +876,7 @@ export default function AccountPage() {
   const showPatientAccountUI = isPatient || isAdmin;
 
   const chiroNavAvailable: { key: NavKey; label: string }[] = [
+    { key: 'welcome', label: 'Getting started' },
     { key: 'practice', label: 'Your practice' },
     { key: 'profile', label: 'Your profile' },
     { key: 'specialties', label: 'Specialties' },
@@ -883,6 +912,17 @@ export default function AccountPage() {
 
   const displayName =
     [profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'there';
+  const licenseStatus = chiropractorProfile?.license_verification_status ?? 'draft';
+  const completeness = evaluateChiropractorSearchReadiness({
+    addressLine1: orgForm.address_line_1,
+    city: orgForm.city,
+    state: orgForm.state,
+    zipCode: orgForm.zip_code,
+    modalities: chiroModalityNames,
+    philosophies: chiroPhilosophyNames,
+    focusAreas: chiroFocusNames,
+    paymentModels: chiroPaymentNames,
+  });
 
   const emailUpdated = new Date(profile.updated_at).toLocaleDateString(undefined, {
     month: 'short',
@@ -893,11 +933,16 @@ export default function AccountPage() {
   const adminOnRoleSection =
     isAdmin && (activeNav === 'practice' || activeNav === 'specialties' || activeNav === 'preferences');
   const toolbarEditDisabled =
-    isComingSoonNavKey(activeNav) || activeNav === 'specialties' || activeNav === 'membership' || adminOnRoleSection;
+    isComingSoonNavKey(activeNav) ||
+    activeNav === 'welcome' ||
+    activeNav === 'specialties' ||
+    activeNav === 'membership' ||
+    adminOnRoleSection;
 
   const toolbarSaveDisabled =
     saving ||
     isComingSoonNavKey(activeNav) ||
+    activeNav === 'welcome' ||
     activeNav === 'membership' ||
     adminOnRoleSection ||
     (activeNav === 'profile' && !profileEditing) ||
@@ -973,6 +1018,47 @@ export default function AccountPage() {
   const openAvatarPicker = () => {
     if (uploadingAvatar) return;
     document.getElementById('account-avatar-input')?.click();
+  };
+
+  const renderWelcomePanel = () => {
+    const statusLabel = licenseStatus.replace(/_/g, ' ');
+    const pending = licenseStatus === 'pending_review' || licenseStatus === 'draft';
+    const rejected = licenseStatus === 'rejected';
+
+    return (
+      <div className={styles.welcomePanel}>
+        <p className={styles.welcomeLead}>
+          Your profile is not public until our team verifies your license.
+        </p>
+        <p className={styles.mutedNote}>
+          Status: <strong>{statusLabel}</strong>
+          {pending ? ' — verification is in progress.' : ''}
+          {rejected ? ' — please update your details and contact support.' : ''}
+        </p>
+
+        <div className={styles.completenessCard}>
+          <p className={styles.sectionTitle}>
+            While you wait, complete your profile for better match quality ({completeness.score}% complete)
+          </p>
+          <ul className={styles.checklist}>
+            {completeness.items.map((item) => (
+              <li key={item.key} className={styles.checklistItem}>
+                <span aria-hidden>{item.complete ? '✓' : '○'}</span>
+                <span>{item.label}</span>
+              </li>
+            ))}
+          </ul>
+          <div className={styles.actionsRow}>
+            <button type="button" className={styles.secondaryBtn} onClick={() => setActiveNav('practice')}>
+              Update practice info
+            </button>
+            <button type="button" className={styles.secondaryBtn} onClick={() => setActiveNav('specialties')}>
+              Update specialties
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderProfilePanel = () => (
@@ -1665,7 +1751,9 @@ export default function AccountPage() {
   };
 
   let mainContent: ReactNode = null;
-  if (activeNav === 'profile') {
+  if (activeNav === 'welcome' && showChiroAccountUI) {
+    mainContent = renderWelcomePanel();
+  } else if (activeNav === 'profile') {
     mainContent = renderProfilePanel();
   } else if (activeNav === 'practice' && showChiroAccountUI) {
     mainContent = renderPracticePanel();
@@ -1689,8 +1777,8 @@ export default function AccountPage() {
           <p>Referrals unlock after your license is verified by our team.</p>
           <p className={styles.mutedNote} style={{ marginTop: '12px' }}>
             Status:{' '}
-            <strong>{chiropractorProfile?.license_verification_status?.replace(/_/g, ' ') || 'draft'}</strong>
-            {chiropractorProfile?.license_verification_status === 'pending_review'
+            <strong>{licenseStatus.replace(/_/g, ' ')}</strong>
+            {licenseStatus === 'pending_review'
               ? ' — we will notify you when review is complete.'
               : ''}
           </p>
