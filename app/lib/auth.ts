@@ -311,6 +311,244 @@ export interface SignUpResult {
   success: boolean;
   error?: string;
   userId?: string;
+  /** True when Supabase returned no session (email confirmation required). Wizard data may be in sessionStorage until first login. */
+  needsEmailVerification?: boolean;
+}
+
+/** SessionStorage: full chiropractor wizard applied after email verify (password never stored). */
+export const PENDING_CHIRO_SIGNUP_STORAGE_KEY = 'movyn.pending_chiro_signup.v1';
+export const PENDING_PATIENT_SIGNUP_STORAGE_KEY = 'movyn.pending_patient_signup.v1';
+
+type PendingChiroStoredV1 = {
+  v: 1;
+  userId: string;
+  data: Omit<SignUpData, 'password'>;
+  markReadyForReview?: boolean;
+};
+
+type PendingPatientStoredV1 = {
+  v: 1;
+  userId: string;
+  data: Omit<PatientSignUpData, 'password'>;
+};
+
+function storePendingChiropractorSignup(
+  userId: string,
+  data: SignUpData,
+  markReadyForReview?: boolean,
+): void {
+  if (typeof window === 'undefined') return;
+  const { password: _drop, ...rest } = data;
+  const payload: PendingChiroStoredV1 = { v: 1, userId, data: rest, markReadyForReview };
+  try {
+    sessionStorage.setItem(PENDING_CHIRO_SIGNUP_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+function storePendingPatientSignup(userId: string, data: PatientSignUpData): void {
+  if (typeof window === 'undefined') return;
+  const { password: _drop, ...rest } = data;
+  const payload: PendingPatientStoredV1 = { v: 1, userId, data: rest };
+  try {
+    sessionStorage.setItem(PENDING_PATIENT_SIGNUP_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+/**
+ * After email verification, apply stored chiropractor wizard data (junctions, clinic, review).
+ * Call from /account once a session exists.
+ */
+export async function flushPendingChiropractorSignupIfAny(supabase: SupabaseClient): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const raw = sessionStorage.getItem(PENDING_CHIRO_SIGNUP_STORAGE_KEY);
+  if (!raw) return;
+  let parsed: PendingChiroStoredV1;
+  try {
+    parsed = JSON.parse(raw) as PendingChiroStoredV1;
+  } catch {
+    sessionStorage.removeItem(PENDING_CHIRO_SIGNUP_STORAGE_KEY);
+    return;
+  }
+  if (parsed.v !== 1 || !parsed.userId || !parsed.data) {
+    sessionStorage.removeItem(PENDING_CHIRO_SIGNUP_STORAGE_KEY);
+    return;
+  }
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user?.id || session.user.id !== parsed.userId) return;
+
+  const full: SignUpData = { ...parsed.data, password: '' };
+  const res = await persistChiropractorSignupData(supabase, parsed.userId, full, {
+    accessToken: session.access_token,
+    markReadyForReview: parsed.markReadyForReview,
+  });
+  if (res.success) {
+    sessionStorage.removeItem(PENDING_CHIRO_SIGNUP_STORAGE_KEY);
+  } else {
+    console.error('flushPendingChiropractorSignupIfAny:', res.error);
+  }
+}
+
+export async function flushPendingPatientSignupIfAny(supabase: SupabaseClient): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const raw = sessionStorage.getItem(PENDING_PATIENT_SIGNUP_STORAGE_KEY);
+  if (!raw) return;
+  let parsed: PendingPatientStoredV1;
+  try {
+    parsed = JSON.parse(raw) as PendingPatientStoredV1;
+  } catch {
+    sessionStorage.removeItem(PENDING_PATIENT_SIGNUP_STORAGE_KEY);
+    return;
+  }
+  if (parsed.v !== 1 || !parsed.userId || !parsed.data) {
+    sessionStorage.removeItem(PENDING_PATIENT_SIGNUP_STORAGE_KEY);
+    return;
+  }
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user?.id || session.user.id !== parsed.userId) return;
+
+  const full: PatientSignUpData = { ...parsed.data, password: '' };
+  const res = await persistPatientSignupData(supabase, parsed.userId, full);
+  if (res.success) {
+    sessionStorage.removeItem(PENDING_PATIENT_SIGNUP_STORAGE_KEY);
+  } else {
+    console.error('flushPendingPatientSignupIfAny:', res.error);
+  }
+}
+
+async function persistChiropractorSignupData(
+  supabase: SupabaseClient,
+  userId: string,
+  data: SignUpData,
+  options: {
+    accessToken: string | null | undefined;
+    markReadyForReview?: boolean;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  const { error: profileError } = await supabase.from('profiles').upsert(
+    {
+      id: userId,
+      first_name: data.firstName || null,
+      last_name: data.lastName || null,
+      email: data.email || null,
+      updated_at: new Date().toISOString(),
+      role: 'chiropractor',
+    },
+    { onConflict: 'id' },
+  );
+
+  if (profileError) {
+    console.error('Profile upsert error:', profileError);
+    return { success: false, error: profileError.message };
+  }
+
+  const chiropractorData = {
+    id: userId,
+    bio: data.bio || null,
+    chiropractic_college: data.college || null,
+    graduation_year: data.graduationYear ? parseInt(data.graduationYear, 10) : null,
+    license_number: data.licenseNumber || null,
+    website_url: data.website || null,
+    instagram_handle: data.instagram || null,
+    accepting_new_patients: true,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: chiroError } = await supabase.from('chiropractors').upsert(chiropractorData, {
+    onConflict: 'id',
+  });
+
+  if (chiroError) {
+    console.error('Chiropractor upsert error:', chiroError);
+    return { success: false, error: chiroError.message };
+  }
+
+  const { error: junctionError } = await insertChiropractorJunctionSelections(supabase, userId, data);
+  if (junctionError) {
+    console.error('Could not save signup specialties (modalities, focus areas, payment, insurance):', junctionError);
+  }
+
+  const signupToken = options.accessToken?.trim();
+  await ensureSignupClinicLinked(supabase, userId, data, signupToken);
+
+  if (options.markReadyForReview) {
+    const now = new Date().toISOString();
+    const { error: reviewErr } = await supabase
+      .from('chiropractors')
+      .update({
+        license_verification_status: 'pending_review',
+        submitted_for_review_at: now,
+        onboarding_completed_at: now,
+        updated_at: now,
+      })
+      .eq('id', userId);
+    if (reviewErr) {
+      console.error('markReadyForReview update:', reviewErr);
+    }
+  }
+
+  return { success: true };
+}
+
+async function persistPatientSignupData(
+  supabase: SupabaseClient,
+  userId: string,
+  data: PatientSignUpData,
+): Promise<{ success: boolean; error?: string }> {
+  const { error: profileError } = await supabase.from('profiles').upsert(
+    {
+      id: userId,
+      first_name: data.firstName || null,
+      last_name: data.lastName || null,
+      email: data.email || null,
+      role: 'patient',
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'id' },
+  );
+
+  if (profileError) {
+    console.error('Profile upsert error:', profileError);
+    return { success: false, error: profileError.message };
+  }
+
+  const patientPayload = {
+    id: userId,
+    phone: data.phone?.trim() || null,
+    date_of_birth: data.dateOfBirth?.trim() || null,
+    emergency_contact: data.emergencyContact?.trim() || null,
+    emergency_phone: data.emergencyPhone?.trim() || null,
+    preferred_modalities: data.preferredModalities ?? [],
+    focus_areas: data.focusAreas ?? [],
+    preferred_business_model: data.preferredBusinessModel?.trim() || null,
+    insurance_type: normalizePatientInsuranceForDb(data.insuranceType),
+    budget_range: normalizePatientBudgetForDb(data.budgetRange),
+    city: data.city?.trim() || null,
+    state: data.state?.trim() || null,
+    preferred_zip_code: data.zipCode?.trim() || null,
+    search_radius_miles: clampSearchRadiusMiles(data.searchRadius ?? 25),
+    preferred_days: data.preferredDays ?? [],
+    preferred_times: data.preferredTimes ?? [],
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: patientError } = await supabase.from('patients').upsert(patientPayload, {
+    onConflict: 'id',
+  });
+
+  if (patientError) {
+    console.error('Patient upsert error:', patientError);
+    return { success: false, error: patientError.message };
+  }
+
+  return { success: true };
 }
 
 export async function checkLicenseExists(licenseNumber: string): Promise<boolean> {
@@ -400,111 +638,30 @@ export async function signUpChiropractor(data: SignUpData): Promise<SignUpResult
         access_token: authData.session.access_token,
         refresh_token: authData.session.refresh_token,
       });
-    }
 
-    // Step 2: Create/update profile record (basic user info)
-    // Note: The trigger may have already created the profile, so we use upsert
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .upsert({
-        id: userId,
-        first_name: data.firstName || null,
-        last_name: data.lastName || null,
-        email: data.email || null,
-        updated_at: new Date().toISOString(),
-        role: 'chiropractor', // Ensure role is set
-      }, {
-        onConflict: 'id'
+      const persisted = await persistChiropractorSignupData(supabase, userId, data, {
+        accessToken: authData.session.access_token,
+        markReadyForReview: data.markReadyForReview,
       });
 
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Continue - profile might not be critical
-    }
-
-    // Step 3: Create chiropractor record (clinic org is attached after insert — see attachClinicOrganizationFromSignup)
-    const chiropractorData = {
-      id: userId,
-      bio: data.bio || null,
-      chiropractic_college: data.college || null,
-      graduation_year: data.graduationYear ? parseInt(data.graduationYear) : null,
-      license_number: data.licenseNumber || null,
-      website_url: data.website || null,
-      instagram_handle: data.instagram || null,
-      accepting_new_patients: true,
-      updated_at: new Date().toISOString(),
-    };
-
-    // Try to insert into chiropractors table
-    const { error: chiroError } = await supabase
-      .from('chiropractors')
-      .insert(chiropractorData);
-
-    if (chiroError) {
-      // Log detailed error for debugging
-      console.error('Chiropractor creation error:', {
-        message: chiroError.message,
-        details: chiroError.details,
-        hint: chiroError.hint,
-        code: chiroError.code,
-      });
-      
-      // Still update profiles table with basic info
-      const { error: profileUpdateError } = await supabase
-        .from('profiles')
-        .update({
-          first_name: data.firstName || null,
-          last_name: data.lastName || null,
-          email: data.email || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
-
-      if (profileUpdateError) {
-        console.error('Profile update error:', profileUpdateError);
+      if (!persisted.success) {
+        let errorMessage = 'Account created, but there was an issue saving your profile. ';
+        const msg = persisted.error || '';
+        if (msg.includes('42P01') || msg.toLowerCase().includes('does not exist')) {
+          errorMessage += 'The database may be missing a migration.';
+        } else {
+          errorMessage += msg;
+        }
+        return { success: false, error: errorMessage, userId };
       }
 
-      // Provide user-friendly error message
-      let errorMessage = 'Account created, but there was an issue saving your profile. ';
-      if (chiroError.code === '42P01') {
-        errorMessage += 'The chiropractors table does not exist. Please run the database migration.';
-      } else if (chiroError.code === '23505') {
-        errorMessage += 'A profile with this information already exists.';
-      } else {
-        errorMessage += `Error: ${chiroError.message}`;
-      }
-
-      return { 
-        success: false, 
-        error: errorMessage
-      };
+      return { success: true, userId };
     }
 
-    const { error: junctionError } = await insertChiropractorJunctionSelections(supabase, userId, data);
-    if (junctionError) {
-      console.error('Could not save signup specialties (modalities, focus areas, payment, insurance):', junctionError);
-    }
-
-    const signupToken = authData.session?.access_token;
-    await ensureSignupClinicLinked(supabase, userId, data, signupToken);
-
-    if (data.markReadyForReview) {
-      const now = new Date().toISOString();
-      const { error: reviewErr } = await supabase
-        .from('chiropractors')
-        .update({
-          license_verification_status: 'pending_review',
-          submitted_for_review_at: now,
-          onboarding_completed_at: now,
-          updated_at: now,
-        })
-        .eq('id', userId);
-      if (reviewErr) {
-        console.error('markReadyForReview update:', reviewErr);
-      }
-    }
-
-    return { success: true, userId };
+    // Email confirmation on: no JWT yet — RLS blocks inserts. Trigger bootstrapped profile + chiropractor;
+    // full wizard is applied after verify via sessionStorage + flush on /account.
+    storePendingChiropractorSignup(userId, data, data.markReadyForReview);
+    return { success: true, userId, needsEmailVerification: true };
   } catch (error: any) {
     console.error('Sign up error:', error);
     return { success: false, error: error.message || 'An unexpected error occurred' };
@@ -555,61 +712,20 @@ export async function signUpPatient(data: PatientSignUpData): Promise<SignUpResu
         access_token: authData.session.access_token,
         refresh_token: authData.session.refresh_token,
       });
+
+      const persisted = await persistPatientSignupData(supabase, userId, data);
+      if (!persisted.success) {
+        return {
+          success: false,
+          error: `Account created, but there was an issue saving your preferences. ${persisted.error || ''}`.trim(),
+          userId,
+        };
+      }
+      return { success: true, userId };
     }
 
-    // Step 2: Create/update profile record
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .upsert({
-        id: userId,
-        first_name: data.firstName || null,
-        last_name: data.lastName || null,
-        email: data.email || null,
-        role: 'patient',
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'id'
-      });
-
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-    }
-
-    // Step 3: Patient row — same fields as account preferences save
-    const patientPayload = {
-      id: userId,
-      phone: data.phone?.trim() || null,
-      date_of_birth: data.dateOfBirth?.trim() || null,
-      emergency_contact: data.emergencyContact?.trim() || null,
-      emergency_phone: data.emergencyPhone?.trim() || null,
-      preferred_modalities: data.preferredModalities ?? [],
-      focus_areas: data.focusAreas ?? [],
-      preferred_business_model: data.preferredBusinessModel?.trim() || null,
-      insurance_type: normalizePatientInsuranceForDb(data.insuranceType),
-      budget_range: normalizePatientBudgetForDb(data.budgetRange),
-      city: data.city?.trim() || null,
-      state: data.state?.trim() || null,
-      preferred_zip_code: data.zipCode?.trim() || null,
-      search_radius_miles: clampSearchRadiusMiles(data.searchRadius ?? 25),
-      preferred_days: data.preferredDays ?? [],
-      preferred_times: data.preferredTimes ?? [],
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error: patientError } = await supabase
-      .from('patients')
-      .upsert(patientPayload, { onConflict: 'id' });
-
-    if (patientError) {
-      console.error('Patient creation error:', patientError);
-      const errorMessage = 'Account created, but there was an issue saving your preferences. ';
-      return {
-        success: false,
-        error: errorMessage + patientError.message,
-      };
-    }
-
-    return { success: true, userId };
+    storePendingPatientSignup(userId, data);
+    return { success: true, userId, needsEmailVerification: true };
   } catch (error: any) {
     console.error('Patient sign up error:', error);
     return { success: false, error: error.message || 'An unexpected error occurred' };

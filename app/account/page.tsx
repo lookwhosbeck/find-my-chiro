@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { Checkbox } from '@radix-ui/themes';
 import { EnvelopeClosedIcon } from '@radix-ui/react-icons';
 import { supabase } from '@/app/lib/supabase';
+import {
+  flushPendingChiropractorSignupIfAny,
+  flushPendingPatientSignupIfAny,
+} from '@/app/lib/auth';
 import { uploadAvatar, deleteAvatar, updateProfileAvatarUrl } from '@/app/lib/avatar-upload';
 import { dispatchProfileUpdated } from '@/app/lib/profile-events';
 import { MovynLogo } from '@/app/components/MovynLogo';
@@ -325,6 +329,9 @@ export default function AccountPage() {
         router.push('/signin');
         return;
       }
+
+      await flushPendingChiropractorSignupIfAny(supabase);
+      await flushPendingPatientSignupIfAny(supabase);
 
       const authUser = session.user;
       setUser(authUser);
