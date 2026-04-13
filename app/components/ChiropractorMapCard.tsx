@@ -34,13 +34,35 @@ function mapListMatchPercent(chiropractor: Chiropractor): number | null {
 export interface ChiropractorMapCardProps {
   chiropractor: Chiropractor;
   profileHref?: string;
+  /** Logged-in referring chiropractor: show low-friction refer icon (does not navigate to profile). */
+  showReferralIcon?: boolean;
+  onReferPatient?: () => void;
 }
 
 /**
  * Map search list / mobile carousel card — layout and type from Figma 84:3608
  * (desktop: avatar left; mobile: avatar right; footer: location + distance).
  */
-export function ChiropractorMapCard({ chiropractor, profileHref }: ChiropractorMapCardProps) {
+function ReferPatientGlyph() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path
+        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 12h-6M19 9v6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ChiropractorMapCard({
+  chiropractor,
+  profileHref,
+  showReferralIcon,
+  onReferPatient,
+}: ChiropractorMapCardProps) {
   const href = profileHref ?? `/chiropractor/${chiropractor.id}`;
   const initials = `${chiropractor.firstName?.[0] || ''}${chiropractor.lastName?.[0] || ''}`.toUpperCase();
   const displayName = `Dr. ${chiropractor.firstName} ${chiropractor.lastName}`.trim();
@@ -60,14 +82,29 @@ export function ChiropractorMapCard({ chiropractor, profileHref }: ChiropractorM
   const showFooter = Boolean(locationLine || distanceText);
 
   return (
-    <Link
-      href={href}
-      prefetch={false}
-      className="mapview-card-link"
-      onClick={(e) => e.stopPropagation()}
-      aria-label={`View profile: ${displayName}`}
-    >
-      <div className="mapview-card" data-variant="map">
+    <div className="chiropractor-map-card__outer" onClick={(e) => e.stopPropagation()}>
+      {showReferralIcon && onReferPatient ? (
+        <button
+          type="button"
+          className="chiropractor-map-card__refer-btn"
+          aria-label={`Refer a patient to ${displayName}`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onReferPatient();
+          }}
+        >
+          <ReferPatientGlyph />
+        </button>
+      ) : null}
+      <Link
+        href={href}
+        prefetch={false}
+        className="mapview-card-link chiropractor-map-card__link"
+        onClick={(e) => e.stopPropagation()}
+        aria-label={`View profile: ${displayName}`}
+      >
+        <div className="mapview-card" data-variant="map">
         <div className="chiropractor-map-card__profile">
           <div className="chiropractor-map-card__avatar">
             {chiropractor.avatarUrl ? (
@@ -109,7 +146,8 @@ export function ChiropractorMapCard({ chiropractor, profileHref }: ChiropractorM
             ) : null}
           </div>
         ) : null}
-      </div>
-    </Link>
+        </div>
+      </Link>
+    </div>
   );
 }

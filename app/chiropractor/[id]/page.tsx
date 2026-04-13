@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Flex, Text, Heading, Card, Box, Button } from '@radix-ui/themes';
@@ -8,6 +8,8 @@ import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
 import { Container } from '@/app/components/Container';
 import { MatchRadarChart } from '@/app/components/MatchRadarChart';
+import { ReferPatientModal } from '@/app/components/ReferPatientModal';
+import { fetchReferralCanRefer } from '@/app/lib/referral-client';
 import type { Chiropractor } from '@/app/lib/queries';
 import { parseSearchFiltersFromParams, appendSearchFiltersToQuery } from '@/app/lib/search-filters-url';
 import { buildMatchRadarOverlay, computeMatchAxes, matchPercentFromAxes } from '@/app/lib/patient-match';
@@ -53,6 +55,8 @@ function ChiropractorProfileContent() {
   const [chiro, setChiro] = useState<Chiropractor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<'notfound' | 'fail' | null>(null);
+  const [canReferPatient, setCanReferPatient] = useState(false);
+  const [referOpen, setReferOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -91,6 +95,15 @@ function ChiropractorProfileContent() {
       cancelled = true;
     };
   }, [id]);
+
+  const refreshReferEligibility = useCallback(async () => {
+    const ok = await fetchReferralCanRefer();
+    setCanReferPatient(ok);
+  }, []);
+
+  useEffect(() => {
+    void refreshReferEligibility();
+  }, [refreshReferEligibility, id]);
 
   const axes = useMemo(() => (chiro ? computeMatchAxes(chiro, filters) : []), [chiro, filters]);
   const overlayRows = useMemo(() => (chiro ? buildMatchRadarOverlay(chiro, filters) : []), [chiro, filters]);
@@ -221,6 +234,17 @@ function ChiropractorProfileContent() {
                 <span className="match-potential-pill" style={matchPill}>
                   {matchPct}% match to your search
                 </span>
+              ) : null}
+              {canReferPatient && chiro.id ? (
+                <Button
+                  type="button"
+                  size="3"
+                  variant="solid"
+                  style={{ marginTop: 8 }}
+                  onClick={() => setReferOpen(true)}
+                >
+                  Refer a patient
+                </Button>
               ) : null}
             </Flex>
           </div>
@@ -472,6 +496,17 @@ function ChiropractorProfileContent() {
       </Box>
 
       <Footer />
+
+      {chiro && canReferPatient ? (
+        <ReferPatientModal
+          open={referOpen}
+          onOpenChange={setReferOpen}
+          receivingChiropractorId={chiro.id}
+          receivingDoctorLabel={displayName}
+          searchFilters={filters}
+          clientMatchScore={hasFilterContext ? matchPct : chiro.matchScore ?? null}
+        />
+      ) : null}
     </Flex>
   );
 }

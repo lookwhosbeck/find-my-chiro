@@ -166,3 +166,20 @@ export async function sendBrevoSimpleTransactional(args: {
     htmlContent: html,
   });
 }
+
+/**
+ * Referral lifecycle (Brevo templates 16–20). Params must match your template merge fields
+ * (e.g. FIRSTNAME / LASTNAME plus custom keys like matchScore, searchSummary, respondUrl).
+ */
+export async function sendBrevoReferralTemplateEmail(args: {
+  to: BrevoRecipient;
+  templateId: number;
+  params: Record<string, string>;
+}): Promise<void> {
+  const display = args.to.name?.trim() || args.to.email;
+  await postBrevo({
+    to: [{ email: args.to.email, name: display }],
+    templateId: args.templateId,
+    params: args.params,
+  });
+}

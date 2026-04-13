@@ -77,14 +77,20 @@ export async function sendChiropractorWelcomeEmailIfNeeded(args: {
   }
 
   const now = new Date().toISOString();
-  const { error: upErr } = await admin
+  const { data: flagged, error: upErr } = await admin
     .from('profiles')
     .update({ chiropractor_welcome_email_sent_at: now, updated_at: now })
     .eq('id', args.userId)
-    .is('chiropractor_welcome_email_sent_at', null);
+    .is('chiropractor_welcome_email_sent_at', null)
+    .select('id')
+    .maybeSingle();
 
   if (upErr) {
     console.error('chiropractor welcome: profile update', upErr);
+    return { sent: false, skippedReason: 'idempotency_update_failed' };
+  }
+  if (!flagged) {
+    return { sent: false, skippedReason: 'idempotency_not_claimed' };
   }
 
   return { sent: true };
@@ -130,14 +136,20 @@ export async function sendChiropractorProfileLiveEmailIfNeeded(userId: string): 
   }
 
   const now = new Date().toISOString();
-  const { error: upErr } = await admin
+  const { data: flagged, error: upErr } = await admin
     .from('profiles')
     .update({ license_approved_email_sent_at: now, updated_at: now })
     .eq('id', userId)
-    .is('license_approved_email_sent_at', null);
+    .is('license_approved_email_sent_at', null)
+    .select('id')
+    .maybeSingle();
 
   if (upErr) {
     console.error('chiropractor live: profile update', upErr);
+    return { sent: false, skippedReason: 'idempotency_update_failed' };
+  }
+  if (!flagged) {
+    return { sent: false, skippedReason: 'idempotency_not_claimed' };
   }
 
   return { sent: true };
@@ -183,14 +195,20 @@ export async function sendChiropractorProfileNudgeEmailIfNeeded(userId: string):
   }
 
   const now = new Date().toISOString();
-  const { error: upErr } = await admin
+  const { data: flagged, error: upErr } = await admin
     .from('profiles')
     .update({ profile_nudge_email_sent_at: now, updated_at: now })
     .eq('id', userId)
-    .is('profile_nudge_email_sent_at', null);
+    .is('profile_nudge_email_sent_at', null)
+    .select('id')
+    .maybeSingle();
 
   if (upErr) {
     console.error('chiropractor nudge: profile update', upErr);
+    return { sent: false, skippedReason: 'idempotency_update_failed' };
+  }
+  if (!flagged) {
+    return { sent: false, skippedReason: 'idempotency_not_claimed' };
   }
 
   return { sent: true };

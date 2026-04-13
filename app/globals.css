@@ -1588,6 +1588,44 @@ header.fmc-site-header .join-network-button,
   }
 }
 
+.chiropractor-map-card__outer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.chiropractor-map-card__refer-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-top: 2px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.chiropractor-map-card__refer-btn:hover {
+  background: rgba(0, 113, 227, 0.18);
+}
+
+.chiropractor-map-card__refer-btn:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 2px;
+}
+
+.chiropractor-map-card__link {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* Mobile filter dropdown stacking */
 @media (max-width: 768px) {
   .filter-dropdown {

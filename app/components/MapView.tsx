@@ -68,6 +68,9 @@ interface MapViewProps {
   onPaymentChange: (option: string, checked: boolean) => void;
   onClearFilters: () => void;
   onApplyFilters: () => void;
+  /** Authenticated referring chiropractor (premium + license approved): show refer icon on list cards. */
+  canReferPatient?: boolean;
+  onReferPatient?: (chiropractor: Chiropractor) => void;
 }
 
 export function MapView({
@@ -93,6 +96,8 @@ export function MapView({
   onPaymentChange,
   onClearFilters,
   onApplyFilters,
+  canReferPatient,
+  onReferPatient,
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -438,6 +443,10 @@ export function MapView({
                   variant="map"
                   chiropractor={chiro}
                   profileHref={profileHrefBuilder(chiro)}
+                  showReferralIcon={Boolean(canReferPatient)}
+                  onReferPatient={
+                    canReferPatient && onReferPatient ? () => onReferPatient(chiro) : undefined
+                  }
                 />
               </div>
             ))}
@@ -504,6 +513,10 @@ export function MapView({
                   variant="map"
                   chiropractor={chiro}
                   profileHref={profileHrefBuilder(chiro)}
+                  showReferralIcon={Boolean(canReferPatient)}
+                  onReferPatient={
+                    canReferPatient && onReferPatient ? () => onReferPatient(chiro) : undefined
+                  }
                 />
               </div>
             ))}

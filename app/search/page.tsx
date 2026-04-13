@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Flex } from '@radix-ui/themes';
 import { Header } from '../components/Header';
 import { MapView } from '../components/MapView';
+import { ReferPatientModal } from '../components/ReferPatientModal';
+import { fetchReferralCanRefer } from '../lib/referral-client';
 import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
 import { normalizeUsZip } from '../lib/geo';
 import {
@@ -34,6 +36,8 @@ function SearchPageContent() {
   const [chiropractors, setChiropractors] = useState<Chiropractor[]>([]);
   const [loading, setLoading] = useState(false);
   const [filtersReady, setFiltersReady] = useState(false);
+  const [canReferPatient, setCanReferPatient] = useState(false);
+  const [referTarget, setReferTarget] = useState<Chiropractor | null>(null);
 
   const [filters, setFilters] = useState<PatientSearchFilters>(() =>
     parseSearchFiltersFromParams(new URLSearchParams(searchParams.toString())),
@@ -72,6 +76,17 @@ function SearchPageContent() {
       }
     })();
     return () => { cancelled = true; };
+  }, [paramsKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const ok = await fetchReferralCanRefer();
+      if (!cancelled) setCanReferPatient(ok);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [paramsKey]);
 
   /** Keep the address bar in sync so back/forward and reload preserve zip + filters. */
@@ -194,8 +209,22 @@ function SearchPageContent() {
           onPaymentChange={handlePaymentChange}
           onClearFilters={handleClearFilters}
           onApplyFilters={performSearch}
+          canReferPatient={canReferPatient}
+          onReferPatient={(chiro) => setReferTarget(chiro)}
         />
       </div>
+      {referTarget ? (
+        <ReferPatientModal
+          open={Boolean(referTarget)}
+          onOpenChange={(o) => {
+            if (!o) setReferTarget(null);
+          }}
+          receivingChiropractorId={referTarget.id}
+          receivingDoctorLabel={`Dr. ${referTarget.firstName} ${referTarget.lastName}`.trim()}
+          searchFilters={filters}
+          clientMatchScore={referTarget.matchScore ?? null}
+        />
+      ) : null}
     </Flex>
   );
 }

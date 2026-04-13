@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "backfill:geocode-orgs": "node scripts/backfill-organization-geocodes.mjs",
     "backfill:geocode-orgs:dry": "node scripts/backfill-organization-geocodes.mjs --dry-run",
     "backfill:geocode-orgs:vercel": "npx vercel env pull .env.vercel.pull --environment=production --yes && node --env-file=.env.vercel.pull scripts/backfill-organization-geocodes.mjs",
@@ -34,6 +36,7 @@
     "@types/react-dom": "^18.3.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.9"
   }
 }

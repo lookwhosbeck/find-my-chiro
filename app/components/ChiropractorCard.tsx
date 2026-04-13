@@ -37,6 +37,8 @@ interface ChiropractorCardProps {
   marketingMatchPercent?: number;
   /** `marquee`: homepage carousel. `map`: map list / horizontal snap (search). */
   variant?: 'default' | 'marquee' | 'map';
+  showReferralIcon?: boolean;
+  onReferPatient?: () => void;
 }
 
 export function ChiropractorCard({
@@ -44,9 +46,18 @@ export function ChiropractorCard({
   profileHref,
   marketingMatchPercent,
   variant = 'default',
+  showReferralIcon,
+  onReferPatient,
 }: ChiropractorCardProps) {
   if (variant === 'map') {
-    return <ChiropractorMapCard chiropractor={chiropractor} profileHref={profileHref} />;
+    return (
+      <ChiropractorMapCard
+        chiropractor={chiropractor}
+        profileHref={profileHref}
+        showReferralIcon={showReferralIcon}
+        onReferPatient={onReferPatient}
+      />
+    );
   }
 
   const isMarquee = variant === 'marquee';

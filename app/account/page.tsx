@@ -29,6 +29,7 @@ import { isPremiumProfile } from '@/app/lib/subscription';
 import { canUseTrustSensitiveFeatures } from '@/app/lib/capabilities';
 import { evaluateChiropractorSearchReadiness } from '@/app/lib/profile-completeness';
 import styles from './page.module.css';
+import { ReferralsWorkspace } from './ReferralsWorkspace';
 
 function supabaseErrorMessage(err: unknown): string {
   if (err && typeof err === 'object') {
@@ -53,7 +54,7 @@ type NavKey =
   | 'favorites'
   | 'groups';
 
-const COMING_SOON_NAV_KEYS: NavKey[] = ['referrals', 'messages', 'favorites', 'groups'];
+const COMING_SOON_NAV_KEYS: NavKey[] = ['messages', 'favorites', 'groups'];
 
 function isComingSoonNavKey(k: NavKey): boolean {
   return COMING_SOON_NAV_KEYS.includes(k);
@@ -890,7 +891,6 @@ export default function AccountPage() {
   ];
 
   const navComingSoon: { key: NavKey; label: string }[] = [
-    { key: 'referrals', label: 'Referrals' },
     { key: 'messages', label: 'Messages' },
     { key: 'favorites', label: 'Favorites' },
     { key: 'groups', label: 'Groups' },
@@ -906,9 +906,7 @@ export default function AccountPage() {
       ? chiroNavAvailable
       : patientNavAvailable;
 
-  const navComingSoonFiltered = isChiro || isAdmin
-    ? navComingSoon.filter((i) => i.key !== 'referrals')
-    : navComingSoon;
+  const navComingSoonFiltered = navComingSoon;
 
   const displayName =
     [profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'there';
@@ -1784,7 +1782,14 @@ export default function AccountPage() {
           </p>
         </div>
       ) : (
-        renderPlaceholder()
+        <div className={styles.placeholderPanel}>
+          <p className={styles.sectionTitle}>Your referrals</p>
+          <p className={styles.mutedNote} style={{ marginBottom: 16 }}>
+            Refer patients from search or a colleague&apos;s profile. Incoming referrals can be accepted or declined
+            here.
+          </p>
+          {profile?.id ? <ReferralsWorkspace userId={profile.id} /> : null}
+        </div>
       );
   } else if (isComingSoonNavKey(activeNav)) {
     mainContent = renderPlaceholder();

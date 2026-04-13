@@ -15,13 +15,18 @@ This project keeps email trigger ownership explicit and simple:
 | 13 | Password reset | recovery flow | Supabase Send Email hook |
 | 14 | E3 Complete profile nudge | 48h after email confirmed AND required profile fields are incomplete | `/api/cron/chiropractor-profile-nudge` |
 | 15 | E4 Profile is live | admin transition to `approved` license status | `PATCH /api/admin/chiropractors` |
-| 16-20 | Referral emails | referral lifecycle events | Deferred until referral domain events are fully wired |
+| 16 | Referral — patient intro | `POST /api/referrals` after row insert | `sendInitialReferralEmailsIfNeeded()` → `BREVO_REFERRAL_PATIENT_TEMPLATE_ID` |
+| 17 | Referral — referring DC copy | same | `BREVO_REFERRAL_SENDER_COPY_TEMPLATE_ID` |
+| 18 | Referral — receiving DC | same | `BREVO_REFERRAL_RECEIVING_DC_TEMPLATE_ID` |
+| 19 | Referral — accepted (notify referring) | `POST /api/referrals/respond` accept | `BREVO_REFERRAL_ACCEPTED_TEMPLATE_ID` |
+| 20 | Referral — declined (notify referring) | `POST /api/referrals/respond` decline | `BREVO_REFERRAL_DECLINED_TEMPLATE_ID` |
 
 ## Idempotency fields
 
 - `profiles.chiropractor_welcome_email_sent_at` (E2)
 - `profiles.profile_nudge_email_sent_at` (E3)
 - `profiles.license_approved_email_sent_at` (E4)
+- `referrals.patient_intro_email_sent_at`, `referrals.referring_copy_email_sent_at`, `referrals.receiving_dc_email_sent_at` (referral intro trio)
 
 Each sender helper follows the same pattern:
 
