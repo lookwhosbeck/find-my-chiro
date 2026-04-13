@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     sessionParams.return_url = `${origin}/signup?session_id={CHECKOUT_SESSION_ID}`;
     sessionParams.redirect_on_completion = 'if_required';
   } else {
-    sessionParams.success_url = `${origin}/account?checkout=success`;
+    sessionParams.success_url = `${origin}/account?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
     sessionParams.cancel_url = `${origin}/account?checkout=canceled`;
   }
 

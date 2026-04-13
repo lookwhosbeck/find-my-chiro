@@ -323,13 +323,44 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const c = new URLSearchParams(window.location.search).get('checkout');
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get('checkout');
+    const checkoutSessionId = params.get('session_id') || params.get('checkout_session_id');
+
+    const confirmCheckoutSession = async () => {
+      if (!checkoutSessionId) return;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const res = await fetch('/api/checkout/confirm-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ sessionId: checkoutSessionId }),
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(json.error || 'Could not confirm checkout session');
+      }
+    };
+
     if (c === 'success') {
       setCheckoutBanner(
         'Payment received. Your subscription status may take a few seconds to update after you return from Stripe.',
       );
       window.history.replaceState({}, '', '/account');
-      void checkUser();
+      void (async () => {
+        try {
+          await confirmCheckoutSession();
+        } catch (e) {
+          console.error('confirm checkout session:', e);
+        } finally {
+          await checkUser();
+        }
+      })();
     } else if (c === 'canceled') {
       setCheckoutBanner('Checkout was canceled. You can subscribe anytime from this page.');
       window.history.replaceState({}, '', '/account');
