@@ -1,6 +1,7 @@
 import 'server-only';
 
 const BREVO_API = 'https://api.brevo.com/v3/smtp/email';
+const DEFAULT_BREVO_TIMEOUT_MS = 8000;
 
 function getApiKey(): string {
   const key = process.env.BREVO_API_KEY?.trim();
@@ -13,15 +14,32 @@ function getApiKey(): string {
 export type BrevoRecipient = { email: string; name?: string };
 
 async function postBrevo(body: Record<string, unknown>): Promise<void> {
-  const res = await fetch(BREVO_API, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-      'api-key': getApiKey(),
-    },
-    body: JSON.stringify(body),
-  });
+  const timeoutRaw = Number(process.env.BREVO_REQUEST_TIMEOUT_MS);
+  const timeoutMs =
+    Number.isFinite(timeoutRaw) && timeoutRaw >= 1000 ? Math.round(timeoutRaw) : DEFAULT_BREVO_TIMEOUT_MS;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(BREVO_API, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        'api-key': getApiKey(),
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new Error(`Brevo API timeout after ${timeoutMs}ms`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
