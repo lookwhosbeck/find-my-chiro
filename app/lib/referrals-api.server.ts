@@ -45,7 +45,7 @@ export type ReferrerEligibility = {
 };
 
 /**
- * Server-side gate: chiropractor role + premium + license approved.
+ * Server-side gate: chiropractor role + premium + license approved, or platform admin (full referral UX for support).
  */
 export async function getReferrerEligibility(
   supabaseService: SupabaseClient<any>,
@@ -59,6 +59,9 @@ export async function getReferrerEligibility(
 
   if (pErr || !profile) {
     return { eligible: false, reason: 'profile_not_found' };
+  }
+  if (profile.role === 'admin') {
+    return { eligible: true };
   }
   if (profile.role !== 'chiropractor') {
     return { eligible: false, reason: 'not_chiropractor' };
@@ -86,4 +89,40 @@ export function siteBaseUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, '');
   return '';
+}
+
+/**
+ * Referrals FK requires a `chiropractors` row for `referring_chiropractor_id`. Admins often have no signup chiro row;
+ * create a minimal stub (service role) so they can exercise the flow.
+ */
+export async function ensureChiropractorRowForReferrerIfNeeded(
+  supabaseService: SupabaseClient<any>,
+  userId: string,
+  profileRole: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (profileRole !== 'admin') return { ok: true };
+
+  const { data: existing, error: selErr } = await supabaseService
+    .from('chiropractors')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (selErr) {
+    console.error('ensureChiropractorRow: select', selErr);
+    return { ok: false, error: 'lookup_failed' };
+  }
+  if (existing) return { ok: true };
+
+  const { error: insErr } = await supabaseService.from('chiropractors').insert({
+    id: userId,
+    accepting_new_patients: true,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (insErr) {
+    console.error('ensureChiropractorRow: insert', insErr);
+    return { ok: false, error: 'stub_insert_failed' };
+  }
+  return { ok: true };
 }

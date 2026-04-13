@@ -1763,14 +1763,14 @@ export default function AccountPage() {
     mainContent = renderMembershipPanel();
   } else if (activeNav === 'referrals' && showChiroAccountUI) {
     mainContent =
-      !isPremiumProfile(profile) ? (
+      !isAdmin && !isPremiumProfile(profile) ? (
         <div className={styles.placeholderPanel}>
           <p>Referrals are a premium capability.</p>
           <p className={styles.mutedNote} style={{ marginTop: '12px' }}>
             Open <strong>Membership</strong> in the sidebar to subscribe.
           </p>
         </div>
-      ) : !canUseTrustSensitiveFeatures(profile, chiropractorProfile ?? {}) ? (
+      ) : !isAdmin && !canUseTrustSensitiveFeatures(profile, chiropractorProfile ?? {}) ? (
         <div className={styles.placeholderPanel}>
           <p>Referrals unlock after your license is verified by our team.</p>
           <p className={styles.mutedNote} style={{ marginTop: '12px' }}>

@@ -7,7 +7,11 @@ import {
   validateReferralCreate,
   type ReferralCreateInput,
 } from '@/app/lib/referrals-domain';
-import { getReferrerEligibility, requireBearerUser } from '@/app/lib/referrals-api.server';
+import {
+  ensureChiropractorRowForReferrerIfNeeded,
+  getReferrerEligibility,
+  requireBearerUser,
+} from '@/app/lib/referrals-api.server';
 import type { PatientSearchFilters } from '@/app/lib/queries';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +56,16 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: 'Referrals require an active subscription and approved license.', code: elig.reason },
       { status: 403 },
+    );
+  }
+
+  const { data: actorProfile } = await supabaseService.from('profiles').select('role').eq('id', user.id).maybeSingle();
+  const actorRole = typeof actorProfile?.role === 'string' ? actorProfile.role : '';
+  const stub = await ensureChiropractorRowForReferrerIfNeeded(supabaseService, user.id, actorRole);
+  if (stub.ok === false) {
+    return NextResponse.json(
+      { error: 'Could not prepare your account to record a referral.', code: stub.error },
+      { status: 500 },
     );
   }
 
