@@ -54,6 +54,17 @@ type ReferralRow = {
   patient_intro_email_sent_at: string | null;
   referring_copy_email_sent_at: string | null;
   receiving_dc_email_sent_at: string | null;
+  created_at?: string | null;
+};
+
+type ChiroEmailContext = {
+  practiceName: string;
+  practiceCity: string;
+  practiceAddress: string;
+  practicePhone: string;
+  practiceWebsite: string;
+  firstTechnique: string;
+  firstPhilosophy: string;
 };
 
 async function loadReferral(supabase: SupabaseClient, id: string): Promise<ReferralRow | null> {
@@ -75,6 +86,74 @@ async function loadProfileEmailName(
   return data as { email: string | null; first_name: string | null; last_name: string | null };
 }
 
+async function loadChiroEmailContext(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<ChiroEmailContext | null> {
+  const { data, error } = await supabase
+    .from('chiropractors')
+    .select(
+      `
+      organizations(name, city, state, zip_code, address_line_1, phone, website),
+      chiropractor_modalities(modalities(name)),
+      chiropractor_philosophies(philosophies(name))
+    `,
+    )
+    .eq('id', userId)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  const orgRaw = Array.isArray(data.organizations) ? data.organizations[0] : data.organizations;
+  const org = (orgRaw ?? {}) as {
+    name?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip_code?: string | null;
+    address_line_1?: string | null;
+    phone?: string | null;
+    website?: string | null;
+  };
+
+  const modalityRows = Array.isArray(data.chiropractor_modalities) ? data.chiropractor_modalities : [];
+  const philosophyRows = Array.isArray(data.chiropractor_philosophies) ? data.chiropractor_philosophies : [];
+
+  const firstTechnique = (() => {
+    for (const row of modalityRows as Array<{ modalities?: { name?: string | null } | Array<{ name?: string | null }> }>) {
+      const mRaw = row?.modalities;
+      const m = Array.isArray(mRaw) ? mRaw[0] : mRaw;
+      const name = m?.name?.trim();
+      if (name) return name;
+    }
+    return '';
+  })();
+
+  const firstPhilosophy = (() => {
+    for (const row of philosophyRows as Array<{ philosophies?: { name?: string | null } | Array<{ name?: string | null }> }>) {
+      const pRaw = row?.philosophies;
+      const p = Array.isArray(pRaw) ? pRaw[0] : pRaw;
+      const name = p?.name?.trim();
+      if (name) return name;
+    }
+    return '';
+  })();
+
+  const city = org.city?.trim() || '';
+  const state = org.state?.trim() || '';
+  const zip = org.zip_code?.trim() || '';
+  const cityStateZip = [city, state].filter(Boolean).join(', ') + (zip ? (city || state ? ` ${zip}` : zip) : '');
+  const address = [org.address_line_1?.trim() || '', cityStateZip.trim()].filter(Boolean).join(', ');
+
+  return {
+    practiceName: org.name?.trim() || '',
+    practiceCity: city || '',
+    practiceAddress: address || '',
+    practicePhone: org.phone?.trim() || '',
+    practiceWebsite: org.website?.trim() || '',
+    firstTechnique,
+    firstPhilosophy,
+  };
+}
+
 function buildRespondUrl(referralId: string, receivingId: string): string {
   const base = siteBaseUrl() || '';
   const exp = referralTokenExpiresInSeconds(REFERRAL_TOKEN_TTL_SEC);
@@ -87,6 +166,12 @@ function buildRespondUrl(referralId: string, receivingId: string): string {
 function buildReceivingProfileUrl(receivingId: string): string {
   const base = siteBaseUrl() || '';
   const path = `/chiropractor/${receivingId}`;
+  return base ? `${base}${path}` : path;
+}
+
+function buildDashboardUrl(): string {
+  const base = siteBaseUrl() || '';
+  const path = '/account';
   return base ? `${base}${path}` : path;
 }
 
@@ -107,6 +192,8 @@ export async function sendInitialReferralEmailsIfNeeded(
 
   const referring = await loadProfileEmailName(supabase, row.referring_chiropractor_id);
   const receiving = await loadProfileEmailName(supabase, row.receiving_chiropractor_id);
+  const referringCtx = await loadChiroEmailContext(supabase, row.referring_chiropractor_id);
+  const receivingCtx = await loadChiroEmailContext(supabase, row.receiving_chiropractor_id);
   if (!referring?.email || !receiving?.email) {
     return { ok: false, error: 'missing_profile_email' };
   }
@@ -128,8 +215,22 @@ export async function sendInitialReferralEmailsIfNeeded(
     const buildBaseParams = (r: ReferralRow): Record<string, string> => {
       const respondUrl = buildRespondUrl(r.id, r.receiving_chiropractor_id);
       const practiceProfileUrl = buildReceivingProfileUrl(r.receiving_chiropractor_id);
+      const dashboardUrl = buildDashboardUrl();
       const patientLastInitialDot = withTrailingDot(r.patient_last_initial);
       const patientLabel = `${r.patient_first_name} ${patientLastInitialDot}`.trim();
+      const patientInitials = `${r.patient_first_name} ${patientLastInitialDot}`.trim();
+      const sentTimestamp = new Date(r.created_at || Date.now()).toLocaleString();
+      const technique = receivingCtx?.firstTechnique || 'a compatible approach';
+      const philosophy = receivingCtx?.firstPhilosophy || 'patient-centered care';
+      const receivingDocCity = receivingCtx?.practiceCity || 'your area';
+      const practiceName = receivingCtx?.practiceName || receivingNameDisplay;
+      const practiceCity = receivingCtx?.practiceCity || receivingDocCity;
+      const practiceAddress = receivingCtx?.practiceAddress || '';
+      const practicePhone = receivingCtx?.practicePhone || '';
+      const practiceWebsite = receivingCtx?.practiceWebsite || '';
+      const referringDocPractice = referringCtx?.practiceName || '';
+      const referringDocCity = referringCtx?.practiceCity || '';
+      const referralNote = r.notes?.trim() || '';
       return {
         referringDoctorName: referringNameCore,
         referringDoctorDisplayName: referringNameDisplay,
@@ -146,14 +247,32 @@ export async function sendInitialReferralEmailsIfNeeded(
         matchScore: String(r.match_score),
         searchSummary: resolvedSearchSummary(r.match_summary),
         practiceProfileUrl,
+        receivingDocProfileUrl: practiceProfileUrl,
         respondUrl,
-        referralNotes: r.notes?.trim() ?? '',
+        dashboardUrl,
+        referralNotes: referralNote,
+        referringDocNote: referralNote,
         patientFirstName: r.patient_first_name,
         patientLastInitial: r.patient_last_initial,
         patientLastInitialWithDot: patientLastInitialDot,
         patientDisplayName: patientLabel,
         patientName: patientLabel,
         patientLabel,
+        patientInitials,
+        receivingDocCity,
+        practiceName,
+        practiceCity,
+        practiceAddress,
+        practicePhone,
+        practiceWebsite,
+        technique,
+        philosophy,
+        referringDocPractice,
+        referringDocCity,
+        durationOfCare: 'See dashboard for patient details',
+        movingTimeline: 'See dashboard for patient timeline',
+        sentTimestamp,
+        referralId: r.id,
       };
     };
 
@@ -249,6 +368,8 @@ export async function sendReferralOutcomeEmailToReferringIfNeeded(
 
   const referring = await loadProfileEmailName(supabase, row.referring_chiropractor_id);
   const receiving = await loadProfileEmailName(supabase, row.receiving_chiropractor_id);
+  const referringCtx = await loadChiroEmailContext(supabase, row.referring_chiropractor_id);
+  const receivingCtx = await loadChiroEmailContext(supabase, row.receiving_chiropractor_id);
   if (!referring?.email) return;
 
   const referringNameCore = personName(referring.first_name, referring.last_name) || 'A colleague';
@@ -257,6 +378,8 @@ export async function sendReferralOutcomeEmailToReferringIfNeeded(
   const receivingNameDisplay = doctorDisplayName(receiving?.first_name, receiving?.last_name);
   const patientLastInitialDot = withTrailingDot(row.patient_last_initial);
   const patientLabel = `${row.patient_first_name} ${patientLastInitialDot}`.trim();
+  const dashboardUrl = buildDashboardUrl();
+  const practiceProfileUrl = buildReceivingProfileUrl(row.receiving_chiropractor_id);
 
   await sendBrevoReferralTemplateEmail({
     to: { email: referring.email, name: referringNameDisplay },
@@ -278,7 +401,25 @@ export async function sendReferralOutcomeEmailToReferringIfNeeded(
       outcome,
       matchScore: String(row.match_score),
       searchSummary: resolvedSearchSummary(row.match_summary),
-      practiceProfileUrl: buildReceivingProfileUrl(row.receiving_chiropractor_id),
+      practiceProfileUrl,
+      receivingDocProfileUrl: practiceProfileUrl,
+      dashboardUrl,
+      referralId: row.id,
+      patientInitials: patientLabel,
+      receivingDocCity: receivingCtx?.practiceCity || 'your area',
+      practiceName: receivingCtx?.practiceName || receivingNameDisplay,
+      practiceCity: receivingCtx?.practiceCity || 'your area',
+      practiceAddress: receivingCtx?.practiceAddress || '',
+      practicePhone: receivingCtx?.practicePhone || '',
+      practiceWebsite: receivingCtx?.practiceWebsite || '',
+      technique: receivingCtx?.firstTechnique || 'a compatible approach',
+      philosophy: receivingCtx?.firstPhilosophy || 'patient-centered care',
+      referringDocPractice: referringCtx?.practiceName || '',
+      referringDocCity: referringCtx?.practiceCity || '',
+      referringDocNote: row.notes?.trim() || '',
+      durationOfCare: 'See dashboard for patient details',
+      movingTimeline: 'See dashboard for patient timeline',
+      sentTimestamp: new Date(row.created_at || Date.now()).toLocaleString(),
       FIRSTNAME: referring.first_name?.trim() || 'Doctor',
       LASTNAME: referring.last_name?.trim() || '',
     },
