@@ -17,10 +17,14 @@ function envTemplateId(key: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function drName(first?: string | null, last?: string | null): string {
+function personName(first?: string | null, last?: string | null): string {
   const f = first?.trim() || '';
   const l = last?.trim() || '';
-  const core = `${f} ${l}`.trim();
+  return `${f} ${l}`.trim();
+}
+
+function doctorDisplayName(first?: string | null, last?: string | null): string {
+  const core = personName(first, last);
   return core ? `Dr. ${core}` : 'A colleague';
 }
 
@@ -28,6 +32,12 @@ function withTrailingDot(v?: string | null): string {
   const core = v?.trim() || '';
   if (!core) return '';
   return core.endsWith('.') ? core : `${core}.`;
+}
+
+function resolvedSearchSummary(raw?: string | null): string {
+  const t = raw?.trim();
+  if (t) return t;
+  return 'the care preferences shared with your current chiropractor';
 }
 
 type ReferralRow = {
@@ -110,8 +120,10 @@ export async function sendInitialReferralEmailsIfNeeded(
     const referringLast = referring.last_name?.trim() || '';
     const receivingFirst = receiving.first_name?.trim() || '';
     const receivingLast = receiving.last_name?.trim() || '';
-    const referringName = drName(referring.first_name, referring.last_name);
-    const receivingName = drName(receiving.first_name, receiving.last_name);
+    const referringNameCore = personName(referring.first_name, referring.last_name) || 'A colleague';
+    const receivingNameCore = personName(receiving.first_name, receiving.last_name) || 'A colleague';
+    const referringNameDisplay = doctorDisplayName(referring.first_name, referring.last_name);
+    const receivingNameDisplay = doctorDisplayName(receiving.first_name, receiving.last_name);
 
     const buildBaseParams = (r: ReferralRow): Record<string, string> => {
       const respondUrl = buildRespondUrl(r.id, r.receiving_chiropractor_id);
@@ -119,16 +131,20 @@ export async function sendInitialReferralEmailsIfNeeded(
       const patientLastInitialDot = withTrailingDot(r.patient_last_initial);
       const patientLabel = `${r.patient_first_name} ${patientLastInitialDot}`.trim();
       return {
-        referringDoctorName: referringName,
-        referringDocName: referringName,
+        referringDoctorName: referringNameCore,
+        referringDoctorDisplayName: referringNameDisplay,
+        referringDocName: referringNameCore,
+        referringDocDisplayName: referringNameDisplay,
         referringDoctorFirstName: referringFirst,
         referringDoctorLastName: referringLast,
-        receivingDoctorName: receivingName,
-        receivingDocName: receivingName,
+        receivingDoctorName: receivingNameCore,
+        receivingDoctorDisplayName: receivingNameDisplay,
+        receivingDocName: receivingNameCore,
+        receivingDocDisplayName: receivingNameDisplay,
         receivingDoctorFirstName: receivingFirst,
         receivingDoctorLastName: receivingLast,
         matchScore: String(r.match_score),
-        searchSummary: r.match_summary ?? '',
+        searchSummary: resolvedSearchSummary(r.match_summary),
         practiceProfileUrl,
         respondUrl,
         referralNotes: r.notes?.trim() ?? '',
@@ -168,7 +184,7 @@ export async function sendInitialReferralEmailsIfNeeded(
       row = await loadReferral(supabase, referralId);
       if (row && !row.referring_copy_email_sent_at) {
         await sendBrevoReferralTemplateEmail({
-          to: { email: referring.email, name: referringName },
+          to: { email: referring.email, name: referringNameDisplay },
           templateId: tReferring,
           params: {
             ...buildBaseParams(row),
@@ -189,7 +205,7 @@ export async function sendInitialReferralEmailsIfNeeded(
       row = await loadReferral(supabase, referralId);
       if (row && !row.receiving_dc_email_sent_at) {
         await sendBrevoReferralTemplateEmail({
-          to: { email: receiving.email, name: receivingName },
+          to: { email: receiving.email, name: receivingNameDisplay },
           templateId: tReceiving,
           params: {
             ...buildBaseParams(row),
@@ -235,19 +251,25 @@ export async function sendReferralOutcomeEmailToReferringIfNeeded(
   const receiving = await loadProfileEmailName(supabase, row.receiving_chiropractor_id);
   if (!referring?.email) return;
 
-  const referringName = drName(referring.first_name, referring.last_name);
-  const receivingName = drName(receiving?.first_name, receiving?.last_name);
+  const referringNameCore = personName(referring.first_name, referring.last_name) || 'A colleague';
+  const receivingNameCore = personName(receiving?.first_name, receiving?.last_name) || 'A colleague';
+  const referringNameDisplay = doctorDisplayName(referring.first_name, referring.last_name);
+  const receivingNameDisplay = doctorDisplayName(receiving?.first_name, receiving?.last_name);
   const patientLastInitialDot = withTrailingDot(row.patient_last_initial);
   const patientLabel = `${row.patient_first_name} ${patientLastInitialDot}`.trim();
 
   await sendBrevoReferralTemplateEmail({
-    to: { email: referring.email, name: referringName },
+    to: { email: referring.email, name: referringNameDisplay },
     templateId,
     params: {
-      referringDoctorName: referringName,
-      referringDocName: referringName,
-      receivingDoctorName: receivingName,
-      receivingDocName: receivingName,
+      referringDoctorName: referringNameCore,
+      referringDoctorDisplayName: referringNameDisplay,
+      referringDocName: referringNameCore,
+      referringDocDisplayName: referringNameDisplay,
+      receivingDoctorName: receivingNameCore,
+      receivingDoctorDisplayName: receivingNameDisplay,
+      receivingDocName: receivingNameCore,
+      receivingDocDisplayName: receivingNameDisplay,
       patientDisplayName: patientLabel,
       patientName: patientLabel,
       patientFirstName: row.patient_first_name,
@@ -255,7 +277,7 @@ export async function sendReferralOutcomeEmailToReferringIfNeeded(
       patientLastInitialWithDot: patientLastInitialDot,
       outcome,
       matchScore: String(row.match_score),
-      searchSummary: row.match_summary ?? '',
+      searchSummary: resolvedSearchSummary(row.match_summary),
       practiceProfileUrl: buildReceivingProfileUrl(row.receiving_chiropractor_id),
       FIRSTNAME: referring.first_name?.trim() || 'Doctor',
       LASTNAME: referring.last_name?.trim() || '',
