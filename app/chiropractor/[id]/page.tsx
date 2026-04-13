@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState, useCallback } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Flex, Text, Heading, Card, Box, Button } from '@radix-ui/themes';
@@ -10,6 +10,7 @@ import { Container } from '@/app/components/Container';
 import { MatchRadarChart } from '@/app/components/MatchRadarChart';
 import { ReferPatientModal } from '@/app/components/ReferPatientModal';
 import { fetchReferralCanRefer } from '@/app/lib/referral-client';
+import { createSupabaseClient } from '@/app/lib/supabase-client';
 import type { Chiropractor } from '@/app/lib/queries';
 import { parseSearchFiltersFromParams, appendSearchFiltersToQuery } from '@/app/lib/search-filters-url';
 import { buildMatchRadarOverlay, computeMatchAxes, matchPercentFromAxes } from '@/app/lib/patient-match';
@@ -96,14 +97,30 @@ function ChiropractorProfileContent() {
     };
   }, [id]);
 
-  const refreshReferEligibility = useCallback(async () => {
-    const ok = await fetchReferralCanRefer();
-    setCanReferPatient(ok);
-  }, []);
-
   useEffect(() => {
-    void refreshReferEligibility();
-  }, [refreshReferEligibility, id]);
+    let cancelled = false;
+    const supabase = createSupabaseClient();
+
+    const syncReferEligibility = () => {
+      void (async () => {
+        const ok = await fetchReferralCanRefer();
+        if (!cancelled) setCanReferPatient(ok);
+      })();
+    };
+
+    syncReferEligibility();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) syncReferEligibility();
+      else if (!cancelled) setCanReferPatient(false);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [id]);
 
   const axes = useMemo(() => (chiro ? computeMatchAxes(chiro, filters) : []), [chiro, filters]);
   const overlayRows = useMemo(() => (chiro ? buildMatchRadarOverlay(chiro, filters) : []), [chiro, filters]);

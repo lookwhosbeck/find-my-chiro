@@ -78,14 +78,29 @@ function SearchPageContent() {
     return () => { cancelled = true; };
   }, [paramsKey]);
 
+  /** Referral CTAs need a JWT; session can hydrate after first paint — refetch on auth changes. */
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const ok = await fetchReferralCanRefer();
-      if (!cancelled) setCanReferPatient(ok);
-    })();
+    const supabase = createSupabaseClient();
+
+    const syncReferEligibility = () => {
+      void (async () => {
+        const ok = await fetchReferralCanRefer();
+        if (!cancelled) setCanReferPatient(ok);
+      })();
+    };
+
+    syncReferEligibility();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) syncReferEligibility();
+      else if (!cancelled) setCanReferPatient(false);
+    });
+
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
     };
   }, [paramsKey]);
 
