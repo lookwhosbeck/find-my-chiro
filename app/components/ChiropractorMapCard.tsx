@@ -1,8 +1,6 @@
 'use client';
 
-import type { CSSProperties } from 'react';
 import Link from 'next/link';
-import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-line';
 import type { Chiropractor } from '../lib/queries';
 
@@ -43,13 +41,14 @@ export interface ChiropractorMapCardProps {
  * Map search list / mobile carousel card — layout and type from Figma 84:3608
  * (desktop: avatar left; mobile: avatar right; footer: location + distance).
  */
+/** User + plus — Figma 84:3608 referral control icon */
 function ReferPatientGlyph() {
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <path
         d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 12h-6M19 9v6"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -76,35 +75,30 @@ export function ChiropractorMapCard({
 
   const matchPercent = mapListMatchPercent(chiropractor);
   const showMatch = matchPercent !== null;
-  const matchPill: Pick<CSSProperties, 'backgroundColor' | 'color'> | null =
-    showMatch ? matchScorePillColors(matchPercent) : null;
+  const showReferral = Boolean(showReferralIcon && onReferPatient);
+  const showMatchRow = showMatch || showReferral;
+
+  const matchRowClass = [
+    'chiropractor-map-card__match-row',
+    showMatch && showReferral ? 'chiropractor-map-card__match-row--split' : '',
+    showMatch && !showReferral ? 'chiropractor-map-card__match-row--match-only' : '',
+    !showMatch && showReferral ? 'chiropractor-map-card__match-row--refer-only' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const showFooter = Boolean(locationLine || distanceText);
 
   return (
     <div className="chiropractor-map-card__outer" onClick={(e) => e.stopPropagation()}>
-      {showReferralIcon && onReferPatient ? (
-        <button
-          type="button"
-          className="chiropractor-map-card__refer-btn"
-          aria-label={`Refer a patient to ${displayName}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onReferPatient();
-          }}
-        >
-          <ReferPatientGlyph />
-        </button>
-      ) : null}
-      <Link
-        href={href}
-        prefetch={false}
-        className="mapview-card-link chiropractor-map-card__link"
-        onClick={(e) => e.stopPropagation()}
-        aria-label={`View profile: ${displayName}`}
-      >
-        <div className="mapview-card" data-variant="map">
+      <div className="mapview-card chiropractor-map-card__root" data-variant="map">
+        <Link
+          href={href}
+          prefetch={false}
+          className="mapview-card-link chiropractor-map-card__hit"
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`View profile: ${displayName}`}
+        />
         <div className="chiropractor-map-card__profile">
           <div className="chiropractor-map-card__avatar">
             {chiropractor.avatarUrl ? (
@@ -114,13 +108,29 @@ export function ChiropractorMapCard({
             )}
           </div>
 
-          <div
-            className={`chiropractor-map-card__body${showMatch ? ' chiropractor-map-card__body--with-match' : ''}`}
-          >
-            {showMatch && matchPill ? (
-              <span className="chiropractor-map-card__match" style={matchPill}>
-                {matchPercent}% Match
-              </span>
+          <div className="chiropractor-map-card__body">
+            {showMatchRow ? (
+              <div className={matchRowClass}>
+                {showMatch ? (
+                  <span className="chiropractor-map-card__match">
+                    {matchPercent}% Match
+                  </span>
+                ) : null}
+                {showReferral ? (
+                  <button
+                    type="button"
+                    className="chiropractor-map-card__refer-btn"
+                    aria-label={`Refer a patient to ${displayName}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onReferPatient?.();
+                    }}
+                  >
+                    <ReferPatientGlyph />
+                  </button>
+                ) : null}
+              </div>
             ) : null}
             <div className="chiropractor-map-card__identity">
               <p className="chiropractor-map-card__name">{displayName}</p>
@@ -146,8 +156,7 @@ export function ChiropractorMapCard({
             ) : null}
           </div>
         ) : null}
-        </div>
-      </Link>
+      </div>
     </div>
   );
 }

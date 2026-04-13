@@ -1197,12 +1197,12 @@ header.fmc-site-header .join-network-button,
   border: 1px solid #0072de !important;
 }
 
-.mapview-card-wrap--active .mapview-card[data-variant='map'] {
+.mapview-card[data-variant='map'] {
   gap: 20px;
 }
 
 @media (max-width: 768px) {
-  .mapview-card-wrap--active .mapview-card[data-variant='map'] {
+  .mapview-card[data-variant='map'] {
     gap: 16px;
   }
 }
@@ -1381,7 +1381,7 @@ header.fmc-site-header .join-network-button,
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 16px;
+  gap: 20px;
   width: 100%;
   min-width: 0;
 }
@@ -1389,6 +1389,7 @@ header.fmc-site-header .join-network-button,
 @media (max-width: 768px) {
   .chiropractor-map-card__profile {
     flex-direction: row-reverse;
+    gap: 16px;
   }
 }
 
@@ -1436,21 +1437,45 @@ header.fmc-site-header .join-network-button,
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
+  gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
   align-self: stretch;
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.chiropractor-map-card__body--with-match {
-  justify-content: space-between;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 @media (max-width: 768px) {
   .chiropractor-map-card__body {
-    padding-top: 0;
-    padding-bottom: 0;
+    gap: 6px;
+  }
+}
+
+/* Top row: match pill + referral — Figma 84:3608 */
+.chiropractor-map-card__match-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.chiropractor-map-card__match-row--split {
+  justify-content: space-between;
+}
+
+.chiropractor-map-card__match-row--match-only {
+  justify-content: flex-start;
+}
+
+.chiropractor-map-card__match-row--refer-only {
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .chiropractor-map-card__match-row {
+    min-height: 36px;
   }
 }
 
@@ -1463,6 +1488,8 @@ header.fmc-site-header .join-network-button,
   font-weight: 400;
   line-height: 1;
   white-space: nowrap;
+  background-color: #dbf1dc;
+  color: #0b6d0f;
 }
 
 @media (max-width: 768px) {
@@ -1559,15 +1586,7 @@ header.fmc-site-header .join-network-button,
   margin-left: auto;
 }
 
-.mapview-card[data-variant='map'] {
-  gap: 24px;
-}
-
 @media (max-width: 768px) {
-  .mapview-card[data-variant='map'] {
-    gap: 16px;
-  }
-
   .chiropractor-map-card__name {
     font-size: 15px;
   }
@@ -1589,11 +1608,47 @@ header.fmc-site-header .join-network-button,
 }
 
 .chiropractor-map-card__outer {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
   min-width: 0;
   width: 100%;
+}
+
+/* Full-card profile link behind content; refer button stays clickable (no <button> inside <a>). */
+.chiropractor-map-card__root {
+  position: relative;
+}
+
+.chiropractor-map-card__root .chiropractor-map-card__hit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.chiropractor-map-card__root .chiropractor-map-card__profile,
+.chiropractor-map-card__root .chiropractor-map-card__footer {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.chiropractor-map-card__root .chiropractor-map-card__refer-btn {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.chiropractor-map-card__root:has(.chiropractor-map-card__hit:focus-visible) {
+  box-shadow:
+    0 0 0 2px #0072de,
+    0 2px 20px -6px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 768px) {
+  .chiropractor-map-card__root:has(.chiropractor-map-card__hit:focus-visible) {
+    box-shadow:
+      0 0 0 2px #0072de,
+      0 2px 10px -4px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .chiropractor-map-card__refer-btn {
@@ -1601,29 +1656,25 @@ header.fmc-site-header .join-network-button,
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  margin-top: 2px;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
   border: none;
-  border-radius: 10px;
-  background: rgba(0, 113, 227, 0.1);
-  color: #0071e3;
+  border-radius: 5px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.12s ease;
 }
 
 .chiropractor-map-card__refer-btn:hover {
-  background: rgba(0, 113, 227, 0.18);
+  background: rgba(37, 99, 235, 0.18);
 }
 
 .chiropractor-map-card__refer-btn:focus-visible {
-  outline: 2px solid #0071e3;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
-}
-
-.chiropractor-map-card__link {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 /* Mobile filter dropdown stacking */
