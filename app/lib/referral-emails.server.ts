@@ -24,6 +24,12 @@ function drName(first?: string | null, last?: string | null): string {
   return core ? `Dr. ${core}` : 'A colleague';
 }
 
+function withTrailingDot(v?: string | null): string {
+  const core = v?.trim() || '';
+  if (!core) return '';
+  return core.endsWith('.') ? core : `${core}.`;
+}
+
 type ReferralRow = {
   id: string;
   referring_chiropractor_id: string;
@@ -100,16 +106,27 @@ export async function sendInitialReferralEmailsIfNeeded(
   const tReceiving = envTemplateId('BREVO_REFERRAL_RECEIVING_DC_TEMPLATE_ID');
 
   try {
+    const referringFirst = referring.first_name?.trim() || '';
+    const referringLast = referring.last_name?.trim() || '';
+    const receivingFirst = receiving.first_name?.trim() || '';
+    const receivingLast = receiving.last_name?.trim() || '';
     const referringName = drName(referring.first_name, referring.last_name);
     const receivingName = drName(receiving.first_name, receiving.last_name);
 
-    const buildParams = (r: ReferralRow) => {
+    const buildBaseParams = (r: ReferralRow): Record<string, string> => {
       const respondUrl = buildRespondUrl(r.id, r.receiving_chiropractor_id);
       const practiceProfileUrl = buildReceivingProfileUrl(r.receiving_chiropractor_id);
-      const patientLabel = `${r.patient_first_name} ${r.patient_last_initial}.`.trim();
+      const patientLastInitialDot = withTrailingDot(r.patient_last_initial);
+      const patientLabel = `${r.patient_first_name} ${patientLastInitialDot}`.trim();
       return {
         referringDoctorName: referringName,
+        referringDocName: referringName,
+        referringDoctorFirstName: referringFirst,
+        referringDoctorLastName: referringLast,
         receivingDoctorName: receivingName,
+        receivingDocName: receivingName,
+        receivingDoctorFirstName: receivingFirst,
+        receivingDoctorLastName: receivingLast,
         matchScore: String(r.match_score),
         searchSummary: r.match_summary ?? '',
         practiceProfileUrl,
@@ -117,20 +134,26 @@ export async function sendInitialReferralEmailsIfNeeded(
         referralNotes: r.notes?.trim() ?? '',
         patientFirstName: r.patient_first_name,
         patientLastInitial: r.patient_last_initial,
+        patientLastInitialWithDot: patientLastInitialDot,
         patientDisplayName: patientLabel,
-        FIRSTNAME: r.patient_first_name,
-        LASTNAME: `${r.patient_last_initial}.`,
+        patientName: patientLabel,
+        patientLabel,
       };
     };
 
     if (tPatient) {
       row = await loadReferral(supabase, referralId);
       if (row && !row.patient_intro_email_sent_at) {
-        const patientLabel = `${row.patient_first_name} ${row.patient_last_initial}.`.trim();
+        const patientLastInitialDot = withTrailingDot(row.patient_last_initial);
+        const patientLabel = `${row.patient_first_name} ${patientLastInitialDot}`.trim();
         await sendBrevoReferralTemplateEmail({
           to: { email: row.patient_email, name: patientLabel },
           templateId: tPatient,
-          params: buildParams(row),
+          params: {
+            ...buildBaseParams(row),
+            FIRSTNAME: row.patient_first_name,
+            LASTNAME: patientLastInitialDot,
+          },
         });
         const { error: u1 } = await supabase
           .from('referrals')
@@ -147,7 +170,11 @@ export async function sendInitialReferralEmailsIfNeeded(
         await sendBrevoReferralTemplateEmail({
           to: { email: referring.email, name: referringName },
           templateId: tReferring,
-          params: buildParams(row),
+          params: {
+            ...buildBaseParams(row),
+            FIRSTNAME: referringFirst || 'Doctor',
+            LASTNAME: referringLast,
+          },
         });
         const { error: u2 } = await supabase
           .from('referrals')
@@ -164,7 +191,11 @@ export async function sendInitialReferralEmailsIfNeeded(
         await sendBrevoReferralTemplateEmail({
           to: { email: receiving.email, name: receivingName },
           templateId: tReceiving,
-          params: buildParams(row),
+          params: {
+            ...buildBaseParams(row),
+            FIRSTNAME: receivingFirst || 'Doctor',
+            LASTNAME: receivingLast,
+          },
         });
         const { error: u3 } = await supabase
           .from('referrals')
@@ -206,15 +237,22 @@ export async function sendReferralOutcomeEmailToReferringIfNeeded(
 
   const referringName = drName(referring.first_name, referring.last_name);
   const receivingName = drName(receiving?.first_name, receiving?.last_name);
-  const patientLabel = `${row.patient_first_name} ${row.patient_last_initial}.`.trim();
+  const patientLastInitialDot = withTrailingDot(row.patient_last_initial);
+  const patientLabel = `${row.patient_first_name} ${patientLastInitialDot}`.trim();
 
   await sendBrevoReferralTemplateEmail({
     to: { email: referring.email, name: referringName },
     templateId,
     params: {
       referringDoctorName: referringName,
+      referringDocName: referringName,
       receivingDoctorName: receivingName,
+      receivingDocName: receivingName,
       patientDisplayName: patientLabel,
+      patientName: patientLabel,
+      patientFirstName: row.patient_first_name,
+      patientLastInitial: row.patient_last_initial,
+      patientLastInitialWithDot: patientLastInitialDot,
       outcome,
       matchScore: String(row.match_score),
       searchSummary: row.match_summary ?? '',

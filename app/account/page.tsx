@@ -158,6 +158,7 @@ export default function AccountPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
   const [checkoutBanner, setCheckoutBanner] = useState<string | null>(null);
+  const [checkoutSyncing, setCheckoutSyncing] = useState(false);
 
   const [chiroModalityNames, setChiroModalityNames] = useState<string[]>([]);
   const [chiroFocusNames, setChiroFocusNames] = useState<string[]>([]);
@@ -326,6 +327,10 @@ export default function AccountPage() {
     const params = new URLSearchParams(window.location.search);
     const c = params.get('checkout');
     const checkoutSessionId = params.get('session_id') || params.get('checkout_session_id');
+    const isPremiumStatus = (status: string | null | undefined) => {
+      const normalized = status?.toLowerCase() ?? '';
+      return normalized === 'active' || normalized === 'trialing';
+    };
 
     const confirmCheckoutSession = async () => {
       if (!checkoutSessionId) return;
@@ -349,15 +354,58 @@ export default function AccountPage() {
 
     if (c === 'success') {
       setCheckoutBanner(
-        'Payment received. Your subscription status may take a few seconds to update after you return from Stripe.',
+        'Payment received. Syncing your membership now...',
       );
+      setCheckoutSyncing(true);
       window.history.replaceState({}, '', '/account');
       void (async () => {
+        let confirmFailed = false;
         try {
           await confirmCheckoutSession();
         } catch (e) {
           console.error('confirm checkout session:', e);
+          confirmFailed = true;
+        }
+
+        try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const userId = session?.user?.id ?? null;
+
+          let synced = false;
+          const attempts = 4;
+          for (let i = 0; i < attempts; i += 1) {
+            await checkUser();
+            if (!userId) break;
+
+            const { data: row } = await supabase
+              .from('profiles')
+              .select('subscription_status')
+              .eq('id', userId)
+              .maybeSingle();
+            if (isPremiumStatus(row?.subscription_status)) {
+              synced = true;
+              break;
+            }
+            if (i < attempts - 1) {
+              await new Promise((resolve) => window.setTimeout(resolve, 2000));
+            }
+          }
+
+          if (synced) {
+            setCheckoutBanner('Membership updated successfully. Your premium plan is active.');
+          } else if (confirmFailed) {
+            setCheckoutBanner(
+              'Payment completed, but membership sync is still processing. Please refresh in a moment.',
+            );
+          } else {
+            setCheckoutBanner(
+              'Payment completed. Membership may take a few more seconds to update; please refresh shortly.',
+            );
+          }
         } finally {
+          setCheckoutSyncing(false);
           await checkUser();
         }
       })();
@@ -1738,6 +1786,11 @@ export default function AccountPage() {
     return (
       <>
         {checkoutBanner && <p className={styles.mutedNote}>{checkoutBanner}</p>}
+        {checkoutSyncing && (
+          <p className={styles.mutedNote}>
+            Verifying your subscription with Stripe. This usually completes in a few seconds.
+          </p>
+        )}
         <p className={styles.sectionTitle}>Current plan</p>
         <p className={styles.mutedNote}>
           {premium
