@@ -41,14 +41,14 @@ export interface ChiropractorMapCardProps {
  * Map search list / mobile carousel card — layout and type from Figma 84:3608
  * (desktop: avatar left; mobile: avatar right; footer: location + distance).
  */
-/** User + plus — Figma 84:3608 referral control icon */
-function ReferPatientGlyph() {
+/** Right arrow icon used in the "Refer doctor" chip. */
+function ReferDoctorArrowGlyph() {
   return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <svg width={9} height={9} viewBox="0 0 9 9" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <path
-        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 12h-6M19 9v6"
+        d="M1.25 4.5H7.75M7.75 4.5L5 1.75M7.75 4.5L5 7.25"
         stroke="currentColor"
-        strokeWidth="1.75"
+        strokeWidth="1.25"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -120,14 +120,15 @@ export function ChiropractorMapCard({
                   <button
                     type="button"
                     className="chiropractor-map-card__refer-btn"
-                    aria-label={`Refer a patient to ${displayName}`}
+                    aria-label={`Refer doctor: ${displayName}`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       onReferPatient?.();
                     }}
                   >
-                    <ReferPatientGlyph />
+                    <span className="chiropractor-map-card__refer-btn-label">Refer doctor</span>
+                    <ReferDoctorArrowGlyph />
                   </button>
                 ) : null}
               </div>

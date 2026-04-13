@@ -1195,14 +1195,11 @@ header.fmc-site-header .join-network-button,
 .mapview-card-wrap--active .mapview-card {
   background: #f5fafe !important;
   border: 1px solid #0072de !important;
-}
-
-.mapview-card[data-variant='map'] {
   gap: 20px;
 }
 
 @media (max-width: 768px) {
-  .mapview-card[data-variant='map'] {
+  .mapview-card-wrap--active .mapview-card {
     gap: 16px;
   }
 }
@@ -1223,6 +1220,7 @@ header.fmc-site-header .join-network-button,
 
 @media (max-width: 768px) {
   .mapview-card {
+    gap: 16px;
     padding: 10px;
     border-radius: 12px;
     box-shadow: 0 2px 10px -4px rgba(0, 0, 0, 0.2);
@@ -1458,7 +1456,6 @@ header.fmc-site-header .join-network-button,
   align-items: center;
   width: 100%;
   min-width: 0;
-  min-height: 44px;
 }
 
 .chiropractor-map-card__match-row--split {
@@ -1475,7 +1472,7 @@ header.fmc-site-header .join-network-button,
 
 @media (max-width: 768px) {
   .chiropractor-map-card__match-row {
-    min-height: 36px;
+    min-height: 0;
   }
 }
 
@@ -1653,28 +1650,40 @@ header.fmc-site-header .join-network-button,
 
 .chiropractor-map-card__refer-btn {
   flex-shrink: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  gap: 4px;
+  width: auto;
+  min-height: 0;
   margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 5px;
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
+  padding: 4px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px !important;
+  background: #e5e7eb;
+  color: #000000;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.12s ease;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .chiropractor-map-card__refer-btn:hover {
-  background: rgba(37, 99, 235, 0.18);
+  background: #dbe0e6;
+  border-color: #d1d5db;
 }
 
 .chiropractor-map-card__refer-btn:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
+}
+
+.chiropractor-map-card__refer-btn-label {
+  display: inline-block;
 }
 
 /* Mobile filter dropdown stacking */
