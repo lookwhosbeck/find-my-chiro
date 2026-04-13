@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { supabase } from '@/app/lib/supabase';
 
@@ -30,6 +30,25 @@ type ReferralEventRow = {
   metadata?: Record<string, unknown>;
 };
 
+function awaitingChiropractorResponse(status: string): boolean {
+  return status === 'sent' || status === 'viewed';
+}
+
+/** Pending (sent/viewed) first, then newest first. */
+function sortReferralsPendingFirst(a: ReferralRow, b: ReferralRow): number {
+  const pa = awaitingChiropractorResponse(a.status) ? 0 : 1;
+  const pb = awaitingChiropractorResponse(b.status) ? 0 : 1;
+  if (pa !== pb) return pa - pb;
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+}
+
+function statusAccentClass(status: string): string {
+  if (awaitingChiropractorResponse(status)) return rs.statusAwaiting;
+  if (status === 'accepted') return rs.statusAccepted;
+  if (status === 'declined') return rs.statusDeclined;
+  return '';
+}
+
 async function authHeaders(): Promise<HeadersInit | null> {
   const {
     data: { session },
@@ -52,6 +71,9 @@ export function ReferralsWorkspace({ userId }: { userId: string }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+
+  const sentSorted = useMemo(() => [...sent].sort(sortReferralsPendingFirst), [sent]);
+  const receivedSorted = useMemo(() => [...received].sort(sortReferralsPendingFirst), [received]);
 
   const loadLists = useCallback(async () => {
     setLoading(true);
@@ -133,31 +155,40 @@ export function ReferralsWorkspace({ userId }: { userId: string }) {
 
   const patientLabel = (r: ReferralRow) => `${r.patient_first_name} ${r.patient_last_initial}.`;
 
-  const renderList = (title: string, items: ReferralRow[], kind: 'sent' | 'received') => (
+  const renderList = (
+    title: string,
+    items: ReferralRow[],
+    kind: 'sent' | 'received',
+    hint: string,
+  ) => (
     <div>
       <h3 className={rs.sectionTitle}>{title}</h3>
+      <p className={rs.sectionHint}>{hint}</p>
       {items.length === 0 ? (
         <p className={rs.meta}>No referrals yet.</p>
       ) : (
         <ul className={rs.list}>
-          {items.map((r) => (
-            <li key={r.id}>
-              <button
-                type="button"
-                className={`${rs.item} ${selectedId === r.id ? rs.itemActive : ''}`}
-                onClick={() => setSelectedId(r.id)}
-              >
-                <span>
-                  <strong>{patientLabel(r)}</strong> · Match {r.match_score}%
-                </span>
-                <span className={rs.meta}>
-                  {new Date(r.created_at).toLocaleString()} ·{' '}
-                  <span className={rs.status}>{r.status}</span>
-                  {kind === 'sent' ? ' · Outgoing' : ' · Incoming'}
-                </span>
-              </button>
-            </li>
-          ))}
+          {items.map((r) => {
+            const accent = statusAccentClass(r.status);
+            return (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  className={`${rs.item} ${selectedId === r.id ? rs.itemActive : ''}`}
+                  onClick={() => setSelectedId(r.id)}
+                >
+                  <span>
+                    <strong>{patientLabel(r)}</strong> · Match {r.match_score}%
+                  </span>
+                  <span className={rs.meta}>
+                    {new Date(r.created_at).toLocaleString()} ·{' '}
+                    <span className={[rs.status, accent].filter(Boolean).join(' ')}>{r.status}</span>
+                    {kind === 'sent' ? ' · Outgoing' : ' · Incoming'}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -178,8 +209,18 @@ export function ReferralsWorkspace({ userId }: { userId: string }) {
 
   return (
     <div className={rs.workspace}>
-      {renderList('Sent', sent, 'sent')}
-      {renderList('Received', received, 'received')}
+      {renderList(
+        'Sent',
+        sentSorted,
+        'sent',
+        'Referrals you sent: waiting on the other doctor appears first. Status here is the live record (email is optional).',
+      )}
+      {renderList(
+        'Received',
+        receivedSorted,
+        'received',
+        'Referrals to your practice: those still needing accept or decline appear first.',
+      )}
 
       {selectedId ? (
         <div className={rs.detail}>
@@ -191,9 +232,19 @@ export function ReferralsWorkspace({ userId }: { userId: string }) {
                 {patientLabel(detail.referral)} → {detail.otherParty.label}
               </p>
               <p className={rs.meta} style={{ marginTop: 8 }}>
-                Status: <span className={rs.status}>{detail.referral.status}</span> · Patient email on file (for care
-                coordination): {detail.referral.patient_email}
+                Status:{' '}
+                <span
+                  className={[rs.status, statusAccentClass(detail.referral.status)].filter(Boolean).join(' ')}
+                >
+                  {detail.referral.status}
+                </span>{' '}
+                · Patient email on file (for care coordination): {detail.referral.patient_email}
               </p>
+              {detail.otherParty.direction === 'receiving' ? (
+                <p className={rs.sectionHint} style={{ marginTop: 6 }}>
+                  When the receiving doctor accepts or declines, this status updates here immediately.
+                </p>
+              ) : null}
               {detail.referral.match_summary ? (
                 <p className={rs.meta} style={{ marginTop: 8 }}>
                   Search context: {detail.referral.match_summary}

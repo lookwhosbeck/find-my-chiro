@@ -113,7 +113,8 @@ function ReferralRespondContent() {
           {done === 'accepted' ? 'Referral accepted' : 'Referral declined'}
         </Heading>
         <Text color="gray" size="2">
-          Thank you. The referring doctor will be notified by email when templates are configured.
+          Thank you. Your response is saved. The referring doctor can see the updated status under Account → Referrals.
+          If referral outcome email templates are configured on the server, they may also receive a short notification.
         </Text>
         <Box mt="4">
           <Button asChild variant="solid">

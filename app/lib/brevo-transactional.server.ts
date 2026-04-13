@@ -168,7 +168,7 @@ export async function sendBrevoSimpleTransactional(args: {
 }
 
 /**
- * Referral lifecycle (Brevo templates 16–20). Params must match your template merge fields
+ * Referral intro + optional outcome pings. Params must match your Brevo template merge fields
  * (e.g. FIRSTNAME / LASTNAME plus custom keys like matchScore, searchSummary, respondUrl).
  */
 export async function sendBrevoReferralTemplateEmail(args: {

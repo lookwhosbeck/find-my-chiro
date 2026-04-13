@@ -182,6 +182,7 @@ export async function sendInitialReferralEmailsIfNeeded(
   }
 }
 
+/** Optional push to referring DC; dashboard (Account → Referrals) remains the source of truth. No-ops if template env unset. */
 export async function sendReferralOutcomeEmailToReferringIfNeeded(
   supabase: SupabaseClient,
   referralId: string,
