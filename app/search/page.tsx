@@ -17,6 +17,7 @@ import {
   mergeProfileDefaultsWithUrlParams,
   parseSearchFiltersFromParams,
   patientRowToSearchFilters,
+  urlHasSearchCriteriaParams,
 } from '../lib/search-filters-url';
 import { createSupabaseClient } from '../lib/supabase-client';
 
@@ -34,7 +35,8 @@ function SearchPageContent() {
   const searchParams = useSearchParams();
   const paramsKey = searchParams.toString();
   const [chiropractors, setChiropractors] = useState<Chiropractor[]>([]);
-  const [loading, setLoading] = useState(false);
+  /** Start true so we do not flash “no results” before filter hydration + first fetch. */
+  const [loading, setLoading] = useState(true);
   const [filtersReady, setFiltersReady] = useState(false);
   const [canReferPatient, setCanReferPatient] = useState(false);
   const [referTarget, setReferTarget] = useState<Chiropractor | null>(null);
@@ -49,12 +51,14 @@ function SearchPageContent() {
       try {
         const supabase = createSupabaseClient();
         const params = new URLSearchParams(paramsKey);
+        // Bare `/search` (no query constraints): show the full directory on the map, not profile-narrowed results.
         let base = getDefaultEmptySearchFilters();
+        const usePatientDefaults = urlHasSearchCriteriaParams(params);
 
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (user && !cancelled) {
+        if (usePatientDefaults && user && !cancelled) {
           const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
           if (prof?.role === 'patient' && !cancelled) {
             const { data: patient } = await supabase.from('patients').select('*').eq('id', user.id).maybeSingle();
@@ -124,8 +128,8 @@ function SearchPageContent() {
     setLoading(true);
     try {
       const hasSearchZip = Boolean(normalizeUsZip(filters.zipCode));
-      // Browse (no ZIP): return enough rows for the national map. With ZIP: keep a tighter list for radius search.
-      const searchLimit = hasSearchZip ? 20 : 500;
+      // Browse (no ZIP): load a large slice for the national map. With ZIP: tighter list for radius search.
+      const searchLimit = hasSearchZip ? 20 : 5000;
       const results = await searchChiropractors(filters, searchLimit);
       setChiropractors(results);
     } catch (error) {

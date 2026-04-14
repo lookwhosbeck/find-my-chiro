@@ -80,6 +80,25 @@ export function getDefaultEmptySearchFilters(): PatientSearchFilters {
   };
 }
 
+/** True when the URL encodes at least one explicit search constraint (not a bare `/search`). */
+export function urlHasSearchCriteriaParams(searchParams: URLSearchParams): boolean {
+  const zip = searchParams.get(KEYS.zip)?.trim();
+  if (zip) return true;
+  if (searchParams.get(KEYS.city)?.trim()) return true;
+  if (searchParams.get(KEYS.state)?.trim()) return true;
+  if (searchParams.getAll(KEYS.modalities).some(Boolean)) return true;
+  if (searchParams.getAll(KEYS.focus).some(Boolean)) return true;
+  if (searchParams.getAll(KEYS.philosophies).some(Boolean)) return true;
+  if (searchParams.get(KEYS.business)?.trim()) return true;
+  if (searchParams.get(KEYS.insurance)?.trim()) return true;
+  if (searchParams.get(KEYS.budget)?.trim()) return true;
+  if (searchParams.has(KEYS.radius)) {
+    const n = parseInt(searchParams.get(KEYS.radius) || '', 10);
+    if (!Number.isNaN(n) && n !== 25) return true;
+  }
+  return false;
+}
+
 /** Map DB `insurance_type` / legacy full names to search filter tokens (e.g. BCBS). */
 const DB_INSURANCE_TO_SEARCH: Record<string, string> = {
   'Blue Cross Blue Shield': 'BCBS',

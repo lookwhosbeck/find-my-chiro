@@ -216,6 +216,37 @@ export default function AccountPage() {
   const preferencesSnapshotRef = useRef<typeof patientForm | null>(null);
   const initialNavSetRef = useRef(false);
 
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T | null> => {
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), ms));
+    return (await Promise.race([promise, timeout])) as T | null;
+  };
+
+  const resolveSessionFast = async () => {
+    const first = await withTimeout(
+      supabase.auth.getSession().then((r) => r.data.session),
+      3000,
+    );
+    if (first?.user) return first;
+
+    await withTimeout(supabase.auth.getUser(), 3000);
+    const second = await withTimeout(
+      supabase.auth.getSession().then((r) => r.data.session),
+      3000,
+    );
+    if (second?.user) return second;
+
+    for (let i = 0; i < 2; i += 1) {
+      await sleep(220);
+      const retry = await withTimeout(
+        supabase.auth.getSession().then((r) => r.data.session),
+        1500,
+      );
+      if (retry?.user) return retry;
+    }
+    return null;
+  };
+
   useEffect(() => {
     setProfileEditing(false);
     setPracticeEditing(false);
@@ -418,17 +449,17 @@ export default function AccountPage() {
 
   const checkUser = async () => {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await resolveSessionFast();
 
       if (!session?.user) {
-        router.push('/signin');
+        router.replace('/signin');
         return;
       }
 
-      await flushPendingChiropractorSignupIfAny(supabase);
-      await flushPendingPatientSignupIfAny(supabase);
+      await Promise.allSettled([
+        withTimeout(flushPendingChiropractorSignupIfAny(supabase), 1800),
+        withTimeout(flushPendingPatientSignupIfAny(supabase), 1800),
+      ]);
 
       const authUser = session.user;
       setUser(authUser);
@@ -476,7 +507,7 @@ export default function AccountPage() {
       await Promise.all(promises);
     } catch (e) {
       console.error('Error checking user:', e);
-      router.push('/');
+      router.replace('/');
     } finally {
       setLoading(false);
     }

@@ -73,6 +73,53 @@ async function loadReferral(supabase: SupabaseClient, id: string): Promise<Refer
   return data as ReferralRow;
 }
 
+type ReferralEmailStampColumn =
+  | 'patient_intro_email_sent_at'
+  | 'referring_copy_email_sent_at'
+  | 'receiving_dc_email_sent_at';
+
+/** One winner per column: prevents duplicate Brevo sends when two workers race on the same referral. */
+async function tryClaimReferralEmailSlot(
+  supabase: SupabaseClient,
+  referralId: string,
+  column: ReferralEmailStampColumn,
+): Promise<boolean> {
+  const claimedAt = new Date().toISOString();
+  const updateBody =
+    column === 'patient_intro_email_sent_at'
+      ? { patient_intro_email_sent_at: claimedAt }
+      : column === 'referring_copy_email_sent_at'
+        ? { referring_copy_email_sent_at: claimedAt }
+        : { receiving_dc_email_sent_at: claimedAt };
+  const { data, error } = await supabase
+    .from('referrals')
+    .update(updateBody)
+    .eq('id', referralId)
+    .is(column, null)
+    .select('id')
+    .maybeSingle();
+  if (error) {
+    console.error(`referral email claim (${column}):`, error);
+    return false;
+  }
+  return Boolean(data?.id);
+}
+
+async function releaseReferralEmailSlot(
+  supabase: SupabaseClient,
+  referralId: string,
+  column: ReferralEmailStampColumn,
+): Promise<void> {
+  const updateBody =
+    column === 'patient_intro_email_sent_at'
+      ? { patient_intro_email_sent_at: null }
+      : column === 'referring_copy_email_sent_at'
+        ? { referring_copy_email_sent_at: null }
+        : { receiving_dc_email_sent_at: null };
+  const { error } = await supabase.from('referrals').update(updateBody).eq('id', referralId);
+  if (error) console.error(`referral email release (${column}):`, error);
+}
+
 async function loadProfileEmailName(
   supabase: SupabaseClient,
   userId: string,
@@ -276,69 +323,116 @@ export async function sendInitialReferralEmailsIfNeeded(
       };
     };
 
+    const toSend: Array<{ run: () => Promise<void> }> = [];
+
+    // Reload before each decision so concurrent workers see stamps from other sends / requests.
     if (tPatient) {
-      row = await loadReferral(supabase, referralId);
-      if (row && !row.patient_intro_email_sent_at) {
-        const patientLastInitialDot = withTrailingDot(row.patient_last_initial);
-        const patientLabel = `${row.patient_first_name} ${patientLastInitialDot}`.trim();
-        await sendBrevoReferralTemplateEmail({
-          to: { email: row.patient_email, name: patientLabel },
-          templateId: tPatient,
-          params: {
-            ...buildBaseParams(row),
-            FIRSTNAME: row.patient_first_name,
-            LASTNAME: patientLastInitialDot,
+      const freshPatient = await loadReferral(supabase, referralId);
+      if (!freshPatient) return { ok: false, error: 'referral_not_found' };
+      row = freshPatient;
+      if (!row.patient_intro_email_sent_at) {
+        const r = row;
+        toSend.push({
+          run: async () => {
+            const claimed = await tryClaimReferralEmailSlot(
+              supabase,
+              referralId,
+              'patient_intro_email_sent_at',
+            );
+            if (!claimed) return;
+            try {
+              const patientLastInitialDot = withTrailingDot(r.patient_last_initial);
+              const patientLabel = `${r.patient_first_name} ${patientLastInitialDot}`.trim();
+              await sendBrevoReferralTemplateEmail({
+                to: { email: r.patient_email, name: patientLabel },
+                templateId: tPatient,
+                params: {
+                  ...buildBaseParams(r),
+                  FIRSTNAME: r.patient_first_name,
+                  LASTNAME: patientLastInitialDot,
+                },
+              });
+            } catch (e) {
+              await releaseReferralEmailSlot(supabase, referralId, 'patient_intro_email_sent_at');
+              throw e;
+            }
           },
         });
-        const { error: u1 } = await supabase
-          .from('referrals')
-          .update({ patient_intro_email_sent_at: new Date().toISOString() })
-          .eq('id', referralId)
-          .is('patient_intro_email_sent_at', null);
-        if (u1) console.error('referral patient email stamp:', u1);
       }
     }
 
     if (tReferring) {
-      row = await loadReferral(supabase, referralId);
-      if (row && !row.referring_copy_email_sent_at) {
-        await sendBrevoReferralTemplateEmail({
-          to: { email: referring.email, name: referringNameDisplay },
-          templateId: tReferring,
-          params: {
-            ...buildBaseParams(row),
-            FIRSTNAME: referringFirst || 'Doctor',
-            LASTNAME: referringLast,
+      const freshReferring = await loadReferral(supabase, referralId);
+      if (!freshReferring) return { ok: false, error: 'referral_not_found' };
+      row = freshReferring;
+      if (!row.referring_copy_email_sent_at) {
+        const r = row;
+        toSend.push({
+          run: async () => {
+            const claimed = await tryClaimReferralEmailSlot(
+              supabase,
+              referralId,
+              'referring_copy_email_sent_at',
+            );
+            if (!claimed) return;
+            try {
+              await sendBrevoReferralTemplateEmail({
+                to: { email: referring.email!, name: referringNameDisplay },
+                templateId: tReferring,
+                params: {
+                  ...buildBaseParams(r),
+                  FIRSTNAME: referringFirst || 'Doctor',
+                  LASTNAME: referringLast,
+                },
+              });
+            } catch (e) {
+              await releaseReferralEmailSlot(supabase, referralId, 'referring_copy_email_sent_at');
+              throw e;
+            }
           },
         });
-        const { error: u2 } = await supabase
-          .from('referrals')
-          .update({ referring_copy_email_sent_at: new Date().toISOString() })
-          .eq('id', referralId)
-          .is('referring_copy_email_sent_at', null);
-        if (u2) console.error('referring copy email stamp:', u2);
       }
     }
 
     if (tReceiving) {
-      row = await loadReferral(supabase, referralId);
-      if (row && !row.receiving_dc_email_sent_at) {
-        await sendBrevoReferralTemplateEmail({
-          to: { email: receiving.email, name: receivingNameDisplay },
-          templateId: tReceiving,
-          params: {
-            ...buildBaseParams(row),
-            FIRSTNAME: receivingFirst || 'Doctor',
-            LASTNAME: receivingLast,
+      const freshReceiving = await loadReferral(supabase, referralId);
+      if (!freshReceiving) return { ok: false, error: 'referral_not_found' };
+      row = freshReceiving;
+      if (!row.receiving_dc_email_sent_at) {
+        const r = row;
+        toSend.push({
+          run: async () => {
+            const claimed = await tryClaimReferralEmailSlot(
+              supabase,
+              referralId,
+              'receiving_dc_email_sent_at',
+            );
+            if (!claimed) return;
+            try {
+              await sendBrevoReferralTemplateEmail({
+                to: { email: receiving.email!, name: receivingNameDisplay },
+                templateId: tReceiving,
+                params: {
+                  ...buildBaseParams(r),
+                  FIRSTNAME: receivingFirst || 'Doctor',
+                  LASTNAME: receivingLast,
+                },
+              });
+            } catch (e) {
+              await releaseReferralEmailSlot(supabase, referralId, 'receiving_dc_email_sent_at');
+              throw e;
+            }
           },
         });
-        const { error: u3 } = await supabase
-          .from('referrals')
-          .update({ receiving_dc_email_sent_at: new Date().toISOString() })
-          .eq('id', referralId)
-          .is('receiving_dc_email_sent_at', null);
-        if (u3) console.error('receiving dc email stamp:', u3);
       }
+    }
+
+    const outcomes = await Promise.allSettled(toSend.map((t) => t.run()));
+
+    const firstReject = outcomes.find((o): o is PromiseRejectedResult => o.status === 'rejected');
+    if (firstReject) {
+      const msg = firstReject.reason instanceof Error ? firstReject.reason.message : 'send_failed';
+      throw new Error(msg);
     }
 
     return { ok: true };

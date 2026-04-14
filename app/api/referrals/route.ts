@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { sendInitialReferralEmailsIfNeeded } from '@/app/lib/referral-emails.server';
 import { computeMatchForReferral } from '@/app/lib/referral-match.server';
@@ -16,6 +17,39 @@ import type { PatientSearchFilters } from '@/app/lib/queries';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+/** Referral POST runs DB work + up to 3 Brevo calls; needs headroom on serverless. */
+export const maxDuration = 60;
+
+const REFERRAL_POST_RELOAD_ATTEMPTS = 4;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function runReferralInitialEmailSideEffects(
+  supabaseService: SupabaseClient<any>,
+  referralId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sendResult = await sendInitialReferralEmailsIfNeeded(supabaseService, referralId);
+  if (sendResult.ok === false) {
+    console.error('referral initial emails:', sendResult.error);
+  }
+
+  const anyReferralTemplate = Boolean(
+    process.env.BREVO_REFERRAL_PATIENT_TEMPLATE_ID?.trim() ||
+      process.env.BREVO_REFERRAL_SENDER_COPY_TEMPLATE_ID?.trim() ||
+      process.env.BREVO_REFERRAL_RECEIVING_DC_TEMPLATE_ID?.trim(),
+  );
+  if (sendResult.ok && process.env.BREVO_API_KEY?.trim() && anyReferralTemplate) {
+    await supabaseService.from('referral_events').insert({
+      referral_id: referralId,
+      event_type: 'emails_sent',
+      metadata: {},
+    });
+  }
+
+  return sendResult;
+}
 
 export async function GET(req: Request) {
   const auth = await requireBearerUser(req);
@@ -119,7 +153,7 @@ export async function POST(req: Request) {
   const { data: created, error: insErr } = await supabaseService
     .from('referrals')
     .insert(insertPayload)
-    .select('id')
+    .select('*')
     .single();
 
   if (insErr || !created?.id) {
@@ -136,28 +170,39 @@ export async function POST(req: Request) {
     metadata: { source: 'api' },
   });
 
-  const sendResult = await sendInitialReferralEmailsIfNeeded(supabaseService, referralId);
-  if (sendResult.ok === false) {
-    console.error('referral initial emails:', sendResult.error);
+  // Await here so the JSON body can include `emailWarning` on every host (including Vercel). Background-only
+  // patterns (e.g. `waitUntil` without awaiting the same work) would drop that signal for clients.
+  const sendResult = await runReferralInitialEmailSideEffects(supabaseService, referralId);
+  const emailWarning = sendResult.ok === false ? sendResult.error : null;
+
+  let referralAfterEmails: (typeof created) | null = null;
+  let lastReloadErr: unknown = null;
+  for (let attempt = 0; attempt < REFERRAL_POST_RELOAD_ATTEMPTS; attempt += 1) {
+    if (attempt > 0) await sleep(50 * 2 ** (attempt - 1));
+    const { data, error } = await supabaseService
+      .from('referrals')
+      .select('*')
+      .eq('id', referralId)
+      .single();
+    if (!error && data) {
+      referralAfterEmails = data;
+      break;
+    }
+    lastReloadErr = error;
   }
 
-  const anyReferralTemplate = Boolean(
-    process.env.BREVO_REFERRAL_PATIENT_TEMPLATE_ID?.trim() ||
-      process.env.BREVO_REFERRAL_SENDER_COPY_TEMPLATE_ID?.trim() ||
-      process.env.BREVO_REFERRAL_RECEIVING_DC_TEMPLATE_ID?.trim(),
-  );
-  if (sendResult.ok && process.env.BREVO_API_KEY?.trim() && anyReferralTemplate) {
-    await supabaseService.from('referral_events').insert({
-      referral_id: referralId,
-      event_type: 'emails_sent',
-      metadata: {},
+  if (!referralAfterEmails) {
+    console.error('referral reload after email side effects (exhausted retries):', lastReloadErr);
+    return NextResponse.json({
+      referral: null,
+      referralReloadFailed: true,
+      referralId,
+      emailWarning,
     });
   }
 
-  const { data: row } = await supabaseService.from('referrals').select('*').eq('id', referralId).single();
-
   return NextResponse.json({
-    referral: row,
-    emailWarning: sendResult.ok === false ? sendResult.error : null,
+    referral: referralAfterEmails,
+    emailWarning,
   });
 }

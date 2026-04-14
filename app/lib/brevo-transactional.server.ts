@@ -2,6 +2,8 @@ import 'server-only';
 
 const BREVO_API = 'https://api.brevo.com/v3/smtp/email';
 const DEFAULT_BREVO_TIMEOUT_MS = 8000;
+/** Avoid hanging the whole referral request if BREVO_REQUEST_TIMEOUT_MS is mis-set very high. */
+const MAX_BREVO_TIMEOUT_MS = 30_000;
 
 function getApiKey(): string {
   const key = process.env.BREVO_API_KEY?.trim();
@@ -15,8 +17,9 @@ export type BrevoRecipient = { email: string; name?: string };
 
 async function postBrevo(body: Record<string, unknown>): Promise<void> {
   const timeoutRaw = Number(process.env.BREVO_REQUEST_TIMEOUT_MS);
-  const timeoutMs =
+  const configured =
     Number.isFinite(timeoutRaw) && timeoutRaw >= 1000 ? Math.round(timeoutRaw) : DEFAULT_BREVO_TIMEOUT_MS;
+  const timeoutMs = Math.min(configured, MAX_BREVO_TIMEOUT_MS);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);

@@ -43,13 +43,54 @@ export default function SignInPage() {
     void checkUser();
   }, []);
 
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        router.replace(getRedirectPath());
+      }
+    });
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T | null> => {
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), ms));
+    return (await Promise.race([promise, timeout])) as T | null;
+  };
+
+  const resolveSessionFast = async () => {
+    const first = await withTimeout(
+      supabase.auth.getSession().then((r) => r.data.session),
+      2500,
+    );
+    if (first?.user) return first;
+
+    await withTimeout(supabase.auth.getUser(), 2500);
+    const second = await withTimeout(
+      supabase.auth.getSession().then((r) => r.data.session),
+      2500,
+    );
+    if (second?.user) return second;
+
+    for (let i = 0; i < 2; i += 1) {
+      await sleep(180);
+      const retry = await withTimeout(
+        supabase.auth.getSession().then((r) => r.data.session),
+        1200,
+      );
+      if (retry?.user) return retry;
+    }
+    return null;
+  };
+
   const checkUser = async () => {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await resolveSessionFast();
       if (session?.user) {
-        router.push(getRedirectPath());
+        router.replace(getRedirectPath());
         return;
       }
     } catch (err) {

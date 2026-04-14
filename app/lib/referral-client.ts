@@ -38,7 +38,13 @@ export async function createReferralRequest(body: {
   notes?: string;
   searchFilters: Record<string, unknown>;
 }): Promise<
-  | { ok: true; referral: unknown; emailWarning?: string | null }
+  | {
+      ok: true;
+      referral: unknown;
+      emailWarning?: string | null;
+      referralReloadFailed?: boolean;
+      referralId?: string;
+    }
   | { ok: false; error: string; field?: string }
 > {
   const token = await getAccessTokenOrNull();
@@ -56,9 +62,17 @@ export async function createReferralRequest(body: {
     field?: string;
     referral?: unknown;
     emailWarning?: string | null;
+    referralReloadFailed?: boolean;
+    referralId?: string;
   };
   if (!res.ok) {
     return { ok: false, error: j.error || 'Request failed', field: j.field };
   }
-  return { ok: true, referral: j.referral, emailWarning: j.emailWarning ?? null };
+  return {
+    ok: true,
+    referral: j.referral,
+    emailWarning: j.emailWarning ?? null,
+    referralReloadFailed: Boolean(j.referralReloadFailed),
+    referralId: typeof j.referralId === 'string' ? j.referralId : undefined,
+  };
 }

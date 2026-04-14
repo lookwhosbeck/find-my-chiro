@@ -33,6 +33,7 @@ export function ReferPatientModal({
   const [formError, setFormError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [emailWarning, setEmailWarning] = useState<string | null>(null);
+  const [referralReloadFailed, setReferralReloadFailed] = useState(false);
 
   const reset = useCallback(() => {
     setPatientEmail('');
@@ -43,6 +44,7 @@ export function ReferPatientModal({
     setDone(false);
     setBusy(false);
     setEmailWarning(null);
+    setReferralReloadFailed(false);
   }, []);
 
   useEffect(() => {
@@ -91,6 +93,7 @@ export function ReferPatientModal({
         return;
       }
       setEmailWarning(result.emailWarning ?? null);
+      setReferralReloadFailed(Boolean(result.referralReloadFailed));
       setDone(true);
     } finally {
       setBusy(false);
@@ -113,16 +116,23 @@ export function ReferPatientModal({
 
         {done ? (
           <Flex direction="column" gap="3">
+            {referralReloadFailed ? (
+              <Text size="2" color="orange">
+                Referral was saved, but we could not load the updated record. Open Account → Referrals to confirm, and
+                do not submit this form again for the same patient.
+              </Text>
+            ) : null}
             {emailWarning ? (
               <Text size="2" color="orange">
                 Referral saved, but email delivery had an issue: {emailWarning}
               </Text>
-            ) : (
+            ) : null}
+            {!referralReloadFailed && !emailWarning ? (
               <Text size="2" color="green">
                 Referral sent. Confirmation emails go to you, the patient, and the receiving doctor when Brevo is
                 configured.
               </Text>
-            )}
+            ) : null}
             <Button type="button" onClick={() => handleOpenChange(false)}>
               Close
             </Button>

@@ -8,6 +8,8 @@ import { scoreChiropractors } from './patient-match';
 import { clampSearchRadiusMiles } from './search-radius';
 
 const GEO_CANDIDATE_CAP = 500;
+/** Browse mode (no ZIP): allow high limits so the map can show the full directory. */
+const BROWSE_FETCH_CAP = 5000;
 
 export async function searchChiropractorsWithClient(
   supabase: SupabaseClient,
@@ -21,7 +23,7 @@ export async function searchChiropractorsWithClient(
       : 25
   );
 
-  const query = supabase
+  let query = supabase
     .from('chiropractors')
     .select(
       `
@@ -34,12 +36,15 @@ export async function searchChiropractorsWithClient(
         chiropractor_philosophies(philosophy_id, philosophies!inner(name))
       `
     )
-    .eq('accepting_new_patients', true)
     .order('updated_at', { ascending: false });
 
-  // With a search ZIP we over-fetch for radius filtering. Without a ZIP, "browse" mode must load
-  // enough rows for the map; limit*3 used to cap at 60 which hid almost all seed data.
-  const fetchCap = baseZip ? GEO_CANDIDATE_CAP : Math.max(limit, GEO_CANDIDATE_CAP);
+  // ZIP search: only practices accepting patients. National browse: every listed DC (network gravity).
+  if (baseZip) {
+    query = query.eq('accepting_new_patients', true);
+  }
+
+  // With a search ZIP we over-fetch for radius filtering. Without a ZIP, browse mode loads up to BROWSE_FETCH_CAP.
+  const fetchCap = baseZip ? GEO_CANDIDATE_CAP : Math.min(BROWSE_FETCH_CAP, Math.max(limit, GEO_CANDIDATE_CAP));
   const { data, error } = await query.limit(fetchCap);
 
   if (error) {
