@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Checkbox } from '@radix-ui/themes';
+import { Checkbox } from '@/components/ui/checkbox';
 import { EnvelopeClosedIcon } from '@radix-ui/react-icons';
 import { supabase } from '@/app/lib/supabase';
 import {

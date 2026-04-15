@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Flex } from '@radix-ui/themes';
 import { Header } from '../components/Header';
 import { MapView } from '../components/MapView';
 import { ReferPatientModal } from '../components/ReferPatientModal';
@@ -202,7 +201,7 @@ function SearchPageContent() {
   }, [filters.zipCode, performSearch]);
 
   return (
-    <Flex direction="column" className="search-page-root">
+    <div className="search-page-root flex flex-col">
       <Header embedded surface="onLight" />
       <div className="search-page-map-area">
         <MapView
@@ -244,7 +243,7 @@ function SearchPageContent() {
           clientMatchScore={referTarget.matchScore ?? null}
         />
       ) : null}
-    </Flex>
+    </div>
   );
 }
 

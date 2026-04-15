@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Flex, Text } from '@radix-ui/themes';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-line';
@@ -391,11 +390,11 @@ export function MapView({
 
   if (!MAPBOX_TOKEN) {
     return (
-      <Flex align="center" justify="center" py="9">
-        <Text color="gray" size="3">
+      <div className="flex items-center justify-center py-24">
+        <p className="text-base text-muted-foreground">
           Map view requires a Mapbox API token. Add NEXT_PUBLIC_MAPBOX_TOKEN to your environment.
-        </Text>
-      </Flex>
+        </p>
+      </div>
     );
   }
 
@@ -527,9 +526,9 @@ export function MapView({
       {/* Empty state */}
       {chiropractors.length === 0 && !loading && (
         <div className="mapview-empty-state">
-          <Text size="3" style={{ color: '#6b7280', textAlign: 'center' }}>
+          <p className="text-center text-base text-muted-foreground">
             No chiropractors found. Try adjusting your search.
-          </Text>
+          </p>
         </div>
       )}
       </div>

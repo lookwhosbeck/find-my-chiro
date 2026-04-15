@@ -16,11 +16,22 @@
     "backfill:geocode-orgs:vercel:preview": "npx vercel env pull .env.vercel.pull --environment=preview --yes && node --env-file=.env.vercel.pull scripts/backfill-organization-geocodes.mjs"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-icons": "^1.3.0",
-    "@radix-ui/themes": "^3.1.0",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@stripe/stripe-js": "^5.10.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.86.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.8.0",
     "mapbox-gl": "^3.20.0",
     "next": "^14.2.0",
     "react": "^18.3.1",
@@ -28,14 +39,19 @@
     "server-only": "^0.0.1",
     "standardwebhooks": "^1.0.0",
     "stripe": "^17.7.0",
+    "tailwind-merge": "^3.5.0",
     "zipcodes": "^8.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.5.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
+    "postcss": "^8.5.9",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.5.0",
     "vitest": "^2.1.9"
   }

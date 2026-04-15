@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Flex, Text } from '@radix-ui/themes';
 
 interface FeatureCardProps {
   title: string;
@@ -9,45 +8,36 @@ interface FeatureCardProps {
 
 export function FeatureCard({ title, description, icon }: FeatureCardProps) {
   return (
-    <Flex
-      direction="column"
-      gap="3"
-      align="center"
+    <div
+      className="flex flex-col items-center gap-3"
       style={{
         flex: '0 1 262px',
         maxWidth: 262,
         padding: 'var(--space-2)',
       }}
     >
-      {icon ? <Flex justify="center">{icon}</Flex> : null}
-      <Text
-        as="p"
+      {icon ? <div className="flex justify-center">{icon}</div> : null}
+      <p
+        className="m-0 text-center font-bold text-foreground"
         style={{
           fontSize: 13,
-          fontWeight: 700,
           lineHeight: '20px',
-          color: '#030302',
-          textAlign: 'center',
-          margin: 0,
           fontFamily: 'var(--font-body)',
         }}
       >
         {title}
-      </Text>
-      <Text
-        as="p"
+      </p>
+      <p
+        className="m-0 text-center text-foreground"
         style={{
           fontSize: 13,
           fontWeight: 400,
           lineHeight: '20px',
-          color: '#030302',
-          textAlign: 'center',
-          margin: 0,
           fontFamily: 'var(--font-body)',
         }}
       >
         {description}
-      </Text>
-    </Flex>
+      </p>
+    </div>
   );
 }

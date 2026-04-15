@@ -1,4 +1,4 @@
-import { Flex, Text, Avatar } from '@radix-ui/themes';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TestimonialProps {
   quote: string;
@@ -8,36 +8,33 @@ interface TestimonialProps {
   reverse?: boolean;
 }
 
-export function Testimonial({ quote, author, avatarInitial, avatarUrl, reverse = false }: TestimonialProps) {
+export function Testimonial({
+  quote,
+  author,
+  avatarInitial,
+  avatarUrl,
+  reverse = false,
+}: TestimonialProps) {
   return (
-    <Flex
-      direction={{ initial: 'column', md: reverse ? 'row-reverse' : 'row' }}
-      gap="6"
-      align="start"
-      style={{
-        padding: '60px 24px',
-        width: '100%',
-      }}
+    <div
+      className={`flex w-full flex-col gap-6 px-6 py-[60px] ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'}`}
     >
-      <Flex
-        direction="column"
-        gap="2"
+      <div
+        className="relative flex flex-1 flex-col gap-2"
         style={{
-          flex: 1,
           fontFamily: "'Untitled Serif', Georgia, serif",
           fontStyle: 'italic',
           fontSize: '32px',
           lineHeight: '38.4px',
           letterSpacing: '-0.96px',
           color: '#030302',
-          position: 'relative',
           paddingLeft: reverse ? '0' : '16px',
           paddingRight: reverse ? '16px' : '0',
         }}
       >
-        <Text
+        <span
+          className="absolute"
           style={{
-            position: 'absolute',
             left: reverse ? 'auto' : '-16px',
             right: reverse ? '-16px' : 'auto',
             top: '18.5px',
@@ -49,17 +46,13 @@ export function Testimonial({ quote, author, avatarInitial, avatarUrl, reverse =
           }}
         >
           "
-        </Text>
-        <Text style={{ fontSize: '32px', lineHeight: '38.4px' }}>{quote}</Text>
-      </Flex>
-      <Flex
-        direction="column"
-        gap="3"
-        justify-content="space-between"
-        align="start"
-        style={{ minWidth: 'fit-content' }}
+        </span>
+        <span style={{ fontSize: '32px', lineHeight: '38.4px' }}>{quote}</span>
+      </div>
+      <div
+        className="flex min-w-fit flex-col items-start justify-between gap-3"
       >
-        <Flex gap="3" align="center">
+        <div className="flex items-center gap-3">
           {reverse && (
             <div
               style={{
@@ -72,17 +65,13 @@ export function Testimonial({ quote, author, avatarInitial, avatarUrl, reverse =
             />
           )}
           <Avatar
-            size="4"
-            radius="full"
-            src={avatarUrl}
-            fallback={avatarInitial || author[0]}
-            style={{
-              width: '72px',
-              height: '72px',
-              background: '#fde99b',
-              border: '4px solid rgba(3, 3, 2, 0.09)',
-            }}
-          />
+            className="h-[72px] w-[72px] rounded-full border-4 border-[rgba(3,3,2,0.09)] bg-[#fde99b]"
+          >
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
+            <AvatarFallback className="rounded-full bg-[#fde99b] text-lg font-medium text-[#030302]">
+              {avatarInitial || author[0]}
+            </AvatarFallback>
+          </Avatar>
           {!reverse && (
             <div
               style={{
@@ -94,20 +83,18 @@ export function Testimonial({ quote, author, avatarInitial, avatarUrl, reverse =
               }}
             />
           )}
-        </Flex>
-        <Text
-          size="4"
-          weight="regular"
+        </div>
+        <p
+          className="text-xl font-normal"
           style={{
-            fontSize: '20px',
             lineHeight: '28px',
             letterSpacing: '-0.4px',
             color: 'rgba(3, 3, 2, 0.75)',
           }}
         >
           {author}
-        </Text>
-      </Flex>
-    </Flex>
+        </p>
+      </div>
+    </div>
   );
 }

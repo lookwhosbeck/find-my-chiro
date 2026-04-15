@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
-import { Button, Text } from "@radix-ui/themes";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { PROFILE_UPDATED_EVENT } from "@/app/lib/profile-events";
@@ -239,10 +240,12 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                   Sign Out
                 </button>
                 <Button
-                  size="2"
-                  variant="solid"
+                  size="sm"
                   asChild
-                  className={`join-network-button fmc-black-pill-cta ${styles.joinCta}`}
+                  className={cn(
+                    "join-network-button fmc-black-pill-cta",
+                    styles.joinCta,
+                  )}
                 >
                   <Link
                     href="/account"
@@ -275,10 +278,12 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                   Log in
                 </Link>
                 <Button
-                  size="2"
-                  variant="solid"
+                  size="sm"
                   asChild
-                  className={`join-network-button fmc-black-pill-cta ${styles.joinCta}`}
+                  className={cn(
+                    "join-network-button fmc-black-pill-cta",
+                    styles.joinCta,
+                  )}
                 >
                   <Link href="/join">Join Network</Link>
                 </Button>
@@ -289,6 +294,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
 
         <Button
           variant="ghost"
+          size="icon"
           onClick={toggleMobileMenu}
           className={styles.mobileMenuButton}
           disabled={signingOut}
@@ -340,21 +346,16 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
             >
               <div className={styles.mobileFlyoutInner}>
                 <div className={styles.mobileFlyoutHeaderRow}>
-                  <Text
-                    size="2"
-                    weight="bold"
-                    color="gray"
-                    style={{
-                      letterSpacing: "0.04em",
-                      textTransform: "uppercase",
-                    }}
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                    style={{ letterSpacing: "0.04em" }}
                   >
                     Menu
-                  </Text>
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="2"
+                    size="icon"
                     aria-label="Close menu"
                     className={styles.mobileFlyoutClose}
                     onClick={() => setMobileMenuOpen(false)}
@@ -393,10 +394,12 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                 {user ? (
                   <div className={styles.mobileFlyoutActions}>
                     <Button
-                      size="2"
-                      variant="solid"
+                      size="sm"
                       asChild
-                      className={`join-network-button fmc-black-pill-cta ${styles.mobileJoinCta}`}
+                      className={cn(
+                        "join-network-button fmc-black-pill-cta",
+                        styles.mobileJoinCta,
+                      )}
                     >
                       <Link
                         href="/account"
@@ -429,10 +432,10 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                       </Link>
                     </Button>
                     <Button
-                      size="2"
+                      size="sm"
                       variant="outline"
                       onClick={handleSignOut}
-                      style={{ width: "100%" }}
+                      className="w-full"
                     >
                       Sign Out
                     </Button>
@@ -440,10 +443,12 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                 ) : (
                   <div className={styles.mobileFlyoutActions}>
                     <Button
-                      size="2"
-                      variant="solid"
+                      size="sm"
                       asChild
-                      className={`join-network-button fmc-black-pill-cta ${styles.mobileJoinCta}`}
+                      className={cn(
+                        "join-network-button fmc-black-pill-cta",
+                        styles.mobileJoinCta,
+                      )}
                     >
                       <Link
                         href="/join"
@@ -453,10 +458,10 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
                       </Link>
                     </Button>
                     <Button
-                      size="2"
+                      size="sm"
                       variant="outline"
                       asChild
-                      style={{ width: "100%" }}
+                      className="w-full"
                     >
                       <Link
                         href="/signin"

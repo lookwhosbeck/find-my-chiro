@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
-import { Box, Flex, Text } from '@radix-ui/themes';
 import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-line';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { Chiropractor } from '../lib/queries';
@@ -89,7 +88,7 @@ export function ChiropractorCard({
     : undefined;
 
   const avatarBlock = (
-    <Box
+    <div
       style={{
         width: avatarSize,
         height: avatarSize,
@@ -106,9 +105,11 @@ export function ChiropractorCard({
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
       ) : (
-        <Flex align="center" justify="center" style={{ width: '100%', height: '100%' }}>
-          <Text
-            weight="medium"
+        <div
+          className="flex h-full w-full items-center justify-center"
+        >
+          <span
+            className="font-medium"
             style={{
               color: isMarquee ? '#ffffff' : 'var(--color-chiro-card-text)',
               fontFamily: 'var(--font-body)',
@@ -117,14 +118,14 @@ export function ChiropractorCard({
             }}
           >
             {initials}
-          </Text>
-        </Flex>
+          </span>
+        </div>
       )}
-    </Box>
+    </div>
   );
 
   const matchBadge = showMatch && matchPillColors ? (
-    <Box
+    <div
       style={{
         ...matchPillColors,
         borderRadius: 5,
@@ -132,7 +133,7 @@ export function ChiropractorCard({
         flexShrink: 0,
       }}
     >
-      <Text
+      <span
         style={{
           color: matchPillColors.color,
           fontFamily: 'var(--font-body)',
@@ -144,14 +145,15 @@ export function ChiropractorCard({
         }}
       >
         {matchPercent}% Match
-      </Text>
-    </Box>
+      </span>
+    </div>
   ) : null;
 
   const nameAndSpecialty = (
-    <Flex direction="column" gap="1" align="start" style={{ width: '100%', minWidth: 0 }}>
-      <Text
-        as="p"
+    <div
+      className="flex w-full min-w-0 flex-col items-start gap-1"
+    >
+      <p
         style={{
           color: 'var(--color-chiro-card-text)',
           fontFamily: 'var(--font-body)',
@@ -171,10 +173,9 @@ export function ChiropractorCard({
         }}
       >
         {displayName}
-      </Text>
+      </p>
       {specialtyLine ? (
-        <Text
-          as="p"
+        <p
           style={{
             color: 'var(--color-chiro-card-text)',
             fontFamily: 'var(--font-body)',
@@ -188,20 +189,19 @@ export function ChiropractorCard({
           }}
         >
           {specialtyLine}
-        </Text>
+        </p>
       ) : null}
-    </Flex>
+    </div>
   );
 
   const locationRow =
     locationLine || distanceSuffix ? (
-      <Flex
-        align="center"
+      <div
+        className="flex min-w-0 items-center"
         style={{
           flexShrink: 0,
           gap: isMarquee ? 6 : 10,
           paddingTop: isMarquee ? 6 : 'var(--space-4)',
-          minWidth: 0,
         }}
       >
         <LocationPinIcon
@@ -212,8 +212,7 @@ export function ChiropractorCard({
             height: isMarquee ? 13 : 16,
           }}
         />
-        <Text
-          as="p"
+        <p
           style={{
             color: 'var(--color-chiro-card-text)',
             fontFamily: 'var(--font-body)',
@@ -230,14 +229,14 @@ export function ChiropractorCard({
         >
           {locationLine}
           {distanceSuffix}
-        </Text>
-      </Flex>
+        </p>
+      </div>
     ) : null;
 
   const href = profileHref ?? `/chiropractor/${chiropractor.id}`;
 
   const cardInner = (
-    <Box
+    <div
       className="chiropractor-card"
       data-variant={isMarquee ? 'marquee' : undefined}
       style={{
@@ -252,34 +251,37 @@ export function ChiropractorCard({
       }}
     >
       {isMarquee ? (
-        <Flex
-          direction="column"
-          justify="between"
-          gap="0"
-          style={{ flex: '1 1 auto', minHeight: 0, width: '100%' }}
+        <div
+          className="flex h-full min-h-0 w-full flex-col justify-between gap-0"
         >
-          <Flex align="start" justify="between" style={{ width: '100%', flexShrink: 0, minHeight: avatarSize }}>
+          <div
+            className="flex w-full flex-shrink-0 items-start justify-between"
+            style={{ minHeight: avatarSize }}
+          >
             {avatarBlock}
             {matchBadge}
-          </Flex>
-          <Flex direction="column" gap="0" align="start" style={{ width: '100%', minWidth: 0, flexShrink: 0 }}>
+          </div>
+          <div className="flex w-full min-w-0 flex-shrink-0 flex-col items-start gap-0">
             {nameAndSpecialty}
             {locationRow}
-          </Flex>
-        </Flex>
+          </div>
+        </div>
       ) : (
         <>
-          <Flex direction="column" gap="4" style={{ flex: '1 1 auto', minHeight: 0 }}>
-            <Flex align="start" justify="between" style={{ width: '100%', minHeight: avatarSize }}>
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <div
+              className="flex w-full items-start justify-between"
+              style={{ minHeight: avatarSize }}
+            >
               {avatarBlock}
               {matchBadge}
-            </Flex>
+            </div>
             {nameAndSpecialty}
-          </Flex>
+          </div>
           {locationRow}
         </>
       )}
-    </Box>
+    </div>
   );
 
   return (

@@ -1,7 +1,18 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Box, Button, Dialog, Flex, Text, TextArea, TextField } from '@radix-ui/themes';
+
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 import { createReferralRequest } from '@/app/lib/referral-client';
 import type { PatientSearchFilters } from '@/app/lib/queries';
@@ -98,7 +109,14 @@ export function ReferPatientModal({
     } finally {
       setBusy(false);
     }
-  }, [notes, patientEmail, patientFirstName, patientLastInitial, receivingChiropractorId, searchFilters]);
+  }, [
+    notes,
+    patientEmail,
+    patientFirstName,
+    patientLastInitial,
+    receivingChiropractorId,
+    searchFilters,
+  ]);
 
   const matchHint =
     clientMatchScore != null && Number.isFinite(clientMatchScore)
@@ -106,114 +124,111 @@ export function ReferPatientModal({
       : null;
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Content style={{ maxWidth: 440 }} aria-describedby={undefined}>
-        <Dialog.Title>Refer a patient</Dialog.Title>
-        <Dialog.Description size="2" color="gray" mb="3">
-          To {receivingDoctorLabel}. The patient does not need a Movyn account. Use first name and one letter for last
-          initial only.
-        </Dialog.Description>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-[440px]">
+        <DialogHeader>
+          <DialogTitle>Refer a patient</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            To {receivingDoctorLabel}. The patient does not need a Movyn account. Use first name
+            and one letter for last initial only.
+          </DialogDescription>
+        </DialogHeader>
 
         {done ? (
-          <Flex direction="column" gap="3">
+          <div className="flex flex-col gap-3">
             {referralReloadFailed ? (
-              <Text size="2" color="orange">
-                Referral was saved, but we could not load the updated record. Open Account → Referrals to confirm, and
-                do not submit this form again for the same patient.
-              </Text>
+              <p className="text-sm text-orange-600 dark:text-orange-400">
+                Referral was saved, but we could not load the updated record. Open Account →
+                Referrals to confirm, and do not submit this form again for the same patient.
+              </p>
             ) : null}
             {emailWarning ? (
-              <Text size="2" color="orange">
+              <p className="text-sm text-orange-600 dark:text-orange-400">
                 Referral saved, but email delivery had an issue: {emailWarning}
-              </Text>
+              </p>
             ) : null}
             {!referralReloadFailed && !emailWarning ? (
-              <Text size="2" color="green">
-                Referral sent. Confirmation emails go to you, the patient, and the receiving doctor when Brevo is
-                configured.
-              </Text>
+              <p className="text-sm text-green-700 dark:text-green-400">
+                Referral sent. Confirmation emails go to you, the patient, and the receiving doctor
+                when Brevo is configured.
+              </p>
             ) : null}
             <Button type="button" onClick={() => handleOpenChange(false)}>
               Close
             </Button>
-          </Flex>
+          </div>
         ) : (
-          <Flex direction="column" gap="3">
+          <div className="flex flex-col gap-3">
             {matchHint ? (
-              <Text size="1" color="gray">
-                {matchHint}
-              </Text>
+              <p className="text-xs text-muted-foreground">{matchHint}</p>
             ) : null}
-            <Box>
-              <Text as="label" size="2" weight="bold" htmlFor="ref-patient-email">
+            <div className="space-y-1">
+              <Label htmlFor="ref-patient-email" className="text-sm font-semibold">
                 Patient email
-              </Text>
-              <TextField.Root
+              </Label>
+              <Input
                 id="ref-patient-email"
                 type="email"
                 autoComplete="email"
                 placeholder="patient@email.com"
                 value={patientEmail}
                 onChange={(e) => setPatientEmail(e.target.value)}
-                mt="1"
               />
-            </Box>
-            <Box>
-              <Text as="label" size="2" weight="bold" htmlFor="ref-patient-first">
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="ref-patient-first" className="text-sm font-semibold">
                 Patient first name
-              </Text>
-              <TextField.Root
+              </Label>
+              <Input
                 id="ref-patient-first"
                 autoComplete="given-name"
                 placeholder="First name"
                 value={patientFirstName}
                 onChange={(e) => setPatientFirstName(e.target.value)}
-                mt="1"
               />
-            </Box>
-            <Box>
-              <Text as="label" size="2" weight="bold" htmlFor="ref-patient-li">
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="ref-patient-li" className="text-sm font-semibold">
                 Last initial (one letter)
-              </Text>
-              <TextField.Root
+              </Label>
+              <Input
                 id="ref-patient-li"
                 maxLength={1}
                 placeholder="S"
                 value={patientLastInitial}
                 onChange={(e) => handleLastInitialChange(e.target.value)}
-                mt="1"
-                style={{ maxWidth: 64, textTransform: 'uppercase' }}
+                className="max-w-16 uppercase"
               />
-            </Box>
-            <Box>
-              <Text as="label" size="2" weight="bold" htmlFor="ref-notes">
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="ref-notes" className="text-sm font-semibold">
                 Notes for the receiving doctor (optional)
-              </Text>
-              <TextArea
+              </Label>
+              <Textarea
                 id="ref-notes"
                 placeholder="Clinical context you are comfortable sharing…"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                mt="1"
                 rows={3}
               />
-            </Box>
-            {formError ? (
-              <Text size="2" color="red">
-                {formError}
-              </Text>
-            ) : null}
-            <Flex gap="2" justify="end" mt="2">
-              <Button type="button" variant="soft" color="gray" disabled={busy} onClick={() => handleOpenChange(false)}>
+            </div>
+            {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
+            <div className="mt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => handleOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button type="button" disabled={busy} onClick={() => void handleSubmit()}>
                 {busy ? 'Sending…' : 'Send referral'}
               </Button>
-            </Flex>
-          </Flex>
+            </div>
+          </div>
         )}
-      </Dialog.Content>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

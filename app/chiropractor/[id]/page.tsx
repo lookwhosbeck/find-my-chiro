@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Flex, Text, Heading, Card, Box, Button } from '@radix-ui/themes';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
 import { Container } from '@/app/components/Container';
@@ -50,7 +51,7 @@ function ChiropractorProfileContent() {
   const filtersKey = searchParams.toString();
   const filters = useMemo(
     () => parseSearchFiltersFromParams(new URLSearchParams(filtersKey || undefined)),
-    [filtersKey]
+    [filtersKey],
   );
 
   const [chiro, setChiro] = useState<Chiropractor | null>(null);
@@ -131,7 +132,7 @@ function ChiropractorProfileContent() {
         userScore: r.userScore,
         providerScore: r.providerScore,
       })),
-    [overlayRows]
+    [overlayRows],
   );
   const matchPct = useMemo(() => matchPercentFromAxes(axes), [axes]);
   const hasFilterContext = overlayRows.length > 0;
@@ -140,44 +141,49 @@ function ChiropractorProfileContent() {
   if (!id) {
     return (
       <Container>
-        <Box py="6">
-          <Text>Invalid profile.</Text>
-        </Box>
+        <div className="py-6">
+          <p className="text-sm text-muted-foreground">Invalid profile.</p>
+        </div>
       </Container>
     );
   }
 
   if (loading) {
     return (
-      <Flex align="center" justify="center" py="9" style={{ minHeight: '40vh' }}>
-        <Text style={{ color: 'rgba(0,0,0,0.61)' }}>Loading profile…</Text>
-      </Flex>
+      <div className="flex min-h-[40vh] items-center justify-center py-24">
+        <p className="text-sm" style={{ color: 'rgba(0,0,0,0.61)' }}>
+          Loading profile…
+        </p>
+      </div>
     );
   }
 
   if (error === 'notfound' || !chiro) {
     return (
-      <Flex direction="column" style={{ minHeight: '100vh', background: '#ffffff' }}>
+      <div className="flex min-h-screen flex-col bg-white">
         <div className="search-hero-outer">
           <div className="search-page-hero">
             <Header embedded />
           </div>
         </div>
         <Container>
-          <Flex direction="column" align="center" gap="4" py="9">
-            <Heading size="6" style={{ fontFamily: 'var(--font-body)', fontWeight: 700 }}>
+          <div className="flex flex-col items-center gap-4 py-24">
+            <h1
+              className="text-2xl font-bold tracking-tight"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
               Profile not found
-            </Heading>
-            <Text size="2" color="gray">
+            </h1>
+            <p className="text-sm text-muted-foreground">
               This chiropractor may no longer be listed or the link is incorrect.
-            </Text>
+            </p>
             <Button asChild variant="outline">
               <Link href="/search">Back to search</Link>
             </Button>
-          </Flex>
+          </div>
         </Container>
         <Footer />
-      </Flex>
+      </div>
     );
   }
 
@@ -194,7 +200,7 @@ function ChiropractorProfileContent() {
   const budgetLabel = formatBudget(chiro.budgetRange);
 
   return (
-    <Flex direction="column" style={{ minHeight: '100vh', background: '#ffffff' }}>
+    <div className="flex min-h-screen flex-col bg-white">
       <div className="search-hero-outer">
         <div className="search-page-hero">
           <Header embedded />
@@ -203,14 +209,14 @@ function ChiropractorProfileContent() {
             <Link href={searchBackHref} className={styles.profileBack}>
               ← Back to search
             </Link>
-            <Flex direction="column" align="center" gap="4" className={styles.profileHeroMeta}>
+            <div className={`flex flex-col items-center gap-4 ${styles.profileHeroMeta}`}>
               <div className={styles.profileAvatar}>
                 {chiro.avatarUrl ? (
                   <img src={chiro.avatarUrl} alt={displayName} />
                 ) : (
-                  <Flex align="center" justify="center" style={{ width: '100%', height: '100%' }}>
-                    <Text
-                      weight="medium"
+                  <div className="flex h-full w-full items-center justify-center">
+                    <span
+                      className="font-medium"
                       style={{
                         color: 'var(--color-chiro-card-text)',
                         fontFamily: 'var(--font-body)',
@@ -219,12 +225,12 @@ function ChiropractorProfileContent() {
                       }}
                     >
                       {initials}
-                    </Text>
-                  </Flex>
+                    </span>
+                  </div>
                 )}
               </div>
-              <Heading
-                as="h1"
+              <h1
+                className="m-0"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
@@ -232,20 +238,25 @@ function ChiropractorProfileContent() {
                   letterSpacing: '-0.03em',
                   fontWeight: 400,
                   color: '#f7f7f7',
-                  margin: 0,
                 }}
               >
                 {displayName}
-              </Heading>
+              </h1>
               {chiro.clinicName ? (
-                <Text size="3" style={{ color: 'rgba(247,247,247,0.88)', fontFamily: 'var(--font-body)' }}>
+                <p
+                  className="text-base"
+                  style={{ color: 'rgba(247,247,247,0.88)', fontFamily: 'var(--font-body)' }}
+                >
                   {chiro.clinicName}
                   {cityStateZip ? ` · ${cityStateZip}` : ''}
-                </Text>
+                </p>
               ) : cityStateZip ? (
-                <Text size="3" style={{ color: 'rgba(247,247,247,0.88)', fontFamily: 'var(--font-body)' }}>
+                <p
+                  className="text-base"
+                  style={{ color: 'rgba(247,247,247,0.88)', fontFamily: 'var(--font-body)' }}
+                >
                   {cityStateZip}
-                </Text>
+                </p>
               ) : null}
               {hasFilterContext && matchPill ? (
                 <span className="match-potential-pill" style={matchPill}>
@@ -253,73 +264,79 @@ function ChiropractorProfileContent() {
                 </span>
               ) : null}
               {canReferPatient && chiro.id ? (
-                <Button
-                  type="button"
-                  size="3"
-                  variant="solid"
-                  style={{ marginTop: 8 }}
-                  onClick={() => setReferOpen(true)}
-                >
+                <Button type="button" size="lg" className="mt-2" onClick={() => setReferOpen(true)}>
                   Refer a patient
                 </Button>
               ) : null}
-            </Flex>
+            </div>
           </div>
         </div>
       </div>
 
-      <Box className={styles.profileMain}>
+      <div className={styles.profileMain}>
         <Container>
           <div className={styles.profileGrid}>
-            <Flex direction="column" gap="5">
+            <div className="flex flex-col gap-5">
               <Card className="search-refine-card">
                 <h2 className={styles.profileSectionTitle}>Practice &amp; contact</h2>
                 <ul className={styles.profileDetailList}>
                   {chiro.clinicName ? (
                     <li>
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                      <span
+                        className="mb-1 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Clinic
-                      </Text>
-                      <Text size="2" style={{ color: 'rgba(0,0,0,0.72)', lineHeight: 1.45 }}>
+                      </span>
+                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)', lineHeight: 1.45 }}>
                         {chiro.clinicName}
-                      </Text>
+                      </span>
                     </li>
                   ) : null}
                   {addressLines.length > 0 ? (
                     <li>
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                      <span
+                        className="mb-1 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Address
-                      </Text>
-                      <Text size="2" style={{ color: 'rgba(0,0,0,0.72)', lineHeight: 1.45 }}>
+                      </span>
+                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)', lineHeight: 1.45 }}>
                         {addressLines.map((line, i) => (
                           <span key={i}>
                             {i > 0 ? <br /> : null}
                             {line}
                           </span>
                         ))}
-                      </Text>
+                      </span>
                       {mapsHref ? (
-                        <Text size="2" mt="2" as="p">
+                        <p className="mt-2 text-sm">
                           <a href={mapsHref} target="_blank" rel="noopener noreferrer">
                             Open in Maps
                           </a>
-                        </Text>
+                        </p>
                       ) : null}
                     </li>
                   ) : null}
                   {chiro.practicePhone ? (
                     <li>
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                      <span
+                        className="mb-1 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Phone
-                      </Text>
+                      </span>
                       <a href={`tel:${chiro.practicePhone.replace(/\s/g, '')}`}>{chiro.practicePhone}</a>
                     </li>
                   ) : null}
                   {chiro.practiceWebsite ? (
                     <li>
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                      <span
+                        className="mb-1 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Website
-                      </Text>
+                      </span>
                       <a href={chiro.practiceWebsite} target="_blank" rel="noopener noreferrer">
                         {chiro.practiceWebsite.replace(/^https?:\/\//i, '')}
                       </a>
@@ -327,22 +344,28 @@ function ChiropractorProfileContent() {
                   ) : null}
                   {payments.length > 0 ? (
                     <li>
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                      <span
+                        className="mb-1 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Payment
-                      </Text>
-                      <Text size="2" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                      </span>
+                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
                         {payments.join(' · ')}
-                      </Text>
+                      </span>
                     </li>
                   ) : null}
                   {budgetLabel ? (
                     <li>
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                      <span
+                        className="mb-1 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Typical budget (self-reported)
-                      </Text>
-                      <Text size="2" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                      </span>
+                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
                         {budgetLabel}
-                      </Text>
+                      </span>
                     </li>
                   ) : null}
                 </ul>
@@ -355,10 +378,13 @@ function ChiropractorProfileContent() {
                 <Card className="search-refine-card">
                   <h2 className={styles.profileSectionTitle}>Focus &amp; approach</h2>
                   {chiro.modalities?.length ? (
-                    <Box mb="4">
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 8 }}>
+                    <div className="mb-4">
+                      <span
+                        className="mb-2 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Techniques
-                      </Text>
+                      </span>
                       <div className={styles.profileTagRow}>
                         {chiro.modalities.map((m) => (
                           <span key={m} className={styles.profileTag}>
@@ -366,13 +392,16 @@ function ChiropractorProfileContent() {
                           </span>
                         ))}
                       </div>
-                    </Box>
+                    </div>
                   ) : null}
                   {chiro.focusAreas?.length ? (
-                    <Box mb="4">
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 8 }}>
+                    <div className="mb-4">
+                      <span
+                        className="mb-2 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Specialties
-                      </Text>
+                      </span>
                       <div className={styles.profileTagRow}>
                         {chiro.focusAreas.map((m) => (
                           <span key={m} className={styles.profileTag}>
@@ -380,13 +409,16 @@ function ChiropractorProfileContent() {
                           </span>
                         ))}
                       </div>
-                    </Box>
+                    </div>
                   ) : null}
-                  {(chiro.philosophies?.length || chiro.philosophy) ? (
-                    <Box>
-                      <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 8 }}>
+                  {chiro.philosophies?.length || chiro.philosophy ? (
+                    <div>
+                      <span
+                        className="mb-2 block text-sm font-bold"
+                        style={{ color: '#202020' }}
+                      >
                         Philosophy
-                      </Text>
+                      </span>
                       <div className={styles.profileTagRow}>
                         {(chiro.philosophies?.length ? chiro.philosophies : [chiro.philosophy!]).map((m) => (
                           <span key={m} className={styles.profileTag}>
@@ -394,13 +426,13 @@ function ChiropractorProfileContent() {
                           </span>
                         ))}
                       </div>
-                    </Box>
+                    </div>
                   ) : null}
                 </Card>
               ) : null}
-            </Flex>
+            </div>
 
-            <Flex direction="column" gap="5">
+            <div className="flex flex-col gap-5">
               {chiro.bio ? (
                 <Card className="search-refine-card">
                   <h2 className={styles.profileSectionTitle}>About</h2>
@@ -414,29 +446,35 @@ function ChiropractorProfileContent() {
                   <ul className={styles.profileDetailList}>
                     {chiro.chiropracticCollege ? (
                       <li>
-                        <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                        <span
+                          className="mb-1 block text-sm font-bold"
+                          style={{ color: '#202020' }}
+                        >
                           College
-                        </Text>
-                        <Text size="2" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                        </span>
+                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
                           {chiro.chiropracticCollege}
                           {chiro.graduationYear ? ` · Class of ${chiro.graduationYear}` : ''}
-                        </Text>
+                        </span>
                       </li>
                     ) : chiro.graduationYear ? (
                       <li>
-                        <Text size="2" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
                           Class of {chiro.graduationYear}
-                        </Text>
+                        </span>
                       </li>
                     ) : null}
                     {chiro.licenseNumber ? (
                       <li>
-                        <Text size="2" weight="bold" style={{ color: '#202020', display: 'block', marginBottom: 4 }}>
+                        <span
+                          className="mb-1 block text-sm font-bold"
+                          style={{ color: '#202020' }}
+                        >
                           License
-                        </Text>
-                        <Text size="2" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                        </span>
+                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
                           {chiro.licenseNumber}
-                        </Text>
+                        </span>
                       </li>
                     ) : null}
                   </ul>
@@ -453,35 +491,31 @@ function ChiropractorProfileContent() {
                     Saved patient profiles will use the same chart automatically in a future update.
                   </p>
                 ) : (
-                  <Flex direction="column" gap="5" align="center" style={{ width: '100%' }}>
+                  <div className="flex w-full flex-col items-center gap-5">
                     <MatchRadarChart points={radarPoints} />
-                    <Flex
-                      gap="5"
-                      justify="center"
-                      align="center"
-                      wrap="wrap"
-                      style={{ rowGap: '12px' }}
+                    <div
+                      className="flex flex-wrap items-center justify-center gap-5 gap-y-3"
                       aria-label="Chart legend"
                     >
-                      <Flex gap="2" align="center">
+                      <div className="flex items-center gap-2">
                         <span
                           className="match-radar-legend-swatch match-radar-legend-swatch--user"
                           aria-hidden
                         />
-                        <Text size="2" style={{ color: 'rgba(0,0,0,0.55)' }}>
+                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.55)' }}>
                           Your search (target)
-                        </Text>
-                      </Flex>
-                      <Flex gap="2" align="center">
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <span
                           className="match-radar-legend-swatch match-radar-legend-swatch--provider"
                           aria-hidden
                         />
-                        <Text size="2" style={{ color: 'rgba(0,0,0,0.55)' }}>
+                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.55)' }}>
                           This practice (fit)
-                        </Text>
-                      </Flex>
-                    </Flex>
+                        </span>
+                      </div>
+                    </div>
                     <div className={styles.radarOverlayDetails}>
                       {overlayRows.map((row) => (
                         <div key={row.id} className={styles.radarOverlayAxis}>
@@ -499,18 +533,21 @@ function ChiropractorProfileContent() {
                         </div>
                       ))}
                     </div>
-                    <Text size="2" style={{ color: 'rgba(0,0,0,0.55)', textAlign: 'center', maxWidth: 480 }}>
+                    <p
+                      className="max-w-[480px] text-center text-sm"
+                      style={{ color: 'rgba(0,0,0,0.55)' }}
+                    >
                       The dashed outline is your search on each axis (full scale). The blue shape is how closely this
                       practice matches. Compare the lists below for specifics—missing clinic data can pull a spoke
                       inward.
-                    </Text>
-                  </Flex>
+                    </p>
+                  </div>
                 )}
               </Card>
-            </Flex>
+            </div>
           </div>
         </Container>
-      </Box>
+      </div>
 
       <Footer />
 
@@ -524,7 +561,7 @@ function ChiropractorProfileContent() {
           clientMatchScore={hasFilterContext ? matchPct : chiro.matchScore ?? null}
         />
       ) : null}
-    </Flex>
+    </div>
   );
 }
 
@@ -532,9 +569,11 @@ export default function ChiropractorProfilePage() {
   return (
     <Suspense
       fallback={
-        <Flex align="center" justify="center" py="9" style={{ minHeight: '100vh' }}>
-          <Text style={{ color: 'rgba(0,0,0,0.61)' }}>Loading…</Text>
-        </Flex>
+        <div className="flex min-h-screen items-center justify-center py-24">
+          <p className="text-sm" style={{ color: 'rgba(0,0,0,0.61)' }}>
+            Loading…
+          </p>
+        </div>
       }
     >
       <ChiropractorProfileContent />

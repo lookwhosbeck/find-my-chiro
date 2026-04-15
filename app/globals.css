@@ -1,8 +1,6 @@
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 html {
   max-width: 100vw;
@@ -14,14 +12,75 @@ html {
   overscroll-behavior: none;
 }
 
-/* Radix root wraps all pages; must not clip overflow or tall pages lose document scroll */
-.radix-themes[data-is-root-theme='true'] {
-  overflow: visible;
-}
-
 /* ========================================
-   Apple-Inspired Design System Tokens
+   Design tokens (shadcn-compatible + Movyn legacy)
    ======================================== */
+
+@layer base {
+  :root {
+    /* shadcn / Pro-Kit-style semantic colors (HSL components for hsl(var(--x))) */
+    --background: 240 20% 99%;
+    --foreground: 240 6% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 6% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 6% 10%;
+    --primary: 211 100% 44%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 211 100% 96%;
+    --accent-foreground: 211 100% 28%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 211 100% 44%;
+    --radius: 0.75rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 240 6% 10%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 64%;
+    --accent: 211 40% 18%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 211 100% 50%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
 
 :root {
   /* Typography - SF Pro system stack for body, Untitled Serif for display */
@@ -62,15 +121,15 @@ html {
   --space-9: 96px;
   --space-10: 128px;
   
-  /* Semantic colors - Apple's refined palette */
-  --color-text-primary: #1d1d1f;      /* Apple's near-black */
-  --color-text-secondary: #86868b;    /* Apple's gray */
-  --color-text-tertiary: #aeaeb2;     /* Lighter gray */
-  --color-background: #fbfbfd;        /* Apple's off-white */
-  --color-surface: #ffffff;           /* Pure white surfaces */
-  --color-border: rgba(0, 0, 0, 0.08); /* Subtle borders */
-  --color-accent: #0071e3;            /* Apple blue */
-  --color-accent-hover: #0077ed;
+  /* Semantic colors — bridge to shadcn tokens (variable-first) */
+  --color-text-primary: hsl(var(--foreground));
+  --color-text-secondary: hsl(var(--muted-foreground));
+  --color-text-tertiary: hsl(var(--muted-foreground) / 0.75);
+  --color-background: hsl(var(--background));
+  --color-surface: hsl(var(--card));
+  --color-border: hsl(var(--border) / 0.65);
+  --color-accent: hsl(var(--primary));
+  --color-accent-hover: hsl(var(--primary) / 0.92);
   
   /* Legacy brand colors (keep for gradients) */
   --color-bg-gradient-start: #9ed4ef;
@@ -150,8 +209,6 @@ body {
   overflow-x: visible;
   overflow-y: visible;
   overscroll-behavior: none;
-  color: var(--color-text-primary);
-  background: var(--color-background);
   font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
@@ -160,37 +217,18 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
+/* Typography: use Tailwind / component-level styles; keep display font for headings only */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
-  color: var(--color-text-primary);
+  color: hsl(var(--foreground));
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
-  font-weight: 400;
-}
-
-h1 {
-  font-size: var(--text-5xl);
-}
-
-h2 {
-  font-size: var(--text-4xl);
-}
-
-h3 {
-  font-size: var(--text-3xl);
-}
-
-h4 {
-  font-size: var(--text-2xl);
-}
-
-h5 {
-  font-size: var(--text-xl);
-}
-
-h6 {
-  font-size: var(--text-lg);
+  font-weight: 600;
 }
 
 p {

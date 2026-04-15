@@ -1,4 +1,3 @@
-import { Flex, Text, Container } from '@radix-ui/themes';
 import Link from 'next/link';
 
 export function Footer() {
@@ -13,174 +12,238 @@ export function Footer() {
         overflow: 'hidden',
       }}
     >
-      <Container>
-        <Flex
-          direction="column"
-          gap="6"
-          style={{
-            maxWidth: '1160px',
-            margin: '0 auto',
-            padding: 'var(--space-5) 0',
-          }}
-        >
+      <div className="mx-auto w-full max-w-[1160px] px-4 md:px-6">
+        <div className="flex flex-col gap-6 py-5">
           {/* Footer Links */}
-          <Flex
-            direction={{ initial: 'column', md: 'row' }}
-            gap="10"
-            justify="between"
-            wrap="wrap"
-          >
+          <div className="flex flex-col flex-wrap justify-between gap-10 md:flex-row">
             {/* Product Column */}
-            <Flex direction="column" gap="1" style={{ flex: 1, minWidth: '200px' }}>
-              <Text
-                size="2"
-                weight="medium"
+            <div className="flex min-w-[200px] flex-1 flex-col gap-1">
+              <span
+                className="mb-2 text-sm font-medium uppercase tracking-wide text-card"
                 style={{
                   fontSize: 'var(--text-sm)',
                   letterSpacing: 'var(--tracking-wide)',
-                  textTransform: 'uppercase',
                   color: 'var(--color-surface)',
-                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Product
-              </Text>
-              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
-              <Flex direction="column" gap="1">
-                <Link href="/features" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+              </span>
+              <div
+                style={{
+                  height: '0.5px',
+                  background: 'var(--color-border)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              />
+              <div className="flex flex-col gap-1">
+                <Link
+                  href="/features"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     Features
-                  </Text>
+                  </span>
                 </Link>
-                <Link href="/pricing" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+                <Link
+                  href="/pricing"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     Pricing
-                  </Text>
+                  </span>
                 </Link>
-              </Flex>
-            </Flex>
+              </div>
+            </div>
 
             {/* Community Column */}
-            <Flex direction="column" gap="1" style={{ flex: 1, minWidth: '200px' }}>
-              <Text
-                size="2"
-                weight="medium"
+            <div className="flex min-w-[200px] flex-1 flex-col gap-1">
+              <span
+                className="mb-2 text-sm font-medium uppercase tracking-wide text-card"
                 style={{
                   fontSize: 'var(--text-sm)',
                   letterSpacing: 'var(--tracking-wide)',
-                  textTransform: 'uppercase',
                   color: 'var(--color-surface)',
-                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Community
-              </Text>
-              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
-              <Flex direction="column" gap="1">
-                <Link href="/about" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+              </span>
+              <div
+                style={{
+                  height: '0.5px',
+                  background: 'var(--color-border)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              />
+              <div className="flex flex-col gap-1">
+                <Link
+                  href="/about"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     About
-                  </Text>
+                  </span>
                 </Link>
-                <Link href="/blog" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+                <Link
+                  href="/blog"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     Blog
-                  </Text>
+                  </span>
                 </Link>
-              </Flex>
-            </Flex>
+              </div>
+            </div>
 
             {/* Support Column */}
-            <Flex direction="column" gap="1" style={{ flex: 1, minWidth: '200px' }}>
-              <Text
-                size="2"
-                weight="medium"
+            <div className="flex min-w-[200px] flex-1 flex-col gap-1">
+              <span
+                className="mb-2 text-sm font-medium uppercase tracking-wide text-card"
                 style={{
                   fontSize: 'var(--text-sm)',
                   letterSpacing: 'var(--tracking-wide)',
-                  textTransform: 'uppercase',
                   color: 'var(--color-surface)',
-                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Support
-              </Text>
-              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
-              <Flex direction="column" gap="1">
-                <Link href="/help" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+              </span>
+              <div
+                style={{
+                  height: '0.5px',
+                  background: 'var(--color-border)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              />
+              <div className="flex flex-col gap-1">
+                <Link
+                  href="/help"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     Help Center
-                  </Text>
+                  </span>
                 </Link>
-                <Link href="/contact" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+                <Link
+                  href="/contact"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     Contact Support
-                  </Text>
+                  </span>
                 </Link>
-              </Flex>
-            </Flex>
+              </div>
+            </div>
 
             {/* Company Column */}
-            <Flex direction="column" gap="1" style={{ flex: 1, minWidth: '200px' }}>
-              <Text
-                size="2"
-                weight="medium"
+            <div className="flex min-w-[200px] flex-1 flex-col gap-1">
+              <span
+                className="mb-2 text-sm font-medium uppercase tracking-wide text-card"
                 style={{
                   fontSize: 'var(--text-sm)',
                   letterSpacing: 'var(--tracking-wide)',
-                  textTransform: 'uppercase',
                   color: 'var(--color-surface)',
-                  marginBottom: 'var(--space-2)',
                 }}
               >
                 Company
-              </Text>
-              <div style={{ height: '0.5px', background: 'var(--color-border)', marginBottom: 'var(--space-2)' }} />
-              <Flex direction="column" gap="1">
-                <Link href="/legal" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+              </span>
+              <div
+                style={{
+                  height: '0.5px',
+                  background: 'var(--color-border)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              />
+              <div className="flex flex-col gap-1">
+                <Link
+                  href="/legal"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     Legal
-                  </Text>
+                  </span>
                 </Link>
-                <Link href="/privacy" style={{ textDecoration: 'none', opacity: 0.8 }}>
-                  <Text size="2" style={{ color: 'var(--color-surface)', fontSize: 'var(--text-sm)' }}>
+                <Link
+                  href="/privacy"
+                  style={{ textDecoration: 'none', opacity: 0.8 }}
+                >
+                  <span
+                    className="text-sm text-card"
+                    style={{
+                      color: 'var(--color-surface)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
                     Privacy Policy
-                  </Text>
+                  </span>
                 </Link>
-              </Flex>
-            </Flex>
-          </Flex>
+              </div>
+            </div>
+          </div>
 
           {/* Bottom Bar */}
-          <div style={{ height: '0.5px', background: 'var(--color-border)', marginTop: 'var(--space-4)' }} />
-          <Flex
-            direction={{ initial: 'column', md: 'row' }}
-            align="center"
-            justify="between"
-            gap="4"
-            style={{ marginTop: 'var(--space-4)' }}
-          >
-            <Text
-              size="2"
+          <div
+            style={{
+              height: '0.5px',
+              background: 'var(--color-border)',
+              marginTop: 'var(--space-4)',
+            }}
+          />
+          <div className="mt-4 flex flex-col items-center justify-between gap-4 md:flex-row">
+            <span
+              className="text-sm text-card opacity-80"
               style={{
                 color: 'var(--color-surface)',
-                opacity: 0.8,
                 fontSize: 'var(--text-base)',
                 letterSpacing: 'var(--tracking-normal)',
               }}
             >
               © 2026 Movyn. All rights reserved.
-            </Text>
-            <Flex gap="2" align="center">
-              {/* Social icons placeholder */}
-            </Flex>
-          </Flex>
-        </Flex>
-      </Container>
+            </span>
+            <div className="flex items-center gap-2">{/* Social icons placeholder */}</div>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }
-
-
-
-

@@ -1,13 +1,15 @@
-import { Heading, Text, Strong, Em } from '@radix-ui/themes';
-
 export const TypographyExample = () => (
   <>
-    <Heading as="h1" size="9">Big Title</Heading>
-    <Heading as="h2" size="6">Sub Title</Heading>
+    <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight text-foreground lg:text-5xl">
+      Big Title
+    </h1>
+    <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight text-foreground first:mt-0">
+      Sub Title
+    </h2>
 
-    <Text as="p" size="3">
-      This is body text with <Strong>bold</Strong> and <Em>italics</Em>.
-    </Text>
+    <p className="leading-7 text-foreground [&:not(:first-child)]:mt-6">
+      This is body text with <strong className="font-semibold">bold</strong> and{' '}
+      <em className="italic">italics</em>.
+    </p>
   </>
 );
-

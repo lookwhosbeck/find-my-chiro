@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Flex } from '@radix-ui/themes';
+import { cn } from '@/lib/utils';
 import { FilterMobileActionBar } from './FilterMobileActionBar';
 
 function ChevronDownIcon() {
@@ -152,11 +152,13 @@ export function FilterDropdowns({
 
   return (
     <div className={showMobileBar ? 'filter-dropdowns-with-mobile-bar' : undefined}>
-      <Flex
+      <div
         ref={rowRef}
-        className={rowClass}
-        align={layout === 'column' ? 'stretch' : 'center'}
-        gap={layout === 'column' ? '0' : '1'}
+        className={cn(
+          rowClass,
+          'flex',
+          layout === 'column' ? 'items-stretch gap-0' : 'items-center gap-1',
+        )}
       >
         <MultiSelectDropdown
           layout={layout}
@@ -194,7 +196,7 @@ export function FilterDropdowns({
           isOpen={openId === 'payment'}
           onTriggerClick={() => toggle('payment')}
         />
-      </Flex>
+      </div>
       {showMobileBar && (
         <FilterMobileActionBar
           onClose={onMobileFilterClose}

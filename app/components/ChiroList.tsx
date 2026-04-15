@@ -1,30 +1,37 @@
-import { Grid, Card, Heading, Text, Flex } from '@radix-ui/themes';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export const ChiroList = () => (
-  <Grid columns={{ initial: '1', md: '3' }} gap="5" width="auto">
-    {/* Card 1 */}
+  <div className="grid w-auto auto-rows-auto grid-cols-1 gap-5 md:grid-cols-3">
     <Card>
-      <Flex direction="column" gap="2">
-        <Heading size="4">Dr. Smith</Heading>
-        <Text>Gonstead Specialist</Text>
-      </Flex>
+      <CardHeader>
+        <CardTitle>Dr. Smith</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">Gonstead Specialist</p>
+      </CardContent>
     </Card>
 
-    {/* Card 2 */}
     <Card>
-      <Flex direction="column" gap="2">
-        <Heading size="4">Dr. Johnson</Heading>
-        <Text>Activator Method</Text>
-      </Flex>
+      <CardHeader>
+        <CardTitle>Dr. Johnson</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">Activator Method</p>
+      </CardContent>
     </Card>
 
-    {/* Card 3 */}
     <Card>
-      <Flex direction="column" gap="2">
-        <Heading size="4">Dr. Williams</Heading>
-        <Text>Sports Chiropractic</Text>
-      </Flex>
+      <CardHeader>
+        <CardTitle>Dr. Williams</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">Sports Chiropractic</p>
+      </CardContent>
     </Card>
-  </Grid>
+  </div>
 );
-
