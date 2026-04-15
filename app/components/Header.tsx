@@ -1,16 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/app/lib/supabase";
 import { PROFILE_UPDATED_EVENT } from "@/app/lib/profile-events";
 import { MovynLogo } from "@/app/components/MovynLogo";
 import { UserAvatar } from "@/app/components/UserAvatar";
-import styles from "./Header.module.css";
 
 type HeaderProfile = {
   avatar_url?: string | null;
@@ -19,7 +24,6 @@ type HeaderProfile = {
   email?: string | null;
 };
 
-/** Google / Apple OAuth often expose picture in metadata before `profiles` is loaded. */
 function oauthAvatarFromSessionUser(
   user: { user_metadata?: Record<string, unknown> } | null,
 ): string | null {
@@ -34,10 +38,7 @@ function oauthAvatarFromSessionUser(
 
 function oauthNamesFromSessionUser(
   user: { user_metadata?: Record<string, unknown> } | null,
-): {
-  first: string | null;
-  last: string | null;
-} {
+): { first: string | null; last: string | null } {
   const m = user?.user_metadata;
   if (!m || typeof m !== "object") return { first: null, last: null };
   const str = (key: string) => {
@@ -84,17 +85,26 @@ function toHeaderAuthUser(
 }
 
 type HeaderProps = {
-  /** When true, header sits in normal flow (e.g. inside the search hero) instead of floating absolutely. */
+  /** Sits inside a hero/map shell instead of the full-width sticky bar. */
   embedded?: boolean;
-  /** Matches ProximitySearchBar: soft shadow on dark heroes, outline on light surfaces. */
+  /** Light chrome (e.g. search map) vs dark hero chrome. */
   surface?: "onDark" | "onLight";
 };
+
+const navLinkClass = (embedded: boolean, surface: "onDark" | "onLight") =>
+  cn(
+    "text-sm font-medium transition-colors",
+    embedded
+      ? surface === "onDark"
+        ? "text-white/80 hover:text-white"
+        : "text-muted-foreground hover:text-foreground"
+      : "text-muted-foreground hover:text-foreground",
+  );
 
 export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   const [user, setUser] = useState<HeaderAuthUser | null>(null);
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const pathname = usePathname();
 
@@ -117,7 +127,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
       if (u) await loadProfile(u.id);
       else setProfile(null);
     };
-    init();
+    void init();
 
     const {
       data: { subscription },
@@ -142,32 +152,13 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
 
   useEffect(() => {
     if (!user) return;
-    loadProfile(user.id);
+    void loadProfile(user.id);
   }, [pathname, user, loadProfile]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [mobileMenuOpen]);
 
   const handleSignOut = () => {
     if (signingOut) return;
     setSigningOut(true);
-    setMobileMenuOpen(false);
-    // Global signOut() can wait on the network indefinitely; local clears storage immediately.
+    setSheetOpen(false);
     const goHome = () => {
       window.location.assign("/");
     };
@@ -184,299 +175,201 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
     })();
   };
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  const primaryCtaClass = cn(
+    "join-network-button rounded-full px-5 font-medium shadow-sm",
+    embedded && surface === "onDark"
+      ? "border-0 bg-white text-[hsl(var(--marketing-hero-surface))] hover:bg-white/90"
+      : "bg-[hsl(var(--marketing-hero-surface))] text-primary-foreground hover:bg-[hsl(var(--marketing-hero-surface))]/90",
+  );
 
-  const barClassName = [
-    "fmc-site-header",
-    styles.bar,
-    embedded ? styles.barEmbedded : styles.barFloating,
-    surface === "onLight" ? styles.barOnLight : styles.barOnDark,
-  ].join(" ");
+  const logoVariant =
+    embedded && surface === "onDark" ? ("onDark" as const) : ("standard" as const);
 
-  return (
+  const innerNav = (
     <>
-      <header className={barClassName}>
-        <Link href="/" className={styles.logoLink}>
-          <MovynLogo variant="standard" className={styles.headerLogo} />
+      <Link href="/search" className={navLinkClass(embedded, surface)}>
+        Find Care
+      </Link>
+      <Link href="/about" className={navLinkClass(embedded, surface)}>
+        About
+      </Link>
+    </>
+  );
+
+  const authDesktop = signingOut ? (
+    <span className="text-muted-foreground text-sm" role="status" aria-live="polite">
+      Signing out…
+    </span>
+  ) : user ? (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        className={cn(
+          "text-sm font-medium transition-colors",
+          embedded && surface === "onDark"
+            ? "text-white/80 hover:text-white"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+        onClick={handleSignOut}
+      >
+        Sign out
+      </button>
+      <Button size="sm" asChild className={primaryCtaClass}>
+        <Link href="/account" className="inline-flex items-center gap-2" aria-label="My account">
+          <UserAvatar
+            avatarUrl={profile?.avatar_url ?? user.oauthAvatarUrl ?? undefined}
+            firstName={profile?.first_name ?? user.oauthFirstName ?? undefined}
+            lastName={profile?.last_name ?? user.oauthLastName ?? undefined}
+            email={profile?.email ?? user.email ?? undefined}
+            size={28}
+            variant="circle"
+            fallbackTone={embedded && surface === "onDark" ? "onDark" : "default"}
+            alt=""
+          />
+          <span className="hidden sm:inline">My Account</span>
         </Link>
+      </Button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-3">
+      <Link href="/signin" className={navLinkClass(embedded, surface)}>
+        Log in
+      </Link>
+      <Button size="sm" asChild className={primaryCtaClass}>
+        <Link href="/join">Join Network</Link>
+      </Button>
+    </div>
+  );
 
-        {signingOut ? (
-          <span
-            className={styles.signingOutMobileOnly}
-            role="status"
-            aria-live="polite"
-          >
-            Signing out…
-          </span>
-        ) : null}
+  const sheetLinks = (
+    <div className="flex flex-col gap-1 py-2">
+      <Link
+        href="/search"
+        className="rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted"
+        onClick={() => setSheetOpen(false)}
+      >
+        Find Care
+      </Link>
+      <Link
+        href="/about"
+        className="rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted"
+        onClick={() => setSheetOpen(false)}
+      >
+        About
+      </Link>
+    </div>
+  );
 
-        <div className={styles.desktopCluster}>
-          <nav className={styles.navLinks} aria-label="Primary">
-            <Link href="/search" className={styles.navTextLink}>
-              Find Care
-            </Link>
-            <Link href="/about" className={styles.navTextLink}>
-              About
-            </Link>
-          </nav>
-          <div className={styles.authActions}>
-            {signingOut ? (
-              <span
-                className={styles.signingOutStatus}
-                role="status"
-                aria-live="polite"
-              >
-                Signing out…
-              </span>
-            ) : user ? (
-              <>
-                <button
-                  type="button"
-                  className={styles.navTextButton}
-                  onClick={handleSignOut}
-                >
-                  Sign Out
-                </button>
-                <Button
-                  size="sm"
-                  asChild
-                  className={cn(
-                    "join-network-button fmc-black-pill-cta",
-                    styles.joinCta,
-                  )}
-                >
-                  <Link
-                    href="/account"
-                    className={styles.myAccountCtaLink}
-                    aria-label="My account"
-                  >
-                    <UserAvatar
-                      avatarUrl={
-                        profile?.avatar_url ?? user.oauthAvatarUrl ?? undefined
-                      }
-                      firstName={
-                        profile?.first_name ?? user.oauthFirstName ?? undefined
-                      }
-                      lastName={
-                        profile?.last_name ?? user.oauthLastName ?? undefined
-                      }
-                      email={profile?.email ?? user.email ?? undefined}
-                      size={28}
-                      variant="circle"
-                      fallbackTone="onDark"
-                      alt=""
-                    />
-                    <span className={styles.myAccountCtaLabel}>My Account</span>
-                  </Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link href="/signin" className={styles.navTextLink}>
-                  Log in
-                </Link>
-                <Button
-                  size="sm"
-                  asChild
-                  className={cn(
-                    "join-network-button fmc-black-pill-cta",
-                    styles.joinCta,
-                  )}
-                >
-                  <Link href="/join">Join Network</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+  const sheetAuth = user ? (
+    <div className="flex flex-col gap-2 border-t pt-4">
+      <Button asChild className={cn(primaryCtaClass, "w-full justify-center")}>
+        <Link href="/account" onClick={() => setSheetOpen(false)}>
+          My Account
+        </Link>
+      </Button>
+      <Button variant="outline" className="w-full" onClick={handleSignOut}>
+        Sign out
+      </Button>
+    </div>
+  ) : (
+    <div className="flex flex-col gap-2 border-t pt-4">
+      <Button asChild className={cn(primaryCtaClass, "w-full justify-center")}>
+        <Link href="/join" onClick={() => setSheetOpen(false)}>
+          Join Network
+        </Link>
+      </Button>
+      <Button variant="outline" asChild className="w-full">
+        <Link href="/signin" onClick={() => setSheetOpen(false)}>
+          Log in
+        </Link>
+      </Button>
+    </div>
+  );
 
+  const menuIcon = (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+
+  const mobileSheet = (
+    <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <SheetTrigger asChild>
         <Button
+          type="button"
           variant="ghost"
           size="icon"
-          onClick={toggleMobileMenu}
-          className={styles.mobileMenuButton}
+          aria-label="Open menu"
           disabled={signingOut}
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileMenuOpen}
-          aria-busy={signingOut}
+          className={cn(embedded && surface === "onDark" && "text-white hover:bg-white/10")}
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {mobileMenuOpen ? (
-              <>
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </>
-            ) : (
-              <>
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </>
-            )}
-          </svg>
+          {menuIcon}
         </Button>
-      </header>
-
-      {mounted &&
-        mobileMenuOpen &&
-        createPortal(
-          <div className={styles.mobileFlyoutRoot}>
-            <button
-              type="button"
-              className={styles.mobileFlyoutBackdrop}
-              aria-label="Close menu"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <div
-              className={styles.mobileFlyoutPanel}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Site menu"
-            >
-              <div className={styles.mobileFlyoutInner}>
-                <div className={styles.mobileFlyoutHeaderRow}>
-                  <span
-                    className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                    style={{ letterSpacing: "0.04em" }}
-                  >
-                    Menu
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Close menu"
-                    className={styles.mobileFlyoutClose}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </Button>
-                </div>
-                <div className={styles.mobileFlyoutLinks}>
-                  <Link
-                    href="/search"
-                    className={styles.mobileFlyoutLink}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Find Care
-                  </Link>
-                  <Link
-                    href="/about"
-                    className={styles.mobileFlyoutLink}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    About
-                  </Link>
-                </div>
-                <div className={styles.mobileFlyoutDivider} />
-                {user ? (
-                  <div className={styles.mobileFlyoutActions}>
-                    <Button
-                      size="sm"
-                      asChild
-                      className={cn(
-                        "join-network-button fmc-black-pill-cta",
-                        styles.mobileJoinCta,
-                      )}
-                    >
-                      <Link
-                        href="/account"
-                        className={styles.mobileMyAccountCtaLink}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <UserAvatar
-                          avatarUrl={
-                            profile?.avatar_url ??
-                            user.oauthAvatarUrl ??
-                            undefined
-                          }
-                          firstName={
-                            profile?.first_name ??
-                            user.oauthFirstName ??
-                            undefined
-                          }
-                          lastName={
-                            profile?.last_name ??
-                            user.oauthLastName ??
-                            undefined
-                          }
-                          email={profile?.email ?? user.email ?? undefined}
-                          size={36}
-                          variant="circle"
-                          fallbackTone="onDark"
-                          alt=""
-                        />
-                        <span>My Account</span>
-                      </Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSignOut}
-                      className="w-full"
-                    >
-                      Sign Out
-                    </Button>
-                  </div>
-                ) : (
-                  <div className={styles.mobileFlyoutActions}>
-                    <Button
-                      size="sm"
-                      asChild
-                      className={cn(
-                        "join-network-button fmc-black-pill-cta",
-                        styles.mobileJoinCta,
-                      )}
-                    >
-                      <Link
-                        href="/join"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Join Network
-                      </Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      asChild
-                      className="w-full"
-                    >
-                      <Link
-                        href="/signin"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Log in
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>,
-          document.body,
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[min(100vw-2rem,320px)] sm:max-w-sm">
+        <SheetHeader>
+          <SheetTitle>Menu</SheetTitle>
+        </SheetHeader>
+        {sheetLinks}
+        {!signingOut ? (
+          sheetAuth
+        ) : (
+          <p className="text-muted-foreground text-sm">Signing out…</p>
         )}
-    </>
+      </SheetContent>
+    </Sheet>
+  );
+
+  if (embedded) {
+    return (
+      <header
+        className={cn(
+          "fmc-site-header flex w-full max-w-6xl items-center justify-between gap-3 rounded-full border px-3 py-2 sm:gap-4 sm:px-5",
+          surface === "onDark"
+            ? "border-white/10 bg-black/30 text-white shadow-[0_8px_40px_rgba(0,0,0,0.2)] backdrop-blur-md"
+            : "border-border/70 bg-background/95 text-foreground shadow-sm backdrop-blur-md",
+        )}
+      >
+        <Link href="/" className="shrink-0 leading-none">
+          <MovynLogo variant={logoVariant} className="h-8 w-auto sm:h-9" />
+        </Link>
+        <div className="hidden min-w-0 flex-1 items-center justify-end gap-8 md:flex">
+          <nav className="flex items-center gap-8" aria-label="Primary">
+            {innerNav}
+          </nav>
+          {authDesktop}
+        </div>
+        <div className="md:hidden">{mobileSheet}</div>
+      </header>
+    );
+  }
+
+  return (
+    <header
+      className={cn(
+        "fmc-site-header sticky top-0 z-[1000] w-full border-b transition-colors",
+        surface === "onLight"
+          ? "border-border/60 bg-background/90 backdrop-blur-xl"
+          : "border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65",
+      )}
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:h-[4.25rem] md:px-8">
+        <Link href="/" className="shrink-0 leading-none">
+          <MovynLogo variant="standard" className="h-9 w-auto md:h-10" />
+        </Link>
+        <nav className="hidden flex-1 justify-center md:flex" aria-label="Primary">
+          <div className="flex items-center gap-10">{innerNav}</div>
+        </nav>
+        <div className="flex flex-1 items-center justify-end gap-2 md:gap-3">
+          <div className="hidden md:block">{authDesktop}</div>
+          <div className="md:hidden">{mobileSheet}</div>
+        </div>
+      </div>
+    </header>
   );
 }

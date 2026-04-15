@@ -1,15 +1,10 @@
 /* Homepage — Figma node 38:4940 */
 
 .page {
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-}
-
-.heroOuter {
-  padding: 32px 32px 0;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 /* Figma 38:4944 — dark base + photo at 20% opacity, content above */
@@ -61,7 +56,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 64px;
+  gap: 40px;
   width: 100%;
 }
 
@@ -165,10 +160,6 @@
 }
 
 @media (max-width: 640px) {
-  .heroOuter {
-    padding: 16px 16px 0;
-  }
-
   .heroPanel {
     padding: 24px 20px 64px;
     gap: 48px;
