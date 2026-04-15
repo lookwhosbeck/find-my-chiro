@@ -7,14 +7,14 @@ import { HomeMarquee } from "./components/home/HomeMarquee";
 import {
   HomeBenefits,
   HomeCommunity,
-  HomeContact,
   HomeFAQ,
   HomeFeatures,
-  HomePricing,
   HomeServices,
   HomeTeam,
   HomeTestimonials,
 } from "./components/home/home-marketing-sections";
+import { HomeContact } from "./components/home/HomeContact";
+import { HomePricing } from "./components/home/HomePricing";
 import { HomeNewsletter } from "./components/home/HomeNewsletter";
 import { getChiropractors } from "./lib/queries";
 

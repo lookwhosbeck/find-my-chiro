@@ -12,7 +12,12 @@ type MarketingShellProps = {
  */
 export function MarketingShell({ children, className }: MarketingShellProps) {
   return (
-    <div className={cn('flex min-h-screen flex-col bg-background text-foreground antialiased', className)}>
+    <div
+      className={cn(
+        'from-muted to-primary/5 flex min-h-screen flex-col bg-gradient-to-tl text-foreground antialiased',
+        className,
+      )}
+    >
       {children}
     </div>
   );
