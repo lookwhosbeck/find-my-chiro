@@ -438,32 +438,6 @@ button.fmc-proximity-submit {
   border-radius: 0 24px 24px 0 !important;
 }
 
-/*
- * Main nav bar (Header.tsx) — same 24px radius as ProximitySearchBar. Radix can flatten corners; clip-path enforces it.
- */
-header.fmc-site-header,
-.radix-themes header.fmc-site-header {
-  border-radius: 24px !important;
-  overflow: hidden !important;
-  clip-path: inset(0 round 24px);
-}
-
-/* Header navigation buttons should be fully rounded */
-header.fmc-site-header button,
-header.fmc-site-header .rt-Button,
-.radix-themes header.fmc-site-header button,
-.radix-themes header.fmc-site-header .rt-Button {
-  border-radius: var(--radius-full) !important;
-}
-
-/* Join Network button - specific rounded style */
-.join-network-button,
-.join-network-button.rt-Button,
-header.fmc-site-header .join-network-button,
-.radix-themes header.fmc-site-header .join-network-button {
-  border-radius: 154px !important;
-}
-
 /* Black pill CTAs (Join Network, My Account): blue fill on hover, white text — no link-blue */
 .fmc-black-pill-cta:hover,
 .fmc-black-pill-cta:hover:link,
@@ -487,11 +461,6 @@ header.fmc-site-header .join-network-button,
   color: #ffffff !important;
 }
 
-/* Footer container */
-.footer-container {
-  border-radius: var(--radius-xl) !important;
-}
-
 /* Chiropractor profile card shell */
 .chiropractor-card {
   border-radius: var(--profile-card-radius) !important;
@@ -501,11 +470,6 @@ header.fmc-site-header .join-network-button,
 /* ========================================
    Layout Utilities
    ======================================== */
-
-/* Spacing for pages with absolute-positioned header */
-.page-with-header {
-  padding-top: calc(var(--space-6) + 68px); /* 32px top position + 68px header height */
-}
 
 /* ========================================
    Search page hero — match homepage heroOuter / heroPanel

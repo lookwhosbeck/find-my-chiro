@@ -6,8 +6,8 @@ import styles from './page.module.css';
 
 export default function AboutPage() {
   return (
-    <MarketingShell className="page-with-header">
-      <Header surface="onLight" />
+    <MarketingShell>
+      <Header />
 
       <div className={styles.splash}>
         <div className={styles.logoWrap}>
