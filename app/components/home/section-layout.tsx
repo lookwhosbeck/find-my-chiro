@@ -12,7 +12,7 @@ export function SectionContainer({
 }) {
   return (
     <section id={id} className={cn("pb-20 sm:pb-32", className)}>
-      <div className="container">{children}</div>
+      <div className="app-container">{children}</div>
     </section>
   );
 }

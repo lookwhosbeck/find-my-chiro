@@ -409,7 +409,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
 
   return (
     <header className="sticky top-2 z-40 lg:top-5">
-      <div className="container">
+      <div className="app-container">
         <div className={frostedBarClass}>
           <Link href="/" className="shrink-0 leading-none">
             <MovynLogo variant="standard" className="h-8 w-auto sm:h-9" />

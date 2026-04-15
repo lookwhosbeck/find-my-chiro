@@ -1,11 +1,11 @@
 import type { Chiropractor } from "@/app/lib/queries";
 import { DualMarqueeCarousels } from "@/app/components/DualMarqueeCarousels";
 
-/** Cosmic `SponsorsSection` — `section` + `container` + marquee track (no extra headings). */
+/** Cosmic `SponsorsSection` — `section` + centered `app-container` + marquee track (no extra headings). */
 export function HomeMarquee({ chiropractors }: { chiropractors: Chiropractor[] }) {
   return (
     <section className="pb-12 lg:pb-24">
-      <div className="container">
+      <div className="app-container">
         {chiropractors.length > 0 ? (
           <DualMarqueeCarousels chiropractors={chiropractors} />
         ) : (

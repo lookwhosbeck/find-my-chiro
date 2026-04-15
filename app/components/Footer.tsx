@@ -5,7 +5,7 @@ const linkClass = "text-sm opacity-60 transition-opacity hover:opacity-100";
 
 export function Footer() {
   return (
-    <footer id="footer" className="container space-y-4 pb-4 lg:pb-8">
+    <footer id="footer" className="app-container space-y-4 pb-4 lg:pb-8">
       <div className="bg-muted rounded-2xl border p-10">
         <div className="grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-4 xl:grid-cols-6">
           <div className="col-span-full space-y-4 xl:col-span-2">

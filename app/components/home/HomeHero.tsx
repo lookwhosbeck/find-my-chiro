@@ -15,7 +15,7 @@ const HERO_IMAGE_SRC = "/hero/home-hero-bg.jpg";
  */
 export function HomeHero() {
   return (
-    <section className="container w-full">
+    <section className="app-container w-full">
       <div className="mx-auto grid max-w-screen-xl place-items-center py-16 pb-8 md:py-32 md:pb-14">
         <BackgroundBeamsWithCollision>
           <div className="relative z-10 w-full space-y-8 pb-8 text-center lg:pb-20">
