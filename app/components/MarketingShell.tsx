@@ -1,0 +1,19 @@
+import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+
+type MarketingShellProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+/**
+ * Marketing page frame: semantic background, full-height column.
+ * Section padding stays in page-level modules or Tailwind on children.
+ */
+export function MarketingShell({ children, className }: MarketingShellProps) {
+  return (
+    <div className={cn('flex min-h-screen flex-col bg-background text-foreground antialiased', className)}>
+      {children}
+    </div>
+  );
+}

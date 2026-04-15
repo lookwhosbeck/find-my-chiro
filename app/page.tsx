@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Card, CardContent } from '@/components/ui/card';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { MarketingShell } from './components/MarketingShell';
 import { ProximitySearchBar } from './components/ProximitySearchBar';
 import { FeatureCard } from './components/FeatureCard';
 import { FeatureIconMatching, FeatureIconFriction, FeatureIconCulture } from './components/FeatureIcons';
@@ -27,8 +29,9 @@ export default async function Home() {
   const chiropractors = await getChiropractors(14);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.heroOuter}>
+    <MarketingShell>
+      <div className={styles.page}>
+      <div className={`${styles.heroOuter} px-4 pt-6 sm:px-6 sm:pt-8 md:px-8 md:pt-8`}>
         <div className={styles.heroPanel}>
           <div className={styles.heroPanelStack} aria-hidden="true">
             <div className={styles.heroPanelSolid} />
@@ -67,26 +70,38 @@ export default async function Home() {
         </div>
       </div>
 
-      <section className={styles.featuresSection}>
+      <section className={`${styles.featuresSection} scroll-mt-20`}>
         <h2 className={styles.featuresTitle}>
           Why join <span className={styles.featuresTitleItalic}>another</span> network?
         </h2>
-        <div className={styles.featuresGrid}>
-          <FeatureCard
-            icon={<FeatureIconMatching />}
-            title="The Matching Engine"
-            description="We don't just list you; we match you based on Modalities (Gonstead, TRT) and Philosophies (Vitalistic, Evidence-Based)."
-          />
-          <FeatureCard
-            icon={<FeatureIconFriction />}
-            title="Reduce Friction"
-            description="Patients filter by Insurance/Cash right away, so you only get calls from people who know your business model."
-          />
-          <FeatureCard
-            icon={<FeatureIconCulture />}
-            title="Show Your Culture"
-            description="Showcase your clinic vibe, not just your address, because good patient fit isn’t only about proximity."
-          />
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+          <Card className="border-border/60 shadow-sm">
+            <CardContent className="pt-8 pb-6">
+              <FeatureCard
+                icon={<FeatureIconMatching />}
+                title="The Matching Engine"
+                description="We don't just list you; we match you based on Modalities (Gonstead, TRT) and Philosophies (Vitalistic, Evidence-Based)."
+              />
+            </CardContent>
+          </Card>
+          <Card className="border-border/60 shadow-sm">
+            <CardContent className="pt-8 pb-6">
+              <FeatureCard
+                icon={<FeatureIconFriction />}
+                title="Reduce Friction"
+                description="Patients filter by Insurance/Cash right away, so you only get calls from people who know your business model."
+              />
+            </CardContent>
+          </Card>
+          <Card className="border-border/60 shadow-sm sm:col-span-2 lg:col-span-1">
+            <CardContent className="pt-8 pb-6">
+              <FeatureCard
+                icon={<FeatureIconCulture />}
+                title="Show Your Culture"
+                description="Showcase your clinic vibe, not just your address, because good patient fit isn’t only about proximity."
+              />
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -100,6 +115,7 @@ export default async function Home() {
       </section>
 
       <Footer />
-    </div>
+      </div>
+    </MarketingShell>
   );
 }

@@ -151,16 +151,14 @@ function ChiropractorProfileContent() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center py-24">
-        <p className="text-sm" style={{ color: 'rgba(0,0,0,0.61)' }}>
-          Loading profile…
-        </p>
+        <p className="text-sm text-muted-foreground">Loading profile…</p>
       </div>
     );
   }
 
   if (error === 'notfound' || !chiro) {
     return (
-      <div className="flex min-h-screen flex-col bg-white">
+      <div className="flex min-h-screen flex-col bg-background">
         <div className="search-hero-outer">
           <div className="search-page-hero">
             <Header embedded />
@@ -200,7 +198,7 @@ function ChiropractorProfileContent() {
   const budgetLabel = formatBudget(chiro.budgetRange);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-background">
       <div className="search-hero-outer">
         <div className="search-page-hero">
           <Header embedded />
@@ -230,31 +228,24 @@ function ChiropractorProfileContent() {
                 )}
               </div>
               <h1
-                className="m-0"
+                className="m-0 text-[hsl(var(--hero-title-on-dark))]"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
                   lineHeight: 1.12,
                   letterSpacing: '-0.03em',
                   fontWeight: 400,
-                  color: '#f7f7f7',
                 }}
               >
                 {displayName}
               </h1>
               {chiro.clinicName ? (
-                <p
-                  className="text-base"
-                  style={{ color: 'rgba(247,247,247,0.88)', fontFamily: 'var(--font-body)' }}
-                >
+                <p className="text-base text-primary-foreground/90" style={{ fontFamily: 'var(--font-body)' }}>
                   {chiro.clinicName}
                   {cityStateZip ? ` · ${cityStateZip}` : ''}
                 </p>
               ) : cityStateZip ? (
-                <p
-                  className="text-base"
-                  style={{ color: 'rgba(247,247,247,0.88)', fontFamily: 'var(--font-body)' }}
-                >
+                <p className="text-base text-primary-foreground/90" style={{ fontFamily: 'var(--font-body)' }}>
                   {cityStateZip}
                 </p>
               ) : null}
@@ -283,12 +274,11 @@ function ChiropractorProfileContent() {
                   {chiro.clinicName ? (
                     <li>
                       <span
-                        className="mb-1 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-1 block text-sm font-bold text-foreground"
                       >
                         Clinic
                       </span>
-                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)', lineHeight: 1.45 }}>
+                      <span className="text-sm leading-snug text-muted-foreground">
                         {chiro.clinicName}
                       </span>
                     </li>
@@ -296,12 +286,11 @@ function ChiropractorProfileContent() {
                   {addressLines.length > 0 ? (
                     <li>
                       <span
-                        className="mb-1 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-1 block text-sm font-bold text-foreground"
                       >
                         Address
                       </span>
-                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)', lineHeight: 1.45 }}>
+                      <span className="text-sm leading-snug text-muted-foreground">
                         {addressLines.map((line, i) => (
                           <span key={i}>
                             {i > 0 ? <br /> : null}
@@ -321,8 +310,7 @@ function ChiropractorProfileContent() {
                   {chiro.practicePhone ? (
                     <li>
                       <span
-                        className="mb-1 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-1 block text-sm font-bold text-foreground"
                       >
                         Phone
                       </span>
@@ -332,8 +320,7 @@ function ChiropractorProfileContent() {
                   {chiro.practiceWebsite ? (
                     <li>
                       <span
-                        className="mb-1 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-1 block text-sm font-bold text-foreground"
                       >
                         Website
                       </span>
@@ -345,12 +332,11 @@ function ChiropractorProfileContent() {
                   {payments.length > 0 ? (
                     <li>
                       <span
-                        className="mb-1 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-1 block text-sm font-bold text-foreground"
                       >
                         Payment
                       </span>
-                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                      <span className="text-sm text-muted-foreground">
                         {payments.join(' · ')}
                       </span>
                     </li>
@@ -358,12 +344,11 @@ function ChiropractorProfileContent() {
                   {budgetLabel ? (
                     <li>
                       <span
-                        className="mb-1 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-1 block text-sm font-bold text-foreground"
                       >
                         Typical budget (self-reported)
                       </span>
-                      <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                      <span className="text-sm text-muted-foreground">
                         {budgetLabel}
                       </span>
                     </li>
@@ -380,8 +365,7 @@ function ChiropractorProfileContent() {
                   {chiro.modalities?.length ? (
                     <div className="mb-4">
                       <span
-                        className="mb-2 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-2 block text-sm font-bold text-foreground"
                       >
                         Techniques
                       </span>
@@ -397,8 +381,7 @@ function ChiropractorProfileContent() {
                   {chiro.focusAreas?.length ? (
                     <div className="mb-4">
                       <span
-                        className="mb-2 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-2 block text-sm font-bold text-foreground"
                       >
                         Specialties
                       </span>
@@ -414,8 +397,7 @@ function ChiropractorProfileContent() {
                   {chiro.philosophies?.length || chiro.philosophy ? (
                     <div>
                       <span
-                        className="mb-2 block text-sm font-bold"
-                        style={{ color: '#202020' }}
+                        className="mb-2 block text-sm font-bold text-foreground"
                       >
                         Philosophy
                       </span>
@@ -447,19 +429,18 @@ function ChiropractorProfileContent() {
                     {chiro.chiropracticCollege ? (
                       <li>
                         <span
-                          className="mb-1 block text-sm font-bold"
-                          style={{ color: '#202020' }}
+                          className="mb-1 block text-sm font-bold text-foreground"
                         >
                           College
                         </span>
-                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                        <span className="text-sm text-muted-foreground">
                           {chiro.chiropracticCollege}
                           {chiro.graduationYear ? ` · Class of ${chiro.graduationYear}` : ''}
                         </span>
                       </li>
                     ) : chiro.graduationYear ? (
                       <li>
-                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                        <span className="text-sm text-muted-foreground">
                           Class of {chiro.graduationYear}
                         </span>
                       </li>
@@ -467,12 +448,11 @@ function ChiropractorProfileContent() {
                     {chiro.licenseNumber ? (
                       <li>
                         <span
-                          className="mb-1 block text-sm font-bold"
-                          style={{ color: '#202020' }}
+                          className="mb-1 block text-sm font-bold text-foreground"
                         >
                           License
                         </span>
-                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.72)' }}>
+                        <span className="text-sm text-muted-foreground">
                           {chiro.licenseNumber}
                         </span>
                       </li>
@@ -502,7 +482,7 @@ function ChiropractorProfileContent() {
                           className="match-radar-legend-swatch match-radar-legend-swatch--user"
                           aria-hidden
                         />
-                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.55)' }}>
+                        <span className="text-sm text-muted-foreground">
                           Your search (target)
                         </span>
                       </div>
@@ -511,7 +491,7 @@ function ChiropractorProfileContent() {
                           className="match-radar-legend-swatch match-radar-legend-swatch--provider"
                           aria-hidden
                         />
-                        <span className="text-sm" style={{ color: 'rgba(0,0,0,0.55)' }}>
+                        <span className="text-sm text-muted-foreground">
                           This practice (fit)
                         </span>
                       </div>
@@ -533,10 +513,7 @@ function ChiropractorProfileContent() {
                         </div>
                       ))}
                     </div>
-                    <p
-                      className="max-w-[480px] text-center text-sm"
-                      style={{ color: 'rgba(0,0,0,0.55)' }}
-                    >
+                    <p className="max-w-[480px] text-center text-sm text-muted-foreground">
                       The dashed outline is your search on each axis (full scale). The blue shape is how closely this
                       practice matches. Compare the lists below for specifics—missing clinic data can pull a spoke
                       inward.
@@ -570,9 +547,7 @@ export default function ChiropractorProfilePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center py-24">
-          <p className="text-sm" style={{ color: 'rgba(0,0,0,0.61)' }}>
-            Loading…
-          </p>
+          <p className="text-sm text-muted-foreground">Loading…</p>
         </div>
       }
     >

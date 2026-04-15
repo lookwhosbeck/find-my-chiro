@@ -23,9 +23,7 @@
 
 .barOnDark {
   border: none;
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.07),
-    0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .barOnLight {
@@ -229,7 +227,7 @@
   color: hsl(var(--primary-foreground));
   padding: 6px 14px;
   border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   min-height: auto;
   font-size: 16px;
   font-weight: 500;
@@ -271,7 +269,7 @@
   border: none;
   padding: 0;
   margin: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: hsl(var(--foreground) / 0.45);
   cursor: pointer;
   animation: headerBackdropIn 0.2s ease;
 }
@@ -284,7 +282,7 @@
   width: min(320px, 88vw);
   max-width: 100%;
   background: hsl(var(--card));
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+  box-shadow: -8px 0 32px hsl(var(--foreground) / 0.12);
   animation: headerDrawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -325,13 +323,13 @@
 .mobileFlyoutLink {
   display: block;
   text-decoration: none;
-  color: var(--gray-12, #202020);
+  color: hsl(var(--foreground));
   font-size: 17px;
   font-family: var(--font-body);
   letter-spacing: -0.02em;
   line-height: 1.4;
   padding: 12px 0;
-  border-bottom: 1px solid var(--gray-4, #e8e8e8);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .mobileFlyoutLink:last-of-type {
@@ -340,7 +338,7 @@
 
 .mobileFlyoutDivider {
   height: 1px;
-  background: var(--gray-4, #e8e8e8);
+  background: hsl(var(--border));
   margin: 4px 0 8px;
 }
 

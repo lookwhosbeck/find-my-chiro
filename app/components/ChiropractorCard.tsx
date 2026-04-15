@@ -111,7 +111,7 @@ export function ChiropractorCard({
           <span
             className="font-medium"
             style={{
-              color: isMarquee ? '#ffffff' : 'var(--color-chiro-card-text)',
+              color: isMarquee ? 'hsl(var(--primary-foreground))' : 'var(--color-chiro-card-text)',
               fontFamily: 'var(--font-body)',
               fontSize: isMarquee ? 22 : 28,
               lineHeight: 1,

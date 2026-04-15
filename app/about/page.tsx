@@ -1,11 +1,12 @@
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
+import { MarketingShell } from '@/app/components/MarketingShell';
 import { MovynLogo } from '@/app/components/MovynLogo';
 import styles from './page.module.css';
 
 export default function AboutPage() {
   return (
-    <div className="page-with-header flex min-h-screen flex-col">
+    <MarketingShell className="page-with-header">
       <Header surface="onLight" />
 
       <div className={styles.splash}>
@@ -16,6 +17,6 @@ export default function AboutPage() {
       </div>
 
       <Footer />
-    </div>
+    </MarketingShell>
   );
 }

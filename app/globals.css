@@ -145,9 +145,12 @@ html {
   /* Chiropractor profile card (Figma) */
   --shadow-chiropractor-profile: 0 50px 40px rgba(0, 0, 0, 0.01), 0 50px 40px rgba(0, 0, 0, 0.02),
     0 20px 40px rgba(0, 0, 0, 0.05), 0 3px 10px rgba(0, 0, 0, 0.08);
-  --color-chiro-card-text: #030302;
-  /* Search page — Figma (node 28:908) */
-  --color-hero-ink: #030302;
+  /* Marketing hero panel — fixed dark base (independent of light/dark theme toggle) */
+  --marketing-hero-surface: 240 6% 4%;
+  --hero-title-on-dark: 0 0% 97%;
+  --color-chiro-card-text: hsl(var(--foreground));
+  /* Search page — near-black ink (stable in light + dark theme) */
+  --color-hero-ink: hsl(var(--marketing-hero-surface));
   --color-tab-active-underline: #0190ff;
   --shadow-search-hero: 0 50px 40px rgba(0, 0, 0, 0.01), 0 50px 40px rgba(0, 0, 0, 0.02),
     0 20px 40px rgba(0, 0, 0, 0.05), 0 3px 10px rgba(0, 0, 0, 0.08);
@@ -156,13 +159,14 @@ html {
   --refine-checkbox-unchecked: #efefef;
   --refine-field-border: #b5b5b5;
 
-  /* Map / filter UI — Figma 85:398, 85:501, 89:912, 90:2518 */
-  --fmc-filter-primary: #2563eb;
-  --fmc-filter-primary-dark: #1d4ed8;
-  --fmc-filter-border-muted: #f3f4f6;
-  --fmc-filter-surface: #f3f4f6;
-  --fmc-filter-border: #e5e7eb;
-  --fmc-filter-label: #202020;
+  /* Map / filter UI — bridged to shadcn semantic tokens */
+  --filter-primary-pressed: 224 76% 42%;
+  --fmc-filter-primary: hsl(var(--primary));
+  --fmc-filter-primary-dark: hsl(var(--filter-primary-pressed));
+  --fmc-filter-border-muted: hsl(var(--muted));
+  --fmc-filter-surface: hsl(var(--muted));
+  --fmc-filter-border: hsl(var(--border));
+  --fmc-filter-label: hsl(var(--foreground));
   
   /* Blur effects */
   --blur-sm: blur(8px);
@@ -515,13 +519,9 @@ header.fmc-site-header .join-network-button,
 
 /* Plain <div> required: Radix Box applies .rt-Box { display: block } and kills flex/gap/centering */
 .search-page-hero {
-  background: #030302;
+  background: hsl(var(--marketing-hero-surface));
   border-radius: 24px;
-  box-shadow:
-    0 50px 40px rgba(0, 0, 0, 0.01),
-    0 50px 40px rgba(0, 0, 0, 0.02),
-    0 20px 40px rgba(0, 0, 0, 0.05),
-    0 3px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-chiropractor-profile);
   padding: 32px 32px 96px;
   display: flex;
   flex-direction: column;

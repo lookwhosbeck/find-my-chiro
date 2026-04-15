@@ -8,14 +8,7 @@ interface FeatureCardProps {
 
 export function FeatureCard({ title, description, icon }: FeatureCardProps) {
   return (
-    <div
-      className="flex flex-col items-center gap-3"
-      style={{
-        flex: '0 1 262px',
-        maxWidth: 262,
-        padding: 'var(--space-2)',
-      }}
-    >
+    <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 px-1 sm:max-w-none">
       {icon ? <div className="flex justify-center">{icon}</div> : null}
       <p
         className="m-0 text-center font-bold text-foreground"
