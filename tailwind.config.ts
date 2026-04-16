@@ -1,5 +1,8 @@
 import type { Config } from 'tailwindcss';
 
+/** OKLCH semantic tokens in CSS vars — alpha via relative color syntax (Tailwind 3.4+). */
+const fromVar = (token: string) => `oklch(from var(${token}) l c h / <alpha-value>)`;
+
 const config: Config = {
   darkMode: ['class'],
   content: [
@@ -25,45 +28,55 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border) / <alpha-value>)',
-        input: 'hsl(var(--input) / <alpha-value>)',
-        ring: 'hsl(var(--ring) / <alpha-value>)',
-        background: 'hsl(var(--background) / <alpha-value>)',
-        foreground: 'hsl(var(--foreground) / <alpha-value>)',
+        border: fromVar('--border'),
+        input: fromVar('--input'),
+        ring: fromVar('--ring'),
+        background: fromVar('--background'),
+        foreground: fromVar('--foreground'),
         primary: {
-          DEFAULT: 'hsl(var(--primary) / <alpha-value>)',
-          foreground: 'hsl(var(--primary-foreground) / <alpha-value>)',
+          DEFAULT: fromVar('--primary'),
+          foreground: fromVar('--primary-foreground'),
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary) / <alpha-value>)',
-          foreground: 'hsl(var(--secondary-foreground) / <alpha-value>)',
+          DEFAULT: fromVar('--secondary'),
+          foreground: fromVar('--secondary-foreground'),
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive) / <alpha-value>)',
-          foreground: 'hsl(var(--destructive-foreground) / <alpha-value>)',
+          DEFAULT: fromVar('--destructive'),
+          foreground: fromVar('--destructive-foreground'),
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted) / <alpha-value>)',
-          foreground: 'hsl(var(--muted-foreground) / <alpha-value>)',
+          DEFAULT: fromVar('--muted'),
+          foreground: fromVar('--muted-foreground'),
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent) / <alpha-value>)',
-          foreground: 'hsl(var(--accent-foreground) / <alpha-value>)',
+          DEFAULT: fromVar('--accent'),
+          foreground: fromVar('--accent-foreground'),
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover) / <alpha-value>)',
-          foreground: 'hsl(var(--popover-foreground) / <alpha-value>)',
+          DEFAULT: fromVar('--popover'),
+          foreground: fromVar('--popover-foreground'),
         },
         card: {
-          DEFAULT: 'hsl(var(--card) / <alpha-value>)',
-          foreground: 'hsl(var(--card-foreground) / <alpha-value>)',
+          DEFAULT: fromVar('--card'),
+          foreground: fromVar('--card-foreground'),
         },
         chart: {
-          1: 'hsl(var(--chart-1) / <alpha-value>)',
-          2: 'hsl(var(--chart-2) / <alpha-value>)',
-          3: 'hsl(var(--chart-3) / <alpha-value>)',
-          4: 'hsl(var(--chart-4) / <alpha-value>)',
-          5: 'hsl(var(--chart-5) / <alpha-value>)',
+          1: fromVar('--chart-1'),
+          2: fromVar('--chart-2'),
+          3: fromVar('--chart-3'),
+          4: fromVar('--chart-4'),
+          5: fromVar('--chart-5'),
+        },
+        sidebar: {
+          DEFAULT: fromVar('--sidebar'),
+          foreground: fromVar('--sidebar-foreground'),
+          primary: fromVar('--sidebar-primary'),
+          'primary-foreground': fromVar('--sidebar-primary-foreground'),
+          accent: fromVar('--sidebar-accent'),
+          'accent-foreground': fromVar('--sidebar-accent-foreground'),
+          border: fromVar('--sidebar-border'),
+          ring: fromVar('--sidebar-ring'),
         },
       },
       borderRadius: {

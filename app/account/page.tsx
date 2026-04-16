@@ -12,8 +12,9 @@ import {
 } from '@/app/lib/auth';
 import { uploadAvatar, deleteAvatar, updateProfileAvatarUrl } from '@/app/lib/avatar-upload';
 import { dispatchProfileUpdated } from '@/app/lib/profile-events';
-import { MovynLogo } from '@/app/components/MovynLogo';
 import { UserAvatar } from '@/app/components/UserAvatar';
+import { DashboardShell, dashboardToolbarActions } from '@/components/dashboard-shell';
+import { Button } from '@/components/ui/button';
 import {
   MODALITY_OPTIONS,
   FOCUS_AREA_OPTIONS,
@@ -965,16 +966,16 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className={styles.shell}>
-        <div className={styles.loadingBox}>Loading…</div>
+      <div className="flex min-h-svh items-center justify-center bg-muted/40">
+        <p className="text-muted-foreground text-sm">Loading…</p>
       </div>
     );
   }
 
   if (!profile || !user) {
     return (
-      <div className={styles.shell}>
-        <div className={styles.loadingBox}>Unable to load your profile.</div>
+      <div className="flex min-h-svh items-center justify-center bg-muted/40">
+        <p className="text-muted-foreground text-sm">Unable to load your profile.</p>
       </div>
     );
   }
@@ -1017,6 +1018,9 @@ export default function AccountPage() {
       : patientNavAvailable;
 
   const navComingSoonFiltered = navComingSoon;
+
+  const shellNavItems = navAvailable.map(({ key, label }) => ({ id: key, label }));
+  const shellComingSoonItems = navComingSoonFiltered.map(({ key, label }) => ({ id: key, label }));
 
   const displayName =
     [profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'there';
@@ -1913,123 +1917,73 @@ export default function AccountPage() {
   }
 
   return (
-    <div className={styles.shell}>
-      <div className={styles.layout}>
-        <aside className={styles.sidebarWrap}>
-          <div className={styles.sidebar}>
-            <Link href="/" style={{ lineHeight: 0 }}>
-              <MovynLogo variant="onDark" className={styles.sidebarLogo} />
-            </Link>
-            <nav className={styles.nav} aria-label="Account sections">
-              {navAvailable.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={`${styles.navItem} ${activeNav === item.key ? styles.navItemActive : ''}`}
-                  onClick={() => setActiveNav(item.key)}
-                >
-                  {item.label}
-                </button>
-              ))}
-              <div className={styles.navComingSoonDivider} role="presentation">
-                <span className={styles.navComingSoonLine} aria-hidden />
-                <span className={styles.navComingSoonLabel}>Coming soon!</span>
-                <span className={styles.navComingSoonLine} aria-hidden />
-              </div>
-              <div className={styles.navComingSoonList} role="group" aria-label="Coming soon">
-                {navComingSoonFiltered.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={`${styles.navItem} ${styles.navItemComingSoon}`}
-                    disabled
-                    aria-disabled="true"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </nav>
-            <div className={styles.sidebarFooter}>
-              {isAdmin ? (
-                <Link href="/admin" className={styles.sidebarLink}>
-                  Admin panel
-                </Link>
-              ) : null}
-              <Link href="/" className={styles.sidebarLink}>
-                Back to home
-              </Link>
-              <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
-                Sign out
-              </button>
-            </div>
-          </div>
-        </aside>
-
-        <main className={styles.mainWrap}>
-          <div className={styles.mainCard}>
-            <div className={styles.accountHeroBar}>
-              <button
-                type="button"
-                className={styles.heroAvatarBtn}
-                onClick={openAvatarPicker}
-                disabled={uploadingAvatar}
-                aria-label="Change profile photo"
-                title="Change profile photo"
-              >
-                <UserAvatar
-                  avatarUrl={profile.avatar_url}
-                  firstName={profileForm.first_name}
-                  lastName={profileForm.last_name}
-                  email={profileForm.email || profile.email}
-                  size={56}
-                  variant="roundedSquare"
-                  fallbackTone="accountHero"
-                  alt=""
-                />
-              </button>
-              <div className={styles.heroWelcome}>
-                <p className={styles.heroWelcomeName}>Welcome, {displayName}</p>
-                <p className={styles.heroWelcomeEmail}>{profileForm.email || profile.email}</p>
-              </div>
-            </div>
-            <input
-              id="account-avatar-input"
-              type="file"
-              accept="image/*"
-              className={styles.hiddenFile}
-              onChange={handleAvatarUpload}
+    <DashboardShell
+      navItems={shellNavItems}
+      comingSoonItems={shellComingSoonItems}
+      activeId={activeNav}
+      onNavigate={(id) => setActiveNav(id as NavKey)}
+      pageTitle={accountPageTitle(activeNav)}
+      headerActions={dashboardToolbarActions({
+        onEdit: handleToolbarEdit,
+        onSave: handleToolbarSave,
+        editDisabled: toolbarEditDisabled,
+        saveDisabled: toolbarSaveDisabled,
+        saving,
+      })}
+      subheader={
+        <>
+          <input
+            id="account-avatar-input"
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={handleAvatarUpload}
+            disabled={uploadingAvatar}
+          />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="ring-offset-background focus-visible:ring-ring rounded-lg border border-transparent p-0.5 transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+              onClick={openAvatarPicker}
               disabled={uploadingAvatar}
-            />
-            <div className={styles.mainInner}>
-              <div className={styles.mainScroll}>
-                <div className={styles.accountTitleRow}>
-                  <h1 className={styles.pageSectionTitle}>{accountPageTitle(activeNav)}</h1>
-                  <div className={styles.accountToolbar} role="group" aria-label="Section actions">
-                    <button
-                      type="button"
-                      className={styles.toolbarBtnEdit}
-                      onClick={handleToolbarEdit}
-                      disabled={toolbarEditDisabled}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.toolbarBtnSave}
-                      onClick={handleToolbarSave}
-                      disabled={toolbarSaveDisabled}
-                    >
-                      {saving ? 'Saving…' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-                <div className={styles.pageSectionBody}>{mainContent}</div>
-              </div>
+              aria-label="Change profile photo"
+              title="Change profile photo"
+            >
+              <UserAvatar
+                avatarUrl={profile.avatar_url}
+                firstName={profileForm.first_name}
+                lastName={profileForm.last_name}
+                email={profileForm.email || profile.email}
+                size={56}
+                variant="roundedSquare"
+                fallbackTone="accountHero"
+                alt=""
+              />
+            </button>
+            <div className="min-w-0">
+              <p className="text-foreground truncate text-sm font-medium">Welcome, {displayName}</p>
+              <p className="text-muted-foreground truncate text-sm">{profileForm.email || profile.email}</p>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+        </>
+      }
+      sidebarFooter={
+        <div className="flex w-full flex-col gap-1">
+          {isAdmin ? (
+            <Button variant="ghost" size="sm" className="justify-start" asChild>
+              <Link href="/admin">Admin panel</Link>
+            </Button>
+          ) : null}
+          <Button variant="ghost" size="sm" className="justify-start" asChild>
+            <Link href="/">Back to home</Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="justify-start" onClick={() => void handleSignOut()}>
+            Sign out
+          </Button>
+        </div>
+      }
+    >
+      <div className={styles.pageSectionBody}>{mainContent}</div>
+    </DashboardShell>
   );
 }

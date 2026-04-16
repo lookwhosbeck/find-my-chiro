@@ -14,7 +14,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { createSupabaseClient } from '@/app/lib/supabase-client';
-import styles from './page.module.css';
+import { DashboardShell } from '@/components/dashboard-shell';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 type ChiroRow = {
   id: string;
@@ -28,18 +39,18 @@ type ChiroRow = {
   submittedForReviewAt: string | null;
 };
 
-function verificationBadgeClass(status: string): string {
+function verificationBadge(status: string): { variant: BadgeProps['variant']; className?: string } {
   switch (status) {
     case 'draft':
-      return styles.badgeDraft;
+      return { variant: 'secondary' };
     case 'pending_review':
-      return styles.badgePending;
+      return { variant: 'outline', className: 'border-amber-500/40 bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-50' };
     case 'approved':
-      return styles.badgeApproved;
+      return { variant: 'outline', className: 'border-emerald-600/30 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/50 dark:text-emerald-50' };
     case 'rejected':
-      return styles.badgeRejected;
+      return { variant: 'destructive' };
     default:
-      return styles.badge;
+      return { variant: 'outline' };
   }
 }
 
@@ -163,113 +174,124 @@ export default function AdminPage() {
 
   if (!ready) {
     return (
-      <div className={styles.shell}>
-        <div className={styles.loadingBox}>Checking access…</div>
+      <div className="flex min-h-svh items-center justify-center bg-muted/40">
+        <p className="text-muted-foreground text-sm">Checking access…</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.shell}>
-      <div className={styles.layout}>
-        <div className={styles.sidebarWrap}>
-          <aside className={styles.sidebar}>
-            <p className={styles.sidebarTitle}>Admin</p>
-            <nav className={styles.nav}>
-              <span className={styles.navItem}>Chiropractors</span>
-            </nav>
-            <div className={styles.sidebarFooter}>
-              <Link href="/" className={styles.sidebarLink}>
-                Back to home
-              </Link>
-              <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
-                Sign out
-              </button>
-            </div>
-          </aside>
+    <DashboardShell
+      navGroupLabel="Admin"
+      navItems={[{ id: 'chiropractors', label: 'Chiropractors' }]}
+      comingSoonItems={[]}
+      activeId="chiropractors"
+      onNavigate={() => {}}
+      pageTitle="Chiropractor signups"
+      sidebarFooter={
+        <div className="flex w-full flex-col gap-1">
+          <Button variant="ghost" size="sm" className="justify-start" asChild>
+            <Link href="/account">My account</Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="justify-start" asChild>
+            <Link href="/">Back to home</Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="justify-start" onClick={() => void handleSignOut()}>
+            Sign out
+          </Button>
         </div>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-muted-foreground max-w-3xl text-sm leading-relaxed">
+          Review verification status and subscription. Approve or reject to control public directory visibility.
+        </p>
 
-        <div className={styles.mainWrap}>
-          <div className={styles.mainCard}>
-            <div className={styles.mainScroll}>
-              <h1 className={styles.pageTitle}>Chiropractor signups</h1>
-              <p className={styles.pageSubtitle}>
-                Review verification status and subscription. Approve or reject to control public directory
-                visibility.
-              </p>
-
-              {loadError ? <div className={styles.errorBox}>{loadError}</div> : null}
-
-              {listLoading ? (
-                <div className={styles.loadingBox}>Loading…</div>
-              ) : (
-                <div className={styles.tableWrap}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th className={styles.th}>Name</th>
-                        <th className={styles.th}>Email</th>
-                        <th className={styles.th}>Practice</th>
-                        <th className={styles.th}>Subscription</th>
-                        <th className={styles.th}>Verification</th>
-                        <th className={styles.th}>Signed up</th>
-                        <th className={styles.th}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((r) => (
-                        <tr key={r.id} className={styles.tr}>
-                          <td className={styles.td}>
-                            {[r.firstName, r.lastName].filter(Boolean).join(' ') || '—'}
-                          </td>
-                          <td className={styles.td}>{r.email || '—'}</td>
-                          <td className={styles.td}>{r.practiceName || '—'}</td>
-                          <td className={styles.td}>
-                            <span className={styles.badgeSub}>{r.subscriptionStatus || '—'}</span>
-                          </td>
-                          <td className={styles.td}>
-                            <span className={verificationBadgeClass(r.verificationStatus)}>
-                              {r.verificationStatus || '—'}
-                            </span>
-                          </td>
-                          <td className={styles.td}>{formatDate(r.signedUpAt)}</td>
-                          <td className={styles.td}>
-                            <div className={styles.actionsCell}>
-                              {r.verificationStatus !== 'approved' ? (
-                                <button
-                                  type="button"
-                                  className={styles.approveBtn}
-                                  disabled={actionId === r.id}
-                                  onClick={() => void patchStatus(r.id, 'approved')}
-                                >
-                                  Approve
-                                </button>
-                              ) : null}
-                              {r.verificationStatus !== 'rejected' ? (
-                                <button
-                                  type="button"
-                                  className={styles.rejectBtn}
-                                  disabled={actionId === r.id}
-                                  onClick={() => void patchStatus(r.id, 'rejected')}
-                                >
-                                  Reject
-                                </button>
-                              ) : null}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {!listLoading && rows.length === 0 && !loadError ? (
-                    <p className={styles.loadingBox}>No chiropractor profiles found.</p>
-                  ) : null}
-                </div>
-              )}
-            </div>
+        {loadError ? (
+          <div
+            className="text-destructive border-destructive/30 bg-destructive/5 rounded-lg border px-4 py-3 text-sm"
+            role="alert"
+          >
+            {loadError}
           </div>
-        </div>
+        ) : null}
+
+        {listLoading ? (
+          <p className="text-muted-foreground text-sm">Loading…</p>
+        ) : (
+          <div className="bg-card text-card-foreground rounded-xl border shadow-sm">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Practice</TableHead>
+                  <TableHead>Subscription</TableHead>
+                  <TableHead>Verification</TableHead>
+                  <TableHead>Signed up</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => {
+                  const vb = verificationBadge(r.verificationStatus);
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">
+                        {[r.firstName, r.lastName].filter(Boolean).join(' ') || '—'}
+                      </TableCell>
+                      <TableCell>{r.email || '—'}</TableCell>
+                      <TableCell>{r.practiceName || '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="font-normal">
+                          {r.subscriptionStatus || '—'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={vb.variant} className={cn('font-normal', vb.className)}>
+                          {r.verificationStatus || '—'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(r.signedUpAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {r.verificationStatus !== 'approved' ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="default"
+                              disabled={actionId === r.id}
+                              onClick={() => void patchStatus(r.id, 'approved')}
+                            >
+                              Approve
+                            </Button>
+                          ) : null}
+                          {r.verificationStatus !== 'rejected' ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={actionId === r.id}
+                              onClick={() => void patchStatus(r.id, 'rejected')}
+                            >
+                              Reject
+                            </Button>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {!listLoading && rows.length === 0 && !loadError ? (
+              <p className="text-muted-foreground border-t px-4 py-6 text-center text-sm">
+                No chiropractor profiles found.
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
-    </div>
+    </DashboardShell>
   );
 }

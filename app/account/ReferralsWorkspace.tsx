@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { supabase } from '@/app/lib/supabase';
-
-import rs from './ReferralsWorkspace.module.css';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 type ReferralRow = {
   id: string;
@@ -34,7 +37,6 @@ function awaitingChiropractorResponse(status: string): boolean {
   return status === 'sent' || status === 'viewed';
 }
 
-/** Pending (sent/viewed) first, then newest first. */
 function sortReferralsPendingFirst(a: ReferralRow, b: ReferralRow): number {
   const pa = awaitingChiropractorResponse(a.status) ? 0 : 1;
   const pb = awaitingChiropractorResponse(b.status) ? 0 : 1;
@@ -42,10 +44,16 @@ function sortReferralsPendingFirst(a: ReferralRow, b: ReferralRow): number {
   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 }
 
-function statusAccentClass(status: string): string {
-  if (awaitingChiropractorResponse(status)) return rs.statusAwaiting;
-  if (status === 'accepted') return rs.statusAccepted;
-  if (status === 'declined') return rs.statusDeclined;
+function statusBadgeClass(status: string): string {
+  if (awaitingChiropractorResponse(status)) {
+    return 'border-amber-500/35 bg-amber-50 text-amber-950 dark:bg-amber-950/35 dark:text-amber-50';
+  }
+  if (status === 'accepted') {
+    return 'border-emerald-600/30 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-50';
+  }
+  if (status === 'declined') {
+    return 'border-border bg-muted text-muted-foreground';
+  }
   return '';
 }
 
@@ -155,51 +163,59 @@ export function ReferralsWorkspace({ userId }: { userId: string }) {
 
   const patientLabel = (r: ReferralRow) => `${r.patient_first_name} ${r.patient_last_initial}.`;
 
-  const renderList = (
-    title: string,
-    items: ReferralRow[],
-    kind: 'sent' | 'received',
-    hint: string,
-  ) => (
-    <div>
-      <h3 className={rs.sectionTitle}>{title}</h3>
-      <p className={rs.sectionHint}>{hint}</p>
-      {items.length === 0 ? (
-        <p className={rs.meta}>No referrals yet.</p>
-      ) : (
-        <ul className={rs.list}>
-          {items.map((r) => {
-            const accent = statusAccentClass(r.status);
-            return (
-              <li key={r.id}>
-                <button
-                  type="button"
-                  className={`${rs.item} ${selectedId === r.id ? rs.itemActive : ''}`}
-                  onClick={() => setSelectedId(r.id)}
-                >
-                  <span>
-                    <strong>{patientLabel(r)}</strong> · Match {r.match_score}%
-                  </span>
-                  <span className={rs.meta}>
-                    {new Date(r.created_at).toLocaleString()} ·{' '}
-                    <span className={[rs.status, accent].filter(Boolean).join(' ')}>{r.status}</span>
-                    {kind === 'sent' ? ' · Outgoing' : ' · Incoming'}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
+  const renderList = (title: string, items: ReferralRow[], kind: 'sent' | 'received', hint: string) => (
+    <Card className="min-h-0 shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+        <CardDescription className="text-xs leading-relaxed">{hint}</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {items.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No referrals yet.</p>
+        ) : (
+          <ScrollArea className="h-[min(280px,40vh)] pr-3">
+            <ul className="flex flex-col gap-2">
+              {items.map((r) => {
+                const active = selectedId === r.id;
+                return (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      className={cn(
+                        'border-border bg-card text-card-foreground flex w-full flex-col gap-1 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors hover:border-primary/40',
+                        active && 'border-primary ring-primary/20 ring-2',
+                      )}
+                      onClick={() => setSelectedId(r.id)}
+                    >
+                      <span className="font-medium">
+                        {patientLabel(r)} · Match {r.match_score}%
+                      </span>
+                      <span className="text-muted-foreground flex flex-wrap items-center gap-1 text-xs">
+                        {new Date(r.created_at).toLocaleString()} ·{' '}
+                        <Badge variant="outline" className={cn('text-[10px] font-semibold uppercase', statusBadgeClass(r.status))}>
+                          {r.status}
+                        </Badge>
+                        <span className="text-muted-foreground/80">
+                          {kind === 'sent' ? 'Outgoing' : 'Incoming'}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </ScrollArea>
+        )}
+      </CardContent>
+    </Card>
   );
 
   if (loading) {
-    return <p className={rs.meta}>Loading referrals…</p>;
+    return <p className="text-muted-foreground text-sm">Loading referrals…</p>;
   }
 
   if (error) {
-    return <p className={rs.error}>{error}</p>;
+    return <p className="text-destructive text-sm">{error}</p>;
   }
 
   const canRespond =
@@ -208,87 +224,93 @@ export function ReferralsWorkspace({ userId }: { userId: string }) {
     (detail.referral.status === 'sent' || detail.referral.status === 'viewed');
 
   return (
-    <div className={rs.workspace}>
-      {renderList(
-        'Sent',
-        sentSorted,
-        'sent',
-        'Referrals you sent: waiting on the other doctor appears first. Status here is the live record (email is optional).',
-      )}
-      {renderList(
-        'Received',
-        receivedSorted,
-        'received',
-        'Referrals to your practice: those still needing accept or decline appear first.',
-      )}
+    <div className="flex min-h-0 flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
+      <div className="flex flex-col gap-5">
+        {renderList(
+          'Sent',
+          sentSorted,
+          'sent',
+          'Referrals you sent: waiting on the other doctor appears first. Status here is the live record (email is optional).',
+        )}
+        {renderList(
+          'Received',
+          receivedSorted,
+          'received',
+          'Referrals to your practice: those still needing accept or decline appear first.',
+        )}
+      </div>
 
-      {selectedId ? (
-        <div className={rs.detail}>
-          {detailLoading || !detail ? (
-            <p className={rs.meta}>Loading details…</p>
+      <Card className="border-border bg-muted/30 min-h-[200px] shadow-sm lg:min-h-[320px]">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Details</CardTitle>
+          <CardDescription className="text-xs">
+            Select a referral to view the timeline and actions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!selectedId ? (
+            <p className="text-muted-foreground text-sm">Select a referral from the lists.</p>
+          ) : detailLoading || !detail ? (
+            <p className="text-muted-foreground text-sm">Loading details…</p>
           ) : (
-            <>
-              <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
+            <div className="space-y-3 text-sm">
+              <p className="text-foreground font-semibold">
                 {patientLabel(detail.referral)} → {detail.otherParty.label}
               </p>
-              <p className={rs.meta} style={{ marginTop: 8 }}>
+              <p className="text-muted-foreground">
                 Status:{' '}
-                <span
-                  className={[rs.status, statusAccentClass(detail.referral.status)].filter(Boolean).join(' ')}
-                >
+                <Badge variant="outline" className={cn('align-middle text-xs', statusBadgeClass(detail.referral.status))}>
                   {detail.referral.status}
-                </span>{' '}
-                · Patient email on file (for care coordination): {detail.referral.patient_email}
+                </Badge>{' '}
+                · Patient email on file: {detail.referral.patient_email}
               </p>
               {detail.otherParty.direction === 'receiving' ? (
-                <p className={rs.sectionHint} style={{ marginTop: 6 }}>
+                <p className="text-muted-foreground text-xs leading-relaxed">
                   When the receiving doctor accepts or declines, this status updates here immediately.
                 </p>
               ) : null}
               {detail.referral.match_summary ? (
-                <p className={rs.meta} style={{ marginTop: 8 }}>
+                <p className="text-muted-foreground text-xs">
                   Search context: {detail.referral.match_summary}
                 </p>
               ) : null}
               {detail.referral.notes ? (
-                <p className={rs.meta} style={{ marginTop: 8 }}>
-                  Notes: {detail.referral.notes}
-                </p>
+                <p className="text-muted-foreground text-xs">Notes: {detail.referral.notes}</p>
               ) : null}
-              <ul className={rs.timeline}>
+              <ul className="border-border mt-2 space-y-2 border-t pt-3">
                 {detail.events.map((ev) => (
-                  <li key={ev.id}>
-                    <strong>{ev.event_type}</strong> · {new Date(ev.created_at).toLocaleString()}
+                  <li key={ev.id} className="text-muted-foreground text-xs">
+                    <span className="text-foreground font-medium">{ev.event_type}</span> ·{' '}
+                    {new Date(ev.created_at).toLocaleString()}
                   </li>
                 ))}
               </ul>
               {canRespond ? (
-                <div className={rs.actions}>
-                  <button
+                <div className="flex flex-wrap gap-2 pt-3">
+                  <Button
                     type="button"
-                    className={`${rs.actionBtn} ${rs.accept}`}
+                    size="sm"
                     disabled={actionBusy}
                     onClick={() => void respond(detail.referral.id, 'accept')}
                   >
                     Accept
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className={`${rs.actionBtn} ${rs.decline}`}
+                    size="sm"
+                    variant="outline"
                     disabled={actionBusy}
                     onClick={() => void respond(detail.referral.id, 'decline')}
                   >
                     Decline
-                  </button>
+                  </Button>
                 </div>
               ) : null}
-              {actionError ? <p className={rs.error}>{actionError}</p> : null}
-            </>
+              {actionError ? <p className="text-destructive pt-1 text-xs">{actionError}</p> : null}
+            </div>
           )}
-        </div>
-      ) : (
-        <p className={rs.meta}>Select a referral to view the timeline and actions.</p>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
