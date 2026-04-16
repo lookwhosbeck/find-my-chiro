@@ -2,7 +2,6 @@ import Link from "next/link";
 import { CheckIcon, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BackgroundBeamsWithCollision } from "@/components/ui/extras/background-beams-with-collision";
 import { ProximitySearchBar } from "@/app/components/ProximitySearchBar";
 import type { Chiropractor } from "@/app/lib/queries";
 import { HomeMapPreview } from "./HomeMapPreview";
@@ -20,7 +19,7 @@ export function HomeHero({ mapChiropractors }: HomeHeroProps) {
   return (
     <section className="app-container w-full">
       <div className="mx-auto grid max-w-screen-xl place-items-center py-16 pb-8 md:py-32 md:pb-14">
-        <BackgroundBeamsWithCollision>
+        <div className="relative flex w-full items-center justify-center">
           <div className="relative z-10 w-full space-y-8 pb-8 text-center lg:pb-20">
             <Badge variant="outline" className="bg-muted py-2 text-sm">
               <span className="text-primary mr-2">
@@ -65,13 +64,10 @@ export function HomeHero({ mapChiropractors }: HomeHeroProps) {
               <ProximitySearchBar variant="onLight" />
             </div>
           </div>
-        </BackgroundBeamsWithCollision>
+        </div>
 
-        <div className="group relative w-full">
-          <div className="bg-primary/60 absolute top-2 left-1/2 mx-auto h-24 w-[90%] -translate-x-1/2 transform rounded-full blur-3xl lg:-top-8 lg:h-80" />
-          <div className="relative mx-auto w-full">
-            <HomeMapPreview chiropractors={mapChiropractors} />
-          </div>
+        <div className="relative mx-auto w-full">
+          <HomeMapPreview chiropractors={mapChiropractors} />
         </div>
       </div>
     </section>
