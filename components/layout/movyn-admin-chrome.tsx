@@ -47,10 +47,10 @@ export function MovynAdminChrome({ defaultOpen, children }: { defaultOpen: boole
           </div>
         }
       />
-      <SidebarInset className="flex min-h-svh flex-col overflow-hidden md:peer-data-[variant=inset]:shadow-sm">
+      <SidebarInset>
         <MovynSiteHeader title="Chiropractor signups" />
-        <div className="bg-muted/40 flex min-h-0 flex-1 flex-col">
-          <div className="@container/main p-(--content-padding) flex min-h-0 flex-1 flex-col overflow-y-auto xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto">
+        <div className="flex min-h-0 flex-1 flex-col bg-muted/40">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-[--content-padding]">
             {children}
           </div>
         </div>
