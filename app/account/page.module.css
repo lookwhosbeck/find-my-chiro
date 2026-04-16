@@ -1,4 +1,4 @@
-/* Account section panels — layout shell lives in `components/dashboard-shell.tsx`. */
+/* Account section panels — chrome lives in `MovynAccountDashboardShell` (kit-style layout). */
 
 .pageSectionBody {
   display: flex;

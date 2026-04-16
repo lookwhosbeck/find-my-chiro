@@ -10,11 +10,10 @@
  *   ALTER TABLE profiles ENABLE TRIGGER profiles_protect_role_on_update;
  */
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { createSupabaseClient } from '@/app/lib/supabase-client';
-import { DashboardShell } from '@/components/dashboard-shell';
+import { accountSettingsHref } from '@/lib/movyn-account-routes';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -115,7 +114,7 @@ export default function AdminPage() {
 
       if (cancelled) return;
       if (profileErr || profile?.role !== 'admin') {
-        router.replace('/account');
+        router.replace(accountSettingsHref('profile'));
         return;
       }
 
@@ -134,13 +133,6 @@ export default function AdminPage() {
       cancelled = true;
     };
   }, [router, loadList]);
-
-  const handleSignOut = async () => {
-    const supabase = createSupabaseClient();
-    await supabase.auth.signOut();
-    router.refresh();
-    router.push('/');
-  };
 
   const patchStatus = async (id: string, status: 'approved' | 'rejected') => {
     const supabase = createSupabaseClient();
@@ -174,35 +166,14 @@ export default function AdminPage() {
 
   if (!ready) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-muted/40">
+      <div className="flex flex-1 items-center justify-center py-16">
         <p className="text-muted-foreground text-sm">Checking access…</p>
       </div>
     );
   }
 
   return (
-    <DashboardShell
-      navGroupLabel="Admin"
-      navItems={[{ id: 'chiropractors', label: 'Chiropractors' }]}
-      comingSoonItems={[]}
-      activeId="chiropractors"
-      onNavigate={() => {}}
-      pageTitle="Chiropractor signups"
-      sidebarFooter={
-        <div className="flex w-full flex-col gap-1">
-          <Button variant="ghost" size="sm" className="justify-start" asChild>
-            <Link href="/account">My account</Link>
-          </Button>
-          <Button variant="ghost" size="sm" className="justify-start" asChild>
-            <Link href="/">Back to home</Link>
-          </Button>
-          <Button variant="ghost" size="sm" className="justify-start" onClick={() => void handleSignOut()}>
-            Sign out
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-4">
+    <div className="space-y-4">
         <p className="text-muted-foreground max-w-3xl text-sm leading-relaxed">
           Review verification status and subscription. Approve or reject to control public directory visibility.
         </p>
@@ -291,7 +262,6 @@ export default function AdminPage() {
             ) : null}
           </div>
         )}
-      </div>
-    </DashboardShell>
+    </div>
   );
 }
