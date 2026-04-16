@@ -3,8 +3,20 @@
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { CheckCircle2, Circle, ShieldCheck, Clock3, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { EnvelopeClosedIcon } from '@radix-ui/react-icons';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  AccountFormCard,
+  AccountFormField,
+  AccountFormPage,
+  AccountGridPage,
+} from '@/components/layout/account-content';
 import { supabase } from '@/app/lib/supabase';
 import {
   flushPendingChiropractorSignupIfAny,
@@ -1158,293 +1170,376 @@ export function MovynAccountDashboardShell({
     document.getElementById('account-avatar-input')?.click();
   };
 
+  /** Figma 26:993 — Getting Started with Movyn. Narrow card with license status, profile completeness checklist, and CTAs. */
   const renderWelcomePanel = () => {
-    const statusLabel = licenseStatus.replace(/_/g, ' ');
-    const pending = licenseStatus === 'pending_review' || licenseStatus === 'draft';
+    const approved = licenseStatus === 'approved';
+    const pending = licenseStatus === 'pending_review' || licenseStatus === 'draft' || licenseStatus === 'submitted';
     const rejected = licenseStatus === 'rejected';
+    const licenseBadge = approved ? (
+      <Badge
+        variant="outline"
+        className="h-9 gap-2 rounded-md border-blue-600/20 bg-blue-600/5 px-3 text-sm font-medium text-foreground"
+      >
+        <ShieldCheck className="size-4 text-blue-600" />
+        License Verified
+      </Badge>
+    ) : rejected ? (
+      <Badge
+        variant="outline"
+        className="h-9 gap-2 rounded-md border-destructive/30 bg-destructive/5 px-3 text-sm font-medium text-destructive"
+      >
+        <AlertTriangle className="size-4" />
+        Needs attention
+      </Badge>
+    ) : (
+      <Badge
+        variant="outline"
+        className="h-9 gap-2 rounded-md border-amber-500/30 bg-amber-500/5 px-3 text-sm font-medium text-foreground"
+      >
+        <Clock3 className="size-4 text-amber-600" />
+        Pending review
+      </Badge>
+    );
+
+    const submittedAt = chiropractorProfile?.submitted_for_review_at
+      ? new Date(chiropractorProfile.submitted_for_review_at).toLocaleDateString(undefined, {
+          month: 'numeric',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : null;
 
     return (
-      <div className={styles.welcomePanel}>
-        <p className={styles.welcomeLead}>
-          Your profile is not public until our team verifies your license.
-        </p>
-        <p className={styles.mutedNote}>
-          Status: <strong>{statusLabel}</strong>
-          {pending ? ' — verification is in progress.' : ''}
-          {rejected ? ' — please update your details and contact support.' : ''}
-        </p>
-
-        <div className={styles.completenessCard}>
-          <p className={styles.sectionTitle}>
-            While you wait, complete your profile for better match quality ({completeness.score}% complete)
-          </p>
-          <ul className={styles.checklist}>
-            {completeness.items.map((item) => (
-              <li key={item.key} className={styles.checklistItem}>
-                <span aria-hidden>{item.complete ? '✓' : '○'}</span>
-                <span>{item.label}</span>
-              </li>
-            ))}
-          </ul>
-          <div className={styles.actionsRow}>
-            <button
-              type="button"
-              className={styles.secondaryBtn}
-              onClick={() => router.push(accountSettingsHref('practice'))}
-            >
-              Update practice info
-            </button>
-            <button
-              type="button"
-              className={styles.secondaryBtn}
-              onClick={() => router.push(accountSettingsHref('specialties'))}
-            >
-              Update specialties
-            </button>
+      <AccountFormPage
+        title="Getting Started with Movyn"
+        description="Your profile will be published as a public listing when our team verifies your license."
+      >
+        <AccountFormCard>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-foreground">License status</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-x-10 gap-y-1 text-sm text-muted-foreground">
+                {submittedAt ? <span>Submitted: {submittedAt}</span> : <span>No license on file yet</span>}
+                {pending ? <span>Review in progress</span> : null}
+              </div>
+              {licenseBadge}
+            </div>
           </div>
-        </div>
-      </div>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-foreground">
+              Your profile is {completeness.score}% complete
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Complete your profile to show up in search results and get better match scores
+            </p>
+            <div className="flex items-center gap-2 pl-2">
+              <div
+                className="relative h-2 flex-1 overflow-hidden rounded-full bg-foreground/10"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={completeness.score}
+              >
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+                  style={{ width: `${completeness.score}%` }}
+                />
+              </div>
+              <span className="w-8 text-right text-sm text-muted-foreground">{completeness.score}%</span>
+            </div>
+            <ul className="mt-1 flex flex-col gap-1">
+              {completeness.items.map((item) => (
+                <li key={item.key} className="flex items-center gap-2 py-1.5">
+                  <span className="flex size-8 items-center justify-center pl-2" aria-hidden>
+                    {item.complete ? (
+                      <CheckCircle2 className="size-4 text-emerald-600 opacity-90" />
+                    ) : (
+                      <Circle className="size-4 text-muted-foreground/60" />
+                    )}
+                  </span>
+                  <span className="text-sm text-foreground">{item.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={() => router.push(accountSettingsHref('practice'))}>
+              Update practice info
+            </Button>
+            <Button type="button" onClick={() => router.push(accountSettingsHref('specialties'))}>
+              Update specialties
+            </Button>
+          </div>
+        </AccountFormCard>
+      </AccountFormPage>
     );
   };
 
-  const renderProfilePanel = () => (
-    <>
-      {profileEditing && (
-        <div className={styles.avatarActions}>
-          <button type="button" className={styles.secondaryBtn} onClick={openAvatarPicker} disabled={uploadingAvatar}>
-            {uploadingAvatar ? 'Uploading…' : profile.avatar_url ? 'Change photo' : 'Upload photo'}
-          </button>
-          {profile.avatar_url && (
-            <button type="button" className={styles.secondaryBtn} onClick={handleAvatarDelete} disabled={uploadingAvatar}>
-              Remove
-            </button>
-          )}
-        </div>
-      )}
-      <p className={styles.mutedNote}>Click your photo in the header to upload. JPG, PNG or GIF. Max 5MB.</p>
+  /** Figma 26:1057 — Update your profile. Narrow card with license row, name/email/bio fields. */
+  const renderProfilePanel = () => {
+    const profileLocked = !profileEditing;
+    return (
+      <AccountFormPage
+        title="Update your profile"
+        description="Your profile will be published as a public listing when our team verifies your license."
+      >
+        <AccountFormCard>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-foreground">License status</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {chiropractorProfile?.submitted_for_review_at
+                  ? `Submitted: ${new Date(chiropractorProfile.submitted_for_review_at).toLocaleDateString(
+                      undefined,
+                      { month: 'numeric', day: 'numeric', year: 'numeric' },
+                    )}`
+                  : 'License status managed under Practice'}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleToolbarEdit}
+                  disabled={toolbarEditDisabled}
+                >
+                  {profileEditing ? 'Cancel' : 'Edit'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleToolbarSave}
+                  disabled={toolbarSaveDisabled}
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </Button>
+              </div>
+            </div>
+          </div>
 
-      <div className={styles.fieldGrid}>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="pf-first">
-            First name
-          </label>
-          <input
-            id="pf-first"
-            className={styles.input}
-            value={profileForm.first_name}
-            onChange={(e) => setProfileForm((p) => ({ ...p, first_name: e.target.value }))}
-            disabled={!profileEditing}
-            placeholder="First name"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="pf-last">
-            Last name
-          </label>
-          <input
-            id="pf-last"
-            className={styles.input}
-            value={profileForm.last_name}
-            onChange={(e) => setProfileForm((p) => ({ ...p, last_name: e.target.value }))}
-            disabled={!profileEditing}
-            placeholder="Last name"
-          />
-        </div>
-        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-          <label className={styles.fieldLabel} htmlFor="pf-email">
-            Email
-          </label>
-          <input
+          <AccountFormField id="pf-first" label="First name">
+            <Input
+              id="pf-first"
+              value={profileForm.first_name}
+              onChange={(e) => setProfileForm((p) => ({ ...p, first_name: e.target.value }))}
+              disabled={profileLocked}
+              placeholder="First name"
+            />
+          </AccountFormField>
+
+          <AccountFormField id="pf-last" label="Last name">
+            <Input
+              id="pf-last"
+              value={profileForm.last_name}
+              onChange={(e) => setProfileForm((p) => ({ ...p, last_name: e.target.value }))}
+              disabled={profileLocked}
+              placeholder="Last name"
+            />
+          </AccountFormField>
+
+          <AccountFormField
             id="pf-email"
-            className={styles.input}
-            type="email"
-            value={profileForm.email}
-            onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
-            disabled={!profileEditing}
-            placeholder="you@example.com"
-          />
-        </div>
-      </div>
-
-      <div className={styles.emailSection}>
-        <h3 className={styles.sectionTitle}>My email address</h3>
-        <div className={styles.emailRow}>
-          <div className={styles.emailIconWrap}>
-            <div className={styles.emailIconBg} />
-            <EnvelopeClosedIcon className={styles.emailIcon} aria-hidden />
-          </div>
-          <div className={styles.emailTextBlock}>
-            <span>{profileForm.email}</span>
-            <span className={styles.emailSub}>Last updated {emailUpdated}</span>
-          </div>
-        </div>
-        <button type="button" className={styles.addEmailBtn} disabled title="Secondary email is not available yet">
-          + Add email address
-        </button>
-      </div>
-
-      {profileEditing && (
-        <div className={styles.actionsRow}>
-          <button
-            type="button"
-            className={styles.secondaryBtn}
-            onClick={() => {
-              setProfileForm({
-                first_name: profile.first_name || '',
-                last_name: profile.last_name || '',
-                email: profile.email || '',
-              });
-            }}
+            label="Email"
+            description="You can manage verified email addresses in your email settings."
           >
-            Reset
-          </button>
-        </div>
-      )}
-    </>
-  );
+            <Input
+              id="pf-email"
+              type="email"
+              value={profileForm.email}
+              onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+              disabled={profileLocked}
+              placeholder="you@example.com"
+            />
+          </AccountFormField>
+
+          {showChiroAccountUI ? (
+            <AccountFormField
+              id="pf-bio"
+              label="Bio"
+              description="Patients will read this on your public profile. You can @mention colleagues and organizations to link to them."
+            >
+              <Textarea
+                id="pf-bio"
+                value={chiropractorForm.bio}
+                onChange={(e) => setChiropractorForm((p) => ({ ...p, bio: e.target.value }))}
+                disabled={profileLocked}
+                placeholder="Tell patients about your experience and approach…"
+                rows={4}
+              />
+            </AccountFormField>
+          ) : null}
+
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <Label className="text-sm font-medium leading-none text-foreground">Profile photo</Label>
+              <p className="text-sm text-muted-foreground">
+                JPG, PNG, or GIF. Max 5MB. Last updated {emailUpdated}.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <UserAvatar
+                avatarUrl={profile.avatar_url}
+                firstName={profileForm.first_name}
+                lastName={profileForm.last_name}
+                email={profileForm.email || profile.email}
+                size={48}
+                variant="roundedSquare"
+                fallbackTone="accountHero"
+                alt=""
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={openAvatarPicker}
+                  disabled={uploadingAvatar || profileLocked}
+                >
+                  {uploadingAvatar ? 'Uploading…' : profile.avatar_url ? 'Change photo' : 'Upload photo'}
+                </Button>
+                {profile.avatar_url ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleAvatarDelete}
+                    disabled={uploadingAvatar || profileLocked}
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </AccountFormCard>
+      </AccountFormPage>
+    );
+  };
 
   const renderPracticePanel = () => {
     const practiceLocked = !practiceEditing;
     return (
-    <>
-      <div className={styles.fieldGrid}>
-        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-          <label className={styles.fieldLabel} htmlFor="org-name">
-            Practice / clinic name
-          </label>
-          <input
-            id="org-name"
-            className={styles.input}
-            value={orgForm.name}
-            onChange={(e) => setOrgForm((p) => ({ ...p, name: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="Clinic name"
-          />
-        </div>
-        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-          <label className={styles.fieldLabel} htmlFor="org-street">
-            Street address
-          </label>
-          <input
-            id="org-street"
-            className={styles.input}
-            value={orgForm.address_line_1}
-            onChange={(e) => setOrgForm((p) => ({ ...p, address_line_1: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="123 Main St"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="org-city">
-            City
-          </label>
-          <input
-            id="org-city"
-            className={styles.input}
-            value={orgForm.city}
-            onChange={(e) => setOrgForm((p) => ({ ...p, city: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="City"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="org-state">
-            State
-          </label>
-          <input
-            id="org-state"
-            className={styles.input}
-            value={orgForm.state}
-            onChange={(e) => setOrgForm((p) => ({ ...p, state: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="ST"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="org-zip">
-            ZIP code
-          </label>
-          <input
-            id="org-zip"
-            className={styles.input}
-            value={orgForm.zip_code}
-            onChange={(e) => setOrgForm((p) => ({ ...p, zip_code: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="12345"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="org-phone">
-            Practice phone
-          </label>
-          <input
-            id="org-phone"
-            className={styles.input}
-            value={orgForm.phone}
-            onChange={(e) => setOrgForm((p) => ({ ...p, phone: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="Phone"
-          />
-        </div>
-      </div>
+      <AccountFormPage
+        title="Your practice"
+        description="Where you see patients and how you present your professional profile."
+      >
+        <AccountFormCard>
+          <AccountFormField id="org-name" label="Practice / clinic name">
+            <Input
+              id="org-name"
+              value={orgForm.name}
+              onChange={(e) => setOrgForm((p) => ({ ...p, name: e.target.value }))}
+              disabled={practiceLocked}
+              placeholder="Clinic name"
+            />
+          </AccountFormField>
 
-      <h3 className={styles.sectionTitle}>Professional profile</h3>
-      <div className={styles.fieldGrid}>
-        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-          <label className={styles.fieldLabel} htmlFor="ch-bio">
-            Professional bio
-          </label>
-          <textarea
+          <AccountFormField id="org-street" label="Street address">
+            <Input
+              id="org-street"
+              value={orgForm.address_line_1}
+              onChange={(e) => setOrgForm((p) => ({ ...p, address_line_1: e.target.value }))}
+              disabled={practiceLocked}
+              placeholder="123 Main St"
+            />
+          </AccountFormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <AccountFormField id="org-city" label="City">
+              <Input
+                id="org-city"
+                value={orgForm.city}
+                onChange={(e) => setOrgForm((p) => ({ ...p, city: e.target.value }))}
+                disabled={practiceLocked}
+                placeholder="City"
+              />
+            </AccountFormField>
+            <AccountFormField id="org-state" label="State">
+              <Input
+                id="org-state"
+                value={orgForm.state}
+                onChange={(e) => setOrgForm((p) => ({ ...p, state: e.target.value }))}
+                disabled={practiceLocked}
+                placeholder="ST"
+              />
+            </AccountFormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <AccountFormField id="org-zip" label="ZIP code">
+              <Input
+                id="org-zip"
+                value={orgForm.zip_code}
+                onChange={(e) => setOrgForm((p) => ({ ...p, zip_code: e.target.value }))}
+                disabled={practiceLocked}
+                placeholder="12345"
+              />
+            </AccountFormField>
+            <AccountFormField id="org-phone" label="Practice phone">
+              <Input
+                id="org-phone"
+                value={orgForm.phone}
+                onChange={(e) => setOrgForm((p) => ({ ...p, phone: e.target.value }))}
+                disabled={practiceLocked}
+                placeholder="Phone"
+              />
+            </AccountFormField>
+          </div>
+
+          <div className="h-px w-full bg-border" aria-hidden />
+
+          <AccountFormField
             id="ch-bio"
-            className={`${styles.input} ${styles.textarea}`}
-            value={chiropractorForm.bio}
-            onChange={(e) => setChiropractorForm((p) => ({ ...p, bio: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="Tell patients about your experience and approach…"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="ch-college">
-            Chiropractic college
-          </label>
-          <input
-            id="ch-college"
-            className={styles.input}
-            value={chiropractorForm.chiropractic_college}
-            onChange={(e) => setChiropractorForm((p) => ({ ...p, chiropractic_college: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="College name"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel} htmlFor="ch-year">
-            Graduation year
-          </label>
-          <input
-            id="ch-year"
-            className={styles.input}
-            type="number"
-            value={chiropractorForm.graduation_year}
-            onChange={(e) => setChiropractorForm((p) => ({ ...p, graduation_year: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="e.g. 2020"
-          />
-        </div>
-        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-          <label className={styles.fieldLabel} htmlFor="ch-license">
-            License number
-          </label>
-          <input
-            id="ch-license"
-            className={styles.input}
-            value={chiropractorForm.license_number}
-            onChange={(e) => setChiropractorForm((p) => ({ ...p, license_number: e.target.value }))}
-            disabled={practiceLocked}
-            placeholder="License number"
-          />
-        </div>
-        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-          <label className={styles.checkboxRow}>
+            label="Professional bio"
+            description="Patients will read this on your public profile."
+          >
+            <Textarea
+              id="ch-bio"
+              value={chiropractorForm.bio}
+              onChange={(e) => setChiropractorForm((p) => ({ ...p, bio: e.target.value }))}
+              disabled={practiceLocked}
+              placeholder="Tell patients about your experience and approach…"
+              rows={4}
+            />
+          </AccountFormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <AccountFormField id="ch-college" label="Chiropractic college">
+              <Input
+                id="ch-college"
+                value={chiropractorForm.chiropractic_college}
+                onChange={(e) =>
+                  setChiropractorForm((p) => ({ ...p, chiropractic_college: e.target.value }))
+                }
+                disabled={practiceLocked}
+                placeholder="College name"
+              />
+            </AccountFormField>
+            <AccountFormField id="ch-year" label="Graduation year">
+              <Input
+                id="ch-year"
+                type="number"
+                value={chiropractorForm.graduation_year}
+                onChange={(e) =>
+                  setChiropractorForm((p) => ({ ...p, graduation_year: e.target.value }))
+                }
+                disabled={practiceLocked}
+                placeholder="e.g. 2020"
+              />
+            </AccountFormField>
+          </div>
+
+          <AccountFormField id="ch-license" label="License number">
+            <Input
+              id="ch-license"
+              value={chiropractorForm.license_number}
+              onChange={(e) => setChiropractorForm((p) => ({ ...p, license_number: e.target.value }))}
+              disabled={practiceLocked}
+              placeholder="License number"
+            />
+          </AccountFormField>
+
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Checkbox
               checked={chiropractorForm.accepting_new_patients}
               disabled={practiceLocked}
@@ -1454,391 +1549,266 @@ export function MovynAccountDashboardShell({
             />
             Currently accepting new patients
           </label>
-        </div>
-      </div>
-      {practiceEditing && (
-        <div className={styles.actionsRow}>
-          <button
-            type="button"
-            className={styles.secondaryBtn}
-            onClick={() => {
-              const snap = practiceSnapshotRef.current;
-              if (snap) {
-                setOrgForm(snap.org);
-                setChiropractorForm(snap.chiro);
-              } else if (chiropractorProfile) {
-                setChiropractorForm({
-                  bio: chiropractorProfile.bio || '',
-                  chiropractic_college: chiropractorProfile.chiropractic_college || '',
-                  graduation_year: chiropractorProfile.graduation_year?.toString() || '',
-                  license_number: chiropractorProfile.license_number || '',
-                  accepting_new_patients: chiropractorProfile.accepting_new_patients ?? true,
-                });
-              }
-            }}
-          >
-            Reset
-          </button>
-        </div>
-      )}
-    </>
+        </AccountFormCard>
+      </AccountFormPage>
     );
   };
 
+  /** Specialties intentionally stays wide + grid: lots of parallel choices that benefit from scan-ability. */
   const renderSpecialtiesPanel = () => {
     const column = (title: string, body: ReactNode) => (
-      <div className={styles.specialtyColumn}>
-        <h4 className={styles.specialtyColumnTitle}>{title}</h4>
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-5">
+        <h4 className="text-sm font-semibold leading-5 text-foreground">{title}</h4>
         {body}
       </div>
     );
 
+    const optionList = (
+      options: readonly string[],
+      checked: string[],
+      toggle: (name: string) => void,
+    ) => (
+      <div className="flex flex-col gap-2">
+        {options.map((m) => (
+          <label key={m} className="flex items-center gap-2 text-sm text-foreground">
+            <Checkbox checked={checked.includes(m)} onCheckedChange={() => toggle(m)} />
+            {m}
+          </label>
+        ))}
+      </div>
+    );
+
     return (
-      <>
-        <div className={styles.specialtiesGrid}>
-          {column(
-            'Techniques',
-            <div className={styles.specialtyOptionList}>
-              {MODALITY_OPTIONS.map((m) => (
-                <label key={m} className={styles.specialtyOptionRow}>
-                  <Checkbox checked={chiroModalityNames.includes(m)} onCheckedChange={() => toggleChiroMod(m)} />
-                  {m}
-                </label>
-              ))}
-            </div>,
-          )}
-          {column(
-            'Specialties',
-            <div className={styles.specialtyOptionList}>
-              {FOCUS_AREA_OPTIONS.map((m) => (
-                <label key={m} className={styles.specialtyOptionRow}>
-                  <Checkbox checked={chiroFocusNames.includes(m)} onCheckedChange={() => toggleChiroFocus(m)} />
-                  {m}
-                </label>
-              ))}
-            </div>,
-          )}
+      <AccountGridPage
+        title="Specialties"
+        description="How patients will filter and match to you in search. Choose all that apply."
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {column('Techniques', optionList(MODALITY_OPTIONS, chiroModalityNames, toggleChiroMod))}
+          {column('Specialties', optionList(FOCUS_AREA_OPTIONS, chiroFocusNames, toggleChiroFocus))}
           {column(
             'Philosophy',
-            <div className={styles.specialtyOptionList}>
-              {PHILOSOPHY_OPTIONS.map((m) => (
-                <label key={m} className={styles.specialtyOptionRow}>
-                  <Checkbox
-                    checked={chiroPhilosophyNames.includes(m)}
-                    onCheckedChange={() => toggleChiroPhilosophy(m)}
-                  />
-                  {m}
-                </label>
-              ))}
-            </div>,
+            optionList(PHILOSOPHY_OPTIONS, chiroPhilosophyNames, toggleChiroPhilosophy),
           )}
           {column(
             'Business model',
-            <div className={styles.specialtyOptionList}>
-              {PAYMENT_MODEL_OPTIONS.map((m) => (
-                <label key={m} className={styles.specialtyOptionRow}>
-                  <Checkbox checked={chiroPaymentNames.includes(m)} onCheckedChange={() => toggleChiroPayment(m)} />
-                  {m}
-                </label>
-              ))}
-            </div>,
+            optionList(PAYMENT_MODEL_OPTIONS, chiroPaymentNames, toggleChiroPayment),
           )}
           {column(
             'Insurance',
-            <div className={styles.specialtyOptionList}>
-              {CHIRO_INSURANCE_OPTIONS.map((m) => (
-                <label key={m} className={styles.specialtyOptionRow}>
-                  <Checkbox
-                    checked={chiroInsuranceNames.includes(m)}
-                    onCheckedChange={() => toggleChiroInsurance(m)}
-                  />
-                  {m}
-                </label>
-              ))}
-            </div>,
+            optionList(CHIRO_INSURANCE_OPTIONS, chiroInsuranceNames, toggleChiroInsurance),
           )}
           {column(
             'Budget range',
-            <div className={styles.selectWrap}>
-              <span className={styles.selectChevron} />
-              <select
-                className={`${styles.specialtyBudgetSelect} ${styles.selectNative}`}
-                value={chiroBudgetRange}
-                onChange={(e) => setChiroBudgetRange(e.target.value)}
-                aria-label="Budget range"
-              >
-                {CHIRO_BUDGET_RANGE_OPTIONS.map((o) => (
-                  <option key={o.value || 'none'} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>,
+            <NativeSelect
+              value={chiroBudgetRange}
+              onChange={(e) => setChiroBudgetRange(e.target.value)}
+              aria-label="Budget range"
+            >
+              {CHIRO_BUDGET_RANGE_OPTIONS.map((o) => (
+                <option key={o.value || 'none'} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </NativeSelect>,
           )}
         </div>
-      </>
+      </AccountGridPage>
     );
   };
 
   const renderPreferencesPanel = () => {
     const prefsLocked = !preferencesEditing;
+    const sectionHeader = (title: string) => (
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold leading-5 text-foreground">{title}</h3>
+      </div>
+    );
+
+    const checkboxGrid = (options: readonly string[], checked: string[], key: 'preferred_modalities' | 'focus_areas' | 'preferred_days' | 'preferred_times') => (
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {options.map((m) => (
+          <label key={m} className="flex items-center gap-2 text-sm text-foreground">
+            <Checkbox
+              checked={checked.includes(m)}
+              disabled={prefsLocked}
+              onCheckedChange={() => togglePatientArr(key, m)}
+            />
+            {m}
+          </label>
+        ))}
+      </div>
+    );
+
     return (
-    <>
-      <h3 className={styles.sectionTitle} style={{ marginTop: 0 }}>
-        Contact &amp; personal
-      </h3>
-      <div className={styles.fieldGrid}>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Phone</label>
-          <input
-            className={styles.input}
-            value={patientForm.phone}
-            onChange={(e) => setPatientForm((p) => ({ ...p, phone: e.target.value }))}
-            disabled={prefsLocked}
-            placeholder="Phone number"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Date of birth</label>
-          <input
-            className={styles.input}
-            type="date"
-            value={patientForm.date_of_birth}
-            onChange={(e) => setPatientForm((p) => ({ ...p, date_of_birth: e.target.value }))}
-            disabled={prefsLocked}
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Emergency contact</label>
-          <input
-            className={styles.input}
-            value={patientForm.emergency_contact}
-            onChange={(e) => setPatientForm((p) => ({ ...p, emergency_contact: e.target.value }))}
-            disabled={prefsLocked}
-            placeholder="Name"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Emergency phone</label>
-          <input
-            className={styles.input}
-            value={patientForm.emergency_phone}
-            onChange={(e) => setPatientForm((p) => ({ ...p, emergency_phone: e.target.value }))}
-            disabled={prefsLocked}
-            placeholder="Phone"
-          />
-        </div>
-      </div>
-
-      <h3 className={styles.sectionTitle}>Location</h3>
-      <div className={styles.fieldGrid}>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>City</label>
-          <input
-            className={styles.input}
-            value={patientForm.city}
-            onChange={(e) => setPatientForm((p) => ({ ...p, city: e.target.value }))}
-            disabled={prefsLocked}
-            placeholder="City"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>State</label>
-          <input
-            className={styles.input}
-            value={patientForm.state}
-            onChange={(e) => setPatientForm((p) => ({ ...p, state: e.target.value }))}
-            disabled={prefsLocked}
-            placeholder="State"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>ZIP code</label>
-          <input
-            className={styles.input}
-            value={patientForm.zip_code}
-            onChange={(e) => setPatientForm((p) => ({ ...p, zip_code: e.target.value }))}
-            disabled={prefsLocked}
-            placeholder="ZIP"
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Search radius (miles)</label>
-          <div className={styles.selectWrap}>
-            <span className={styles.selectChevron} />
-            <select
-              className={`${styles.select} ${styles.selectNative}`}
-              value={patientForm.search_radius}
-              disabled={prefsLocked}
-              onChange={(e) =>
-                setPatientForm((p) => ({ ...p, search_radius: parseInt(e.target.value, 10) }))
-              }
-            >
-              {SEARCH_RADIUS_MILES_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n} miles
-                </option>
-              ))}
-            </select>
+      <AccountFormPage
+        title="Your preferences"
+        description="Personal info and what you're looking for; used to tailor your chiropractor matches."
+      >
+        <AccountFormCard>
+          {sectionHeader('Contact & personal')}
+          <div className="grid grid-cols-2 gap-3">
+            <AccountFormField id="pt-phone" label="Phone">
+              <Input
+                id="pt-phone"
+                value={patientForm.phone}
+                onChange={(e) => setPatientForm((p) => ({ ...p, phone: e.target.value }))}
+                disabled={prefsLocked}
+                placeholder="Phone number"
+              />
+            </AccountFormField>
+            <AccountFormField id="pt-dob" label="Date of birth">
+              <Input
+                id="pt-dob"
+                type="date"
+                value={patientForm.date_of_birth}
+                onChange={(e) => setPatientForm((p) => ({ ...p, date_of_birth: e.target.value }))}
+                disabled={prefsLocked}
+              />
+            </AccountFormField>
+            <AccountFormField id="pt-ec" label="Emergency contact">
+              <Input
+                id="pt-ec"
+                value={patientForm.emergency_contact}
+                onChange={(e) => setPatientForm((p) => ({ ...p, emergency_contact: e.target.value }))}
+                disabled={prefsLocked}
+                placeholder="Name"
+              />
+            </AccountFormField>
+            <AccountFormField id="pt-ep" label="Emergency phone">
+              <Input
+                id="pt-ep"
+                value={patientForm.emergency_phone}
+                onChange={(e) => setPatientForm((p) => ({ ...p, emergency_phone: e.target.value }))}
+                disabled={prefsLocked}
+                placeholder="Phone"
+              />
+            </AccountFormField>
           </div>
-        </div>
-      </div>
 
-      <h3 className={styles.sectionTitle}>Treatment styles</h3>
-      <div className={styles.checkboxGrid}>
-        {MODALITY_OPTIONS.map((m) => (
-          <label key={m} className={styles.checkboxRow}>
-            <Checkbox
-              checked={patientForm.preferred_modalities.includes(m)}
-              disabled={prefsLocked}
-              onCheckedChange={() => togglePatientArr('preferred_modalities', m)}
-            />
-            {m}
-          </label>
-        ))}
-      </div>
-
-      <h3 className={styles.sectionTitle}>Specialty interests</h3>
-      <div className={styles.checkboxGrid}>
-        {FOCUS_AREA_OPTIONS.map((m) => (
-          <label key={m} className={styles.checkboxRow}>
-            <Checkbox
-              checked={patientForm.focus_areas.includes(m)}
-              disabled={prefsLocked}
-              onCheckedChange={() => togglePatientArr('focus_areas', m)}
-            />
-            {m}
-          </label>
-        ))}
-      </div>
-
-      <h3 className={styles.sectionTitle}>Payment &amp; insurance</h3>
-      <div className={styles.fieldGrid}>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Preferred business model</label>
-          <div className={styles.selectWrap}>
-            <span className={styles.selectChevron} />
-            <select
-              className={`${styles.select} ${styles.selectNative}`}
-              value={patientForm.preferred_business_model}
-              disabled={prefsLocked}
-              onChange={(e) => setPatientForm((p) => ({ ...p, preferred_business_model: e.target.value }))}
-            >
-              <option value="">No preference</option>
-              <option value="cash">Cash-based</option>
-              <option value="insurance">Insurance-based</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
+          <div className="h-px w-full bg-border" aria-hidden />
+          {sectionHeader('Location')}
+          <div className="grid grid-cols-2 gap-3">
+            <AccountFormField id="pt-city" label="City">
+              <Input
+                id="pt-city"
+                value={patientForm.city}
+                onChange={(e) => setPatientForm((p) => ({ ...p, city: e.target.value }))}
+                disabled={prefsLocked}
+                placeholder="City"
+              />
+            </AccountFormField>
+            <AccountFormField id="pt-state" label="State">
+              <Input
+                id="pt-state"
+                value={patientForm.state}
+                onChange={(e) => setPatientForm((p) => ({ ...p, state: e.target.value }))}
+                disabled={prefsLocked}
+                placeholder="State"
+              />
+            </AccountFormField>
+            <AccountFormField id="pt-zip" label="ZIP code">
+              <Input
+                id="pt-zip"
+                value={patientForm.zip_code}
+                onChange={(e) => setPatientForm((p) => ({ ...p, zip_code: e.target.value }))}
+                disabled={prefsLocked}
+                placeholder="ZIP"
+              />
+            </AccountFormField>
+            <AccountFormField id="pt-radius" label="Search radius (miles)">
+              <NativeSelect
+                id="pt-radius"
+                value={patientForm.search_radius}
+                disabled={prefsLocked}
+                onChange={(e) =>
+                  setPatientForm((p) => ({ ...p, search_radius: parseInt(e.target.value, 10) }))
+                }
+              >
+                {SEARCH_RADIUS_MILES_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n} miles
+                  </option>
+                ))}
+              </NativeSelect>
+            </AccountFormField>
           </div>
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Insurance type</label>
-          <div className={styles.selectWrap}>
-            <span className={styles.selectChevron} />
-            <select
-              className={`${styles.select} ${styles.selectNative}`}
-              value={patientForm.insurance_type}
-              disabled={prefsLocked}
-              onChange={(e) => setPatientForm((p) => ({ ...p, insurance_type: e.target.value }))}
-            >
-              <option value="">Select…</option>
-              <option value="none">No insurance / self-pay</option>
-              <option value="BCBS">Blue Cross Blue Shield</option>
-              <option value="Aetna">Aetna</option>
-              <option value="Cigna">Cigna</option>
-              <option value="UnitedHealthcare">UnitedHealthcare</option>
-              <option value="Medicare">Medicare</option>
-              <option value="Medicaid">Medicaid</option>
-            </select>
-          </div>
-        </div>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Budget range (monthly)</label>
-          <div className={styles.selectWrap}>
-            <span className={styles.selectChevron} />
-            <select
-              className={`${styles.select} ${styles.selectNative}`}
-              value={patientForm.budget_range}
-              disabled={prefsLocked}
-              onChange={(e) => setPatientForm((p) => ({ ...p, budget_range: e.target.value }))}
-            >
-              <option value="">No preference</option>
-              <option value="under-50">Under $50</option>
-              <option value="50-100">$50 – $100</option>
-              <option value="100-150">$100 – $150</option>
-              <option value="over-150">Over $150</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
-      <h3 className={styles.sectionTitle}>Availability</h3>
-      <div className={styles.checkboxGrid}>
-        {PREFERRED_DAY_OPTIONS.map((d) => (
-          <label key={d} className={styles.checkboxRow}>
-            <Checkbox
-              checked={patientForm.preferred_days.includes(d)}
-              disabled={prefsLocked}
-              onCheckedChange={() => togglePatientArr('preferred_days', d)}
-            />
-            {d}
-          </label>
-        ))}
-      </div>
-      <div className={styles.checkboxGrid} style={{ marginTop: 12 }}>
-        {PREFERRED_TIME_OPTIONS.map((t) => (
-          <label key={t} className={styles.checkboxRow}>
-            <Checkbox
-              checked={patientForm.preferred_times.includes(t)}
-              disabled={prefsLocked}
-              onCheckedChange={() => togglePatientArr('preferred_times', t)}
-            />
-            {t}
-          </label>
-        ))}
-      </div>
+          <div className="h-px w-full bg-border" aria-hidden />
+          {sectionHeader('Treatment styles')}
+          {checkboxGrid(MODALITY_OPTIONS, patientForm.preferred_modalities, 'preferred_modalities')}
 
-      {preferencesEditing && (
-        <div className={styles.actionsRow}>
-          <button
-            type="button"
-            className={styles.secondaryBtn}
-            onClick={() => {
-              if (preferencesSnapshotRef.current) {
-                setPatientForm(preferencesSnapshotRef.current);
-              } else if (patientProfile) {
-                setPatientForm({
-                  phone: patientProfile.phone || '',
-                  date_of_birth: patientProfile.date_of_birth?.slice(0, 10) || '',
-                  emergency_contact: patientProfile.emergency_contact || '',
-                  emergency_phone: patientProfile.emergency_phone || '',
-                  preferred_modalities: patientProfile.preferred_modalities || [],
-                  focus_areas: patientProfile.focus_areas || [],
-                  preferred_business_model: patientProfile.preferred_business_model || '',
-                  insurance_type: patientProfile.insurance_type || '',
-                  budget_range: patientProfile.budget_range || '',
-                  city: patientProfile.city || '',
-                  state: patientProfile.state || '',
-                  zip_code: patientProfile.zip_code || patientProfile.preferred_zip_code || '',
-                  search_radius: clampSearchRadiusMiles(
-                    patientProfile.search_radius ?? patientProfile.search_radius_miles ?? 25
-                  ),
-                  preferred_days: patientProfile.preferred_days || [],
-                  preferred_times: patientProfile.preferred_times || [],
-                });
-              }
-            }}
-          >
-            Reset
-          </button>
-        </div>
-      )}
-    </>
+          {sectionHeader('Specialty interests')}
+          {checkboxGrid(FOCUS_AREA_OPTIONS, patientForm.focus_areas, 'focus_areas')}
+
+          <div className="h-px w-full bg-border" aria-hidden />
+          {sectionHeader('Payment & insurance')}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <AccountFormField id="pt-bm" label="Preferred business model">
+              <NativeSelect
+                id="pt-bm"
+                value={patientForm.preferred_business_model}
+                disabled={prefsLocked}
+                onChange={(e) =>
+                  setPatientForm((p) => ({ ...p, preferred_business_model: e.target.value }))
+                }
+              >
+                <option value="">No preference</option>
+                <option value="cash">Cash-based</option>
+                <option value="insurance">Insurance-based</option>
+                <option value="hybrid">Hybrid</option>
+              </NativeSelect>
+            </AccountFormField>
+            <AccountFormField id="pt-ins" label="Insurance type">
+              <NativeSelect
+                id="pt-ins"
+                value={patientForm.insurance_type}
+                disabled={prefsLocked}
+                onChange={(e) => setPatientForm((p) => ({ ...p, insurance_type: e.target.value }))}
+              >
+                <option value="">Select…</option>
+                <option value="none">No insurance / self-pay</option>
+                <option value="BCBS">Blue Cross Blue Shield</option>
+                <option value="Aetna">Aetna</option>
+                <option value="Cigna">Cigna</option>
+                <option value="UnitedHealthcare">UnitedHealthcare</option>
+                <option value="Medicare">Medicare</option>
+                <option value="Medicaid">Medicaid</option>
+              </NativeSelect>
+            </AccountFormField>
+            <AccountFormField id="pt-budget" label="Budget range (monthly)">
+              <NativeSelect
+                id="pt-budget"
+                value={patientForm.budget_range}
+                disabled={prefsLocked}
+                onChange={(e) => setPatientForm((p) => ({ ...p, budget_range: e.target.value }))}
+              >
+                <option value="">No preference</option>
+                <option value="under-50">Under $50</option>
+                <option value="50-100">$50 – $100</option>
+                <option value="100-150">$100 – $150</option>
+                <option value="over-150">Over $150</option>
+              </NativeSelect>
+            </AccountFormField>
+          </div>
+
+          <div className="h-px w-full bg-border" aria-hidden />
+          {sectionHeader('Availability')}
+          {checkboxGrid(PREFERRED_DAY_OPTIONS, patientForm.preferred_days, 'preferred_days')}
+          {checkboxGrid(PREFERRED_TIME_OPTIONS, patientForm.preferred_times, 'preferred_times')}
+        </AccountFormCard>
+      </AccountFormPage>
     );
   };
 
-  const renderPlaceholder = () => (
-    <div className={styles.placeholderPanel}>This section is coming soon.</div>
+  const renderPlaceholder = (title: string = accountPageTitle(activeNav)) => (
+    <AccountFormPage title={title} description="This section is coming soon.">
+      <AccountFormCard>
+        <p className="text-sm text-muted-foreground">
+          We're building this area next. Nothing to do here yet.
+        </p>
+      </AccountFormCard>
+    </AccountFormPage>
   );
 
   const renderMembershipPanel = () => {
@@ -1853,53 +1823,72 @@ export function MovynAccountDashboardShell({
     const statusLabel = profile.subscription_status || 'free';
 
     return (
-      <>
-        {checkoutBanner && <p className={styles.mutedNote}>{checkoutBanner}</p>}
-        {checkoutSyncing && (
-          <p className={styles.mutedNote}>
-            Verifying your subscription with Stripe. This usually completes in a few seconds.
-          </p>
-        )}
-        <p className={styles.sectionTitle}>Current plan</p>
-        <p className={styles.mutedNote}>
-          {premium
-            ? `Premium — status: ${statusLabel}${renews ? ` · Renews or ends next on ${renews}` : ''}`
-            : `Free — status: ${statusLabel}. Upgrade for premium features as they launch.`}
-        </p>
-        <div className={styles.actionsRow} style={{ flexWrap: 'wrap', gap: '12px' }}>
-          {!premium ? (
-            <>
-              <button
+      <AccountFormPage
+        title="Membership"
+        description="Your Movyn plan. Premium unlocks referrals and extra discovery features."
+      >
+        <AccountFormCard>
+          {checkoutBanner ? (
+            <p className="text-sm text-muted-foreground">{checkoutBanner}</p>
+          ) : null}
+          {checkoutSyncing ? (
+            <p className="text-sm text-muted-foreground">
+              Verifying your subscription with Stripe. This usually completes in a few seconds.
+            </p>
+          ) : null}
+
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-foreground">Current plan</p>
+            <p className="text-sm text-muted-foreground">
+              {premium
+                ? `Premium — status: ${statusLabel}${renews ? ` · Renews or ends next on ${renews}` : ''}`
+                : `Free — status: ${statusLabel}. Upgrade for premium features as they launch.`}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {!premium ? (
+              <>
+                <Button
+                  type="button"
+                  onClick={() => void startSubscriptionCheckout('monthly')}
+                  disabled={billingBusy}
+                >
+                  {billingBusy ? 'Please wait…' : 'Subscribe monthly'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void startSubscriptionCheckout('annual')}
+                  disabled={billingBusy}
+                >
+                  {billingBusy ? 'Please wait…' : 'Subscribe annual'}
+                </Button>
+              </>
+            ) : (
+              <Button
                 type="button"
-                className={styles.secondaryBtn}
+                variant="secondary"
+                onClick={() => void openBillingPortal()}
                 disabled={billingBusy}
-                onClick={() => void startSubscriptionCheckout('monthly')}
               >
-                {billingBusy ? 'Please wait…' : 'Subscribe monthly'}
-              </button>
-              <button
-                type="button"
-                className={styles.secondaryBtn}
-                disabled={billingBusy}
-                onClick={() => void startSubscriptionCheckout('annual')}
-              >
-                {billingBusy ? 'Please wait…' : 'Subscribe annual'}
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className={styles.secondaryBtn}
-              disabled={billingBusy}
-              onClick={() => void openBillingPortal()}
-            >
-              {billingBusy ? 'Please wait…' : 'Manage subscription'}
-            </button>
-          )}
-        </div>
-      </>
+                {billingBusy ? 'Please wait…' : 'Manage subscription'}
+              </Button>
+            )}
+          </div>
+        </AccountFormCard>
+      </AccountFormPage>
     );
   };
+
+  const renderReferralsGate = (body: ReactNode) => (
+    <AccountFormPage
+      title="Referrals"
+      description="Send and receive patient referrals from colleagues."
+    >
+      <AccountFormCard>{body}</AccountFormCard>
+    </AccountFormPage>
+  );
 
   let mainContent: ReactNode = null;
   if (activeNav === 'welcome' && showChiroAccountUI) {
@@ -1916,38 +1905,44 @@ export function MovynAccountDashboardShell({
     mainContent = renderMembershipPanel();
   } else if (activeNav === 'referrals' && showChiroAccountUI) {
     mainContent =
-      !isAdmin && !isPremiumProfile(profile) ? (
-        <div className={styles.placeholderPanel}>
-          <p>Referrals are a premium capability.</p>
-          <p className={styles.mutedNote} style={{ marginTop: '12px' }}>
-            Open{' '}
-            <Link href={accountSettingsHref('membership')} className="text-foreground font-medium underline">
-              Membership
-            </Link>{' '}
-            in the sidebar to subscribe.
-          </p>
-        </div>
-      ) : !isAdmin && !canUseTrustSensitiveFeatures(profile, chiropractorProfile ?? {}) ? (
-        <div className={styles.placeholderPanel}>
-          <p>Referrals unlock after your license is verified by our team.</p>
-          <p className={styles.mutedNote} style={{ marginTop: '12px' }}>
-            Status:{' '}
-            <strong>{licenseStatus.replace(/_/g, ' ')}</strong>
-            {licenseStatus === 'pending_review'
-              ? ' — we will notify you when review is complete.'
-              : ''}
-          </p>
-        </div>
-      ) : (
-        <div className={styles.placeholderPanel}>
-          <p className={styles.sectionTitle}>Your referrals</p>
-          <p className={styles.mutedNote} style={{ marginBottom: 16 }}>
-            Refer patients from search or a colleague&apos;s profile. Incoming referrals can be accepted or declined
-            here.
-          </p>
-          {profile?.id ? <ReferralsWorkspace userId={profile.id} /> : null}
-        </div>
-      );
+      !isAdmin && !isPremiumProfile(profile)
+        ? renderReferralsGate(
+            <div className="space-y-3">
+              <p className="text-sm text-foreground">Referrals are a premium capability.</p>
+              <p className="text-sm text-muted-foreground">
+                Open{' '}
+                <Link
+                  href={accountSettingsHref('membership')}
+                  className="font-medium text-foreground underline"
+                >
+                  Membership
+                </Link>{' '}
+                in the sidebar to subscribe.
+              </p>
+            </div>,
+          )
+        : !isAdmin && !canUseTrustSensitiveFeatures(profile, chiropractorProfile ?? {})
+          ? renderReferralsGate(
+              <div className="space-y-3">
+                <p className="text-sm text-foreground">
+                  Referrals unlock after your license is verified by our team.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Status: <strong>{licenseStatus.replace(/_/g, ' ')}</strong>
+                  {licenseStatus === 'pending_review'
+                    ? ' — we will notify you when review is complete.'
+                    : ''}
+                </p>
+              </div>,
+            )
+          : (
+              <AccountGridPage
+                title="Referrals"
+                description="Refer patients from search or a colleague's profile. Incoming referrals can be accepted or declined here."
+              >
+                {profile?.id ? <ReferralsWorkspace userId={profile.id} /> : null}
+              </AccountGridPage>
+            );
   } else if (isComingSoonNavKey(activeNav)) {
     mainContent = renderPlaceholder();
   } else {
