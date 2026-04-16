@@ -28,40 +28,49 @@ type PlanRow = {
 
 const plans: PlanRow[] = [
   {
-    name: "Starter (placeholder)",
-    price: { monthly: 29, annually: Math.round(29 * 12 * discountRatio) },
-    description: "For solo providers testing the waters on Movyn.",
-    features: ["Placeholder feature", "Placeholder feature", "Email support (placeholder)"],
-    cta: "Start free trial",
+    name: "Listed",
+    price: { monthly: 0, annually: 0 },
+    description:
+      "Get a verified profile on Movyn at no cost. Patients can find you, see your credentials, and reach out.",
+    features: [
+      "Verified license badge",
+      "Searchable basic profile (location, contact, credentials)",
+      "Up to 3 modalities and 3 focus areas",
+    ],
+    cta: "Create your free profile",
     href: "/join",
     popular: false,
   },
   {
-    name: "Professional (placeholder)",
-    price: { monthly: 79, annually: Math.round(79 * 12 * discountRatio) },
-    description: "For growing clinics that want more visibility and leads.",
+    name: "Pro",
+    price: { monthly: 79, annually: Math.round(79 * 12 * (1 - discountRatio)) },
+    description:
+      "For chiropractors who want to be matched on what they actually do—and stand out in their area.",
     features: [
-      "Placeholder feature",
-      "Placeholder feature",
-      "Placeholder feature",
-      "Priority support (placeholder)",
+      "Everything in Listed",
+      "Unlimited modalities, philosophies, and focus areas",
+      "Priority placement in fit-matched search results",
+      "Full bio, photos, room and team highlights",
+      "Direct messaging from interested patients",
     ],
-    cta: "Start free trial",
+    cta: "Start Pro",
     href: "/join",
     popular: true,
   },
   {
-    name: "Enterprise (placeholder)",
-    price: { monthly: 199, annually: Math.round(199 * 12 * discountRatio) },
-    description: "For groups, MSOs, or custom integrations.",
+    name: "Network",
+    price: { monthly: 199, annually: Math.round(199 * 12 * (1 - discountRatio)) },
+    description:
+      "For multi-location practices, integrative groups, and clinics that want to refer between providers.",
     features: [
-      "Placeholder feature",
-      "Placeholder feature",
-      "Placeholder feature",
-      "Placeholder feature",
+      "Everything in Pro",
+      "Multi-location and team management",
+      "Provider-to-provider referrals",
+      "Group analytics and reporting",
+      "Dedicated onboarding for your team",
     ],
-    cta: "Contact sales",
-    href: "mailto:hello@movyn.com?subject=Enterprise%20pricing",
+    cta: "Talk to us",
+    href: "mailto:hello@movyn.com?subject=Network%20plan",
     popular: false,
     external: true,
     enterprise: true,
@@ -75,9 +84,9 @@ export function HomePricing() {
   return (
     <SectionContainer id="pricing">
       <SectionHeader
-        subTitle="Pricing"
-        title="Plans you can refine later"
-        description="Placeholder pricing — mirror Cosmic’s layout while you finalize packaging. Toggle matches the template’s monthly / annual control."
+        subTitle="Pricing for chiropractors"
+        title="Free to be listed. Affordable to be found."
+        description="Patients always search Movyn for free. Chiropractors choose the level of visibility and tools that fit their practice—no contracts, cancel anytime."
       />
       <div className="mx-auto max-w-5xl">
         <div className="flex justify-center">

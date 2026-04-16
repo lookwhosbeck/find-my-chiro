@@ -12,19 +12,20 @@ export function HomePricingCta() {
       <div className="from-muted to-muted/50 relative flex flex-col justify-between gap-4 overflow-hidden rounded-xl border bg-gradient-to-br lg:flex-row lg:gap-10">
         <div className="flex max-w-lg flex-col gap-6 py-4 ps-4 pe-4 md:py-10 md:ps-10 md:pe-0">
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-            Ready to list your practice on Movyn?
+            Get the right patients reaching out for the right reasons.
           </h2>
           <p className="text-muted-foreground md:text-lg">
-            Placeholder copy — replace with your conversion story. Point patients to search and
-            providers to your join flow.
+            Build a profile that explains how you actually practice—then let Movyn match you with
+            patients who are looking for exactly that. Setup takes about ten minutes, and listing is
+            free.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
             <Button variant="outline" asChild>
-              <Link href="/search">Browse directory</Link>
+              <Link href="/search">Browse the directory</Link>
             </Button>
             <Button asChild>
               <Link href="/join">
-                Join the network
+                List your practice
                 <ChevronRight className="ml-1 inline size-4" />
               </Link>
             </Button>

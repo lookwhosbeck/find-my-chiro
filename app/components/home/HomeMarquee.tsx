@@ -6,6 +6,9 @@ export function HomeMarquee({ chiropractors }: { chiropractors: Chiropractor[] }
   return (
     <section className="pb-12 lg:pb-24">
       <div className="app-container">
+        <p className="text-muted-foreground mb-8 text-center text-sm tracking-wide uppercase">
+          Independent chiropractors already on Movyn
+        </p>
         {chiropractors.length > 0 ? (
           <DualMarqueeCarousels chiropractors={chiropractors} />
         ) : (

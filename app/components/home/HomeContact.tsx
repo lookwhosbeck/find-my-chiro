@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Clock, Mail, Phone } from "lucide-react";
+import { Clock, HeartHandshake, Mail, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,46 +17,59 @@ export function HomeContact() {
   return (
     <SectionContainer id="contact">
       <SectionHeader
-        subTitle="Contact"
-        title="Connect with Movyn"
-        description="Placeholder — keep this section once your support email, hours, and intake form are finalized."
+        subTitle="Get in touch"
+        title="We read every message."
+        description="Whether you're a patient who can't find what you're looking for, a chiropractor curious about joining, or a partner who has an idea—we'd love to hear from you."
       />
       <section className="mx-auto grid max-w-screen-lg grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <div className="flex flex-col gap-6 *:rounded-lg *:border *:p-6">
             <div className="bg-muted">
               <div className="mb-4 flex items-center gap-3">
-                <Building2 className="size-4" />
-                <div className="font-bold">Location (placeholder)</div>
-              </div>
-              <div className="text-muted-foreground">123 Example Ave, Suite 100, Your City, ST 00000</div>
-            </div>
-            <div className="bg-muted">
-              <div className="mb-4 flex items-center gap-3">
-                <Phone className="size-4" />
-                <div className="font-bold">Call us (placeholder)</div>
-              </div>
-              <div className="text-muted-foreground">+1 (555) 000-0000</div>
-            </div>
-            <div className="bg-muted">
-              <div className="mb-4 flex items-center gap-3">
                 <Mail className="size-4" />
                 <div className="font-bold">Email</div>
               </div>
-              <div className="text-muted-foreground">hello@movyn.com</div>
+              <a className="text-muted-foreground hover:text-foreground" href="mailto:hello@movyn.com">
+                hello@movyn.com
+              </a>
+            </div>
+            <div className="bg-muted">
+              <div className="mb-4 flex items-center gap-3">
+                <Stethoscope className="size-4" />
+                <div className="font-bold">For chiropractors</div>
+              </div>
+              <div className="text-muted-foreground">
+                Questions about listing, verification, or the Pro plan? Email{" "}
+                <a className="underline-offset-2 hover:underline" href="mailto:practices@movyn.com">
+                  practices@movyn.com
+                </a>
+                .
+              </div>
+            </div>
+            <div className="bg-muted">
+              <div className="mb-4 flex items-center gap-3">
+                <HeartHandshake className="size-4" />
+                <div className="font-bold">For patients</div>
+              </div>
+              <div className="text-muted-foreground">
+                Stuck finding the right fit? Tell us what you&apos;re looking for and we&apos;ll point you in
+                the right direction—no charge.
+              </div>
             </div>
             <div className="bg-muted">
               <div className="mb-4 flex items-center gap-3">
                 <Clock className="size-4" />
-                <div className="font-bold">Hours (placeholder)</div>
+                <div className="font-bold">Response time</div>
               </div>
-              <div className="text-muted-foreground">Monday–Friday, 9am–5pm</div>
+              <div className="text-muted-foreground">
+                Most messages get a reply within one business day, Monday through Friday.
+              </div>
             </div>
           </div>
         </div>
         <Card className="bg-muted">
           <CardHeader>
-            <CardTitle>Send a message</CardTitle>
+            <CardTitle>Send us a note</CardTitle>
           </CardHeader>
           <CardContent>
             <form
@@ -102,7 +115,7 @@ export function HomeContact() {
                   id="contact-message"
                   name="message"
                   rows={5}
-                  placeholder="How can we help?"
+                  placeholder="Tell us what you're looking for, or what you'd want Movyn to do better."
                   className="resize-none"
                   required
                 />

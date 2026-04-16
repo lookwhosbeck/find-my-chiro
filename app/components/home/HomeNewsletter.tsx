@@ -13,13 +13,13 @@ export function HomeNewsletter() {
       <SectionHeader
         title={
           <>
-            Join our{" "}
+            Get the{" "}
             <span className="bg-gradient-to-b from-primary/60 to-primary bg-clip-text text-transparent">
-              newsletter
+              Movyn newsletter
             </span>
           </>
         }
-        description="Placeholder — connect this field to your ESP (e.g. Resend, Mailchimp, Brevo) when you are ready."
+        description="Occasional updates on new features, network growth, and what we're learning from chiropractors and patients. No spam—unsubscribe in one click."
       />
       <form
         className="mx-auto flex w-full flex-col gap-4 md:w-8/12 md:flex-row md:gap-2 lg:w-5/12"
@@ -38,7 +38,7 @@ export function HomeNewsletter() {
           disabled={submitted}
         />
         <Button type="submit" disabled={submitted}>
-          {submitted ? "Thanks — check your inbox" : "Subscribe"}
+          {submitted ? "You're in — check your inbox" : "Keep me posted"}
         </Button>
       </form>
     </SectionContainer>

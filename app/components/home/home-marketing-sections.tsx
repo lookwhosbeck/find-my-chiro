@@ -29,53 +29,53 @@ import { cn } from "@/lib/utils";
 const benefitList = [
   {
     icon: Blocks,
-    title: "Matching beyond the map",
+    title: "Matching, not just mapping",
     description:
-      "Placeholder — explain how Movyn weighs modalities, philosophy, and logistics so patients and practices actually fit.",
+      "We weigh technique, treatment philosophy, focus areas, and how a practice runs—then surface chiropractors who actually fit, instead of ranking by distance alone.",
   },
   {
     icon: LineChart,
-    title: "Clearer expectations upfront",
+    title: "Know what to expect before you book",
     description:
-      "Placeholder — cash vs insurance, visit style, and focus areas surface before the first call.",
+      "Cash, insurance, sliding scale, visit length, follow-up cadence—every profile spells it out up front, so you walk in with no surprises and the right questions.",
   },
   {
     icon: Wallet,
-    title: "Less wasted time for everyone",
+    title: "Less wasted time on both sides",
     description:
-      "Placeholder — fewer mismatched inquiries because filters reflect how you really practice.",
+      "Patients stop calling around. Chiropractors stop fielding inquiries that were never going to be a fit. Everyone gets to the right conversation faster.",
   },
   {
     icon: Sparkles,
-    title: "Room to grow your presence",
+    title: "A profile that actually represents you",
     description:
-      "Placeholder — profiles, storytelling, and discovery features you can expand as you ship.",
+      "For practices: tell the story behind your care—your philosophy, your team, your room, your rates—in a profile patients read before they reach out.",
   },
 ] as const;
 
 const serviceList = [
   {
-    title: "Patient search",
+    title: "For patients — Smart search",
     description:
-      "Placeholder — zip-first discovery, preference filters, and saved context for returning visitors.",
+      "Search by ZIP and the things that actually matter: technique, philosophy, payment model, focus areas, even preferred days and times. Save your preferences once and your matches keep getting sharper.",
     pro: false,
   },
   {
-    title: "Practice profiles",
+    title: "For practices — Living profiles",
     description:
-      "Placeholder — rich listings, match signals, and calls-to-action tuned for chiropractors.",
+      "Show how you really practice. Bio, modalities, focus areas, rates, payment models, and accepting-new-patients status all surface as match signals—so the people who reach out are the people you want to treat.",
     pro: true,
   },
   {
-    title: "Network programs",
+    title: "Referrals between providers",
     description:
-      "Placeholder — employer, referral, or partner bundles when you are ready to describe them.",
-    pro: false,
+      "Refer patients to a colleague who's a better fit for what they need, in a network of vetted chiropractors. Built in collaboration with the providers who use it.",
+    pro: true,
   },
   {
-    title: "Trust & safety",
+    title: "Trust & verification",
     description:
-      "Placeholder — verification, reporting, and privacy commitments (run past counsel).",
+      "Every chiropractor on Movyn has their license verified before their profile goes live. Patient privacy is protected by default—no selling data, no aggressive remarketing.",
     pro: false,
   },
 ] as const;
@@ -83,86 +83,94 @@ const serviceList = [
 const featureList = [
   {
     icon: Tablet,
-    title: "Search tuned for chiropractic care",
+    title: "Search built for chiropractic, not generic health",
     description:
-      "Placeholder — describe how filters reflect real-world choices patients make before booking.",
+      "Filter by adjustment style, soft-tissue work, instrument-assisted technique, decompression, prenatal, pediatric—the choices patients actually weigh before they book.",
   },
   {
     icon: BadgeCheck,
-    title: "Signals that build confidence",
+    title: "Verified, licensed providers only",
     description:
-      "Placeholder — education, licensure, modalities, and philosophy cues you want highlighted.",
+      "Every chiropractor on Movyn has had their state license verified. Education, graduation year, and credentials are visible on every profile.",
   },
   {
     icon: Target,
-    title: "Fit-first discovery",
+    title: "Fit-first match scoring",
     description:
-      "Placeholder — explain match scoring or ranking in plain language once the product is final.",
+      "When you set your preferences, Movyn ranks practices by how well they line up with what you want—not by who paid the most for placement.",
   },
   {
     icon: PictureInPicture,
-    title: "Profiles that feel human",
+    title: "Profiles that read like a real practice",
     description:
-      "Placeholder — photos, voice, and clinic culture so listings feel like more than a pin.",
+      "A bio in the chiropractor's own words, the room they treat in, their team, their approach. Enough to know if it feels right before you pick up the phone.",
   },
   {
     icon: MousePointerClick,
-    title: "Clear next steps",
+    title: "One step to make contact",
     description:
-      "Placeholder — booking, call, or website handoffs that you control per practice.",
+      "Visit the practice's website, call the office, or send a direct request through Movyn—whichever the chiropractor prefers. No middleman, no playing phone tag.",
   },
   {
     icon: Lock,
-    title: "Privacy-minded by design",
+    title: "Privacy-minded by default",
     description:
-      "Placeholder — how you minimize data collection and protect accounts (legal review required).",
+      "We don't sell your data, and we don't share your search activity with practices. Your information is used to find you better matches—nothing else.",
   },
 ] as const;
 
 const testimonials = [
   {
     quote:
-      "Placeholder — swap for a patient story about finding someone who matched their preferences, not just distance.",
-    name: "Alex P.",
-    role: "Patient",
+      "I don't want anyone who'll just crack my back. I wanted someone who does soft-tissue work and explains what they're doing. Movyn was the first place that let me filter for that.",
+    name: "What patients tell us",
+    role: "Patient research",
   },
   {
     quote:
-      "Placeholder — swap for a DC quote on lead quality or fewer mismatched calls after joining Movyn.",
-    name: "Dr. Jordan Lee",
-    role: "Chiropractor",
+      "Most directory leads were the wrong fit—people calling about insurance I don't take, or expecting a model of care I don't practice. The patients reaching out through Movyn already know what I do.",
+    name: "What chiropractors tell us",
+    role: "Provider research",
   },
   {
     quote:
-      "Placeholder — swap for staff or office-manager perspective if that supports your narrative.",
-    name: "Sam Rivera",
-    role: "Clinic team",
+      "We finally have a way to send a patient to a colleague we trust, knowing they'll get exactly the care that's right for them.",
+    name: "What network providers tell us",
+    role: "Referral partner research",
   },
 ] as const;
 
 const teamPlaceholders = [
-  { initials: "NB", name: "Name", role: "Title (placeholder)" },
-  { initials: "TM", name: "Name", role: "Title (placeholder)" },
-  { initials: "CK", name: "Name", role: "Title (placeholder)" },
-  { initials: "DL", name: "Name", role: "Title (placeholder)" },
+  { initials: "NB", name: "Coming soon", role: "Founder" },
+  { initials: "TM", name: "Coming soon", role: "Engineering" },
+  { initials: "CK", name: "Coming soon", role: "Provider experience" },
+  { initials: "DL", name: "Coming soon", role: "Patient experience" },
 ] as const;
 
 const faqItems = [
   {
-    q: "Is Movyn medical advice?",
-    a: "No. Movyn helps you discover professionals; care decisions stay between you and your provider. Replace with counsel-approved language.",
+    q: "Is Movyn free for patients?",
+    a: "Yes. Searching, filtering, saving preferences, and contacting a chiropractor on Movyn is free. We make money from practice memberships, not from patients.",
   },
   {
-    q: "What does it cost to search?",
-    a: "Placeholder — state your patient pricing story. Practices: point to your join page or pricing section.",
+    q: "How is Movyn different from a regular directory?",
+    a: "Most directories rank by distance or who pays for ads. Movyn matches on the things that actually shape your care—technique, philosophy, payment model, focus areas, and visit style—so the chiropractor you find is one who's a real fit, not just the closest one.",
   },
   {
-    q: "How do you use my data?",
-    a: "Placeholder — summarize retention, sharing, and rights. Link to /privacy when it is finalized.",
+    q: "Are the chiropractors on Movyn vetted?",
+    a: "Yes. Every chiropractor goes through license verification before their profile is visible to patients. You'll see their state license, school, graduation year, and credentials on every profile.",
   },
   {
-    q: "Can practices list multiple locations?",
-    a: "Placeholder — describe org accounts or multi-location support the way you plan to ship it.",
+    q: "Does Movyn give medical advice or book appointments for me?",
+    a: "No. Movyn helps you find the right chiropractor; care decisions and scheduling stay between you and the practice. We hand you off directly—through their booking link, phone number, or website—so there's no middleman.",
+  },
+  {
+    q: "How do you handle my data?",
+    a: "We use your information to surface better matches and to let you reach out to a practice—nothing else. We don't sell your data, and we don't share your search activity with chiropractors you haven't contacted.",
+  },
+  {
+    q: "I'm a chiropractor—how do I list my practice?",
+    a: "Create a free account, add your practice details, and submit your license for verification. Once you're approved, you can publish your profile and start receiving fit-matched patient inquiries.",
   },
 ] as const;
 
@@ -173,9 +181,9 @@ export function HomeBenefits() {
         <div>
           <SectionHeader
             className="sticky max-w-full text-center lg:top-[22rem] lg:text-start"
-            subTitle="Benefits"
-            title="Why Movyn exists"
-            description="Placeholder — replace with the outcomes you deliver for patients who feel lost in generic directories and for practices tired of poor-fit leads."
+            subTitle="Why Movyn"
+            title="Generic directories weren't built for chiropractic care."
+            description="Patients waste hours calling around to find someone who actually does what they need. Chiropractors waste hours on inquiries that were never going to be a fit. Movyn fixes both sides of that problem."
           />
         </div>
         <div className="flex w-full flex-col gap-6 lg:gap-[14rem]">
@@ -210,8 +218,8 @@ export function HomeFeatures() {
     <SectionContainer id="features">
       <SectionHeader
         subTitle="Features"
-        title="Everything patients and practices need to connect"
-        description="Placeholder — swap for your platform story. Layout mirrors Cosmic’s feature grid (icon ring + copy)."
+        title="Everything you need to find—or be found by—the right person."
+        description="A search engine, profile system, and trust layer designed specifically for chiropractic care."
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {featureList.map((card) => {
@@ -240,9 +248,9 @@ export function HomeServices() {
   return (
     <SectionContainer id="solutions">
       <SectionHeader
-        subTitle="Services"
-        title="Grow with Movyn"
-        description="Placeholder — map these cards to real offerings: discovery, listings, partnerships, and compliance."
+        subTitle="What's on Movyn"
+        title="Built for both sides of the appointment."
+        description="Patients get a smarter way to search. Chiropractors get a profile, a referral network, and verified trust signals that turn the right kind of attention into the right kind of patient."
       />
       <div className="mx-auto grid w-full max-w-5xl gap-6 sm:grid-cols-2">
         {serviceList.map(({ title, description, pro }) => (
@@ -271,9 +279,9 @@ export function HomeTestimonials() {
   return (
     <SectionContainer id="testimonials">
       <SectionHeader
-        subTitle="Testimonials"
-        title="Loved by people finding the right fit"
-        description="Placeholder — swap for real quotes when you have them. Static grid matches Cosmic card styling (no carousel dependency)."
+        subTitle="What we hear"
+        title="The frustration we kept hearing on both sides."
+        description="Quotes drawn from patient and provider conversations during Movyn's build. Real customer stories will replace these as the network grows."
       />
       <div className="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
         {testimonials.map((review) => (
@@ -300,7 +308,11 @@ export function HomeTestimonials() {
 export function HomeTeam() {
   return (
     <SectionContainer id="team">
-      <SectionHeader subTitle="Team" title="People behind Movyn" />
+      <SectionHeader
+        subTitle="Team"
+        title="A small team, building closely with chiropractors."
+        description="Movyn is shaped by ongoing conversations with the providers and patients it serves. The full team will be introduced here as we grow."
+      />
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {teamPlaceholders.map((member) => (
           <Card
@@ -337,22 +349,25 @@ export function HomeCommunity() {
             <div className="flex flex-col items-center gap-3 text-center">
               <Heart className="text-primary size-10" aria-hidden />
               <CardTitle className="text-center text-3xl font-bold md:text-4xl">
-                Ready to join this{" "}
+                Better-fit chiropractic care starts with the{" "}
                 <span className="bg-gradient-to-b from-primary/60 to-primary bg-clip-text text-transparent">
-                  community?
+                  right network.
                 </span>
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="text-muted-foreground mx-auto max-w-screen-sm space-y-4 text-center text-xl">
             <p>
-              Placeholder — invite people to your real community touchpoint (Discord, Slack, events, or a simple
-              mailing list).
+              Movyn is built with—and for—the chiropractors and patients who use it. Join the
+              network and help shape what better-fit care looks like.
             </p>
           </CardContent>
-          <CardFooter className="justify-center">
+          <CardFooter className="flex-col items-center justify-center gap-3 sm:flex-row">
             <Button size="lg" asChild>
-              <Link href="/about">Learn more</Link>
+              <Link href="/signup-patient">I&apos;m looking for care</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/join">I&apos;m a chiropractor</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -364,8 +379,12 @@ export function HomeCommunity() {
 export function HomeFAQ() {
   return (
     <SectionContainer id="faq">
-      <SectionHeader subTitle="FAQs" title="Common questions" />
-      <div className="mx-auto max-w-sm space-y-3">
+      <SectionHeader
+        subTitle="FAQs"
+        title="Questions we get a lot"
+        description="If you don't see what you're looking for, drop us a note below."
+      />
+      <div className="mx-auto max-w-2xl space-y-3">
         {faqItems.map((item) => (
           <details
             key={item.q}
