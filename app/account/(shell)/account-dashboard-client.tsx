@@ -213,35 +213,21 @@ export function MovynAccountDashboardShell({
   /** One-time default tab for pending chiropractors (matches legacy `initialNavSetRef`). */
   const initialChiroWelcomeRef = useRef(false);
 
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-  const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T | null> => {
-    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), ms));
-    return (await Promise.race([promise, timeout])) as T | null;
-  };
-
+  /**
+   * Middleware (`middleware.ts`) already validated the JWT and would have
+   * redirected to `/signin` if the cookie was missing. The browser session is
+   * stored synchronously in cookies/localStorage, so a single `getSession()` is
+   * enough — no need for a `getUser()` network round trip or retry loop here.
+   * One short retry covers the race where signIn just finished and the cookie
+   * hasn't propagated to localStorage yet.
+   */
   const resolveSessionFast = async () => {
-    const first = await withTimeout(
-      supabase.auth.getSession().then((r) => r.data.session),
-      3000,
-    );
+    const first = (await supabase.auth.getSession()).data.session;
     if (first?.user) return first;
 
-    await withTimeout(supabase.auth.getUser(), 3000);
-    const second = await withTimeout(
-      supabase.auth.getSession().then((r) => r.data.session),
-      3000,
-    );
-    if (second?.user) return second;
-
-    for (let i = 0; i < 2; i += 1) {
-      await sleep(220);
-      const retry = await withTimeout(
-        supabase.auth.getSession().then((r) => r.data.session),
-        1500,
-      );
-      if (retry?.user) return retry;
-    }
-    return null;
+    await new Promise((r) => setTimeout(r, 150));
+    const retry = (await supabase.auth.getSession()).data.session;
+    return retry?.user ? retry : null;
   };
 
   useEffect(() => {
@@ -295,48 +281,11 @@ export function MovynAccountDashboardShell({
     }
   }, [profile, activeNav, router]);
 
-  const loadChiroAccountData = useCallback(async (userId: string) => {
-    const pickName = (rel: unknown): string | undefined => {
-      if (rel == null) return undefined;
-      if (Array.isArray(rel)) return (rel[0] as { name?: string })?.name;
-      return (rel as { name?: string }).name;
-    };
-
-    try {
-      const [mods, focus, phil, pay] = await Promise.all([
-        supabase.from('chiropractor_modalities').select('modalities(name)').eq('chiropractor_id', userId),
-        supabase.from('chiropractor_focus_areas').select('focus_areas(name)').eq('chiropractor_id', userId),
-        supabase.from('chiropractor_philosophies').select('philosophies(name)').eq('chiropractor_id', userId),
-        supabase.from('chiropractor_payment_models').select('payment_models(name)').eq('chiropractor_id', userId),
-      ]);
-
-      const mn = mods.data?.map((r) => pickName((r as { modalities?: unknown }).modalities)).filter(Boolean) || [];
-      const fn = focus.data?.map((r) => pickName((r as { focus_areas?: unknown }).focus_areas)).filter(Boolean) || [];
-      const pn = phil.data?.map((r) => pickName((r as { philosophies?: unknown }).philosophies)).filter(Boolean) || [];
-      const pym = pay.data?.map((r) => pickName((r as { payment_models?: unknown }).payment_models)).filter(Boolean) || [];
-
-      setChiroModalityNames(mn as string[]);
-      setChiroFocusNames(fn as string[]);
-      setChiroPhilosophyNames(pn as string[]);
-      setChiroPaymentNames(pym as string[]);
-
-      const ins = await supabase.from('chiropractor_insurances').select('insurances(name)').eq('chiropractor_id', userId);
-      if (!ins.error && ins.data) {
-        const names = ins.data
-          .map((r) => pickName((r as { insurances?: unknown }).insurances))
-          .filter(Boolean) as string[];
-        setChiroInsuranceNames(names);
-      } else {
-        setChiroInsuranceNames([]);
-      }
-    } catch {
-      setChiroModalityNames([]);
-      setChiroFocusNames([]);
-      setChiroPhilosophyNames([]);
-      setChiroPaymentNames([]);
-      setChiroInsuranceNames([]);
-    }
-  }, []);
+  const pickRelName = (rel: unknown): string | undefined => {
+    if (rel == null) return undefined;
+    if (Array.isArray(rel)) return (rel[0] as { name?: string })?.name;
+    return (rel as { name?: string }).name;
+  };
 
   const toggleChiroMod = (name: string) => {
     setChiroModalityNames((prev) =>
@@ -477,148 +426,19 @@ export function MovynAccountDashboardShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const checkUser = async () => {
-    try {
-      const session = await resolveSessionFast();
-
-      if (!session?.user) {
-        router.replace('/signin');
-        return;
-      }
-
-      await Promise.allSettled([
-        withTimeout(flushPendingChiropractorSignupIfAny(supabase), 1800),
-        withTimeout(flushPendingPatientSignupIfAny(supabase), 1800),
-      ]);
-
-      const authUser = session.user;
-      setUser(authUser);
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError || !profileData) {
-        console.error('Error fetching profile:', profileError);
-        setLoading(false);
-        return;
-      }
-
-      setProfile(profileData as UserProfile);
-      setProfileForm({
-        first_name: profileData.first_name || '',
-        last_name: profileData.last_name || '',
-        email: profileData.email || '',
-      });
-
-      if (
-        profileData.role === 'chiropractor' &&
-        authUser.email_confirmed_at &&
-        !(profileData as UserProfile).chiropractor_welcome_email_sent_at
-      ) {
-        void fetch('/api/email/chiropractor-welcome', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-      }
-
-      const promises: Promise<void>[] = [];
-
-      if (profileData.role === 'chiropractor' || profileData.role === 'admin') {
-        promises.push(loadChiroData(authUser.id, profileData.role));
-      }
-
-      if (profileData.role === 'patient' || profileData.role === 'admin') {
-        promises.push(loadPatientData(authUser.id));
-      }
-
-      await Promise.all(promises);
-    } catch (e) {
-      console.error('Error checking user:', e);
-      router.replace('/');
-    } finally {
-      setLoading(false);
-    }
+  type OrgRow = {
+    id: string;
+    name?: string | null;
+    address_line_1?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip_code?: string | null;
+    phone?: string | null;
   };
+  type ChiroRowWithOrg = ChiropractorProfile & { organizations?: OrgRow | null };
 
-  const loadChiroData = async (userId: string, role: string) => {
-    const { data: chiroData, error: chiroError } = await supabase
-      .from('chiropractors')
-      .select(
-        `*,
-        organizations ( id, name, address_line_1, city, state, zip_code, phone )`,
-      )
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (!chiroError && chiroData) {
-      type OrgRow = {
-        id: string;
-        name?: string | null;
-        address_line_1?: string | null;
-        city?: string | null;
-        state?: string | null;
-        zip_code?: string | null;
-        phone?: string | null;
-      };
-      const row = chiroData as ChiropractorProfile & {
-        organizations?: OrgRow | null;
-      };
-
-      setChiropractorProfile(row);
-      setChiropractorForm({
-        bio: row.bio || '',
-        chiropractic_college: row.chiropractic_college || '',
-        graduation_year: row.graduation_year?.toString() || '',
-        license_number: row.license_number || '',
-        accepting_new_patients: row.accepting_new_patients ?? true,
-      });
-      setChiroBudgetRange(row.budget_range || '');
-
-      const org = row.organizations;
-      if (org) {
-        setOrganizationId(org.id);
-        setOrgForm({
-          name: org.name || '',
-          address_line_1: org.address_line_1 || '',
-          city: org.city || '',
-          state: org.state || '',
-          zip_code: org.zip_code || '',
-          phone: org.phone || '',
-        });
-      } else if (row.organization_id) {
-        setOrganizationId(row.organization_id);
-        const { data: orgOnly } = await supabase
-          .from('organizations')
-          .select('id, name, address_line_1, city, state, zip_code, phone')
-          .eq('id', row.organization_id)
-          .single();
-        if (orgOnly) {
-          setOrgForm({
-            name: orgOnly.name || '',
-            address_line_1: orgOnly.address_line_1 || '',
-            city: orgOnly.city || '',
-            state: orgOnly.state || '',
-            zip_code: orgOnly.zip_code || '',
-            phone: orgOnly.phone || '',
-          });
-        }
-      } else {
-        setOrganizationId(null);
-        setOrgForm({
-          name: '',
-          address_line_1: '',
-          city: '',
-          state: '',
-          zip_code: '',
-          phone: '',
-        });
-      }
-
-      await loadChiroAccountData(userId);
-    } else if (role === 'admin') {
+  const applyChiroRow = useCallback((row: ChiroRowWithOrg | null) => {
+    if (!row) {
       setChiropractorProfile(null);
       setOrganizationId(null);
       setChiropractorForm({
@@ -637,39 +457,186 @@ export function MovynAccountDashboardShell({
         zip_code: '',
         phone: '',
       });
-      await loadChiroAccountData(userId);
+      return;
     }
-  };
 
-  const loadPatientData = async (userId: string) => {
-    const { data: patientData, error: patientError } = await supabase
-      .from('patients')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    setChiropractorProfile(row);
+    setChiropractorForm({
+      bio: row.bio || '',
+      chiropractic_college: row.chiropractic_college || '',
+      graduation_year: row.graduation_year?.toString() || '',
+      license_number: row.license_number || '',
+      accepting_new_patients: row.accepting_new_patients ?? true,
+    });
+    setChiroBudgetRange(row.budget_range || '');
 
-    if (!patientError && patientData) {
-      setPatientProfile(patientData as PatientProfile);
-      const pRow = patientData as PatientProfile;
-      setPatientForm({
-        phone: pRow.phone || '',
-        date_of_birth: pRow.date_of_birth?.slice(0, 10) || '',
-        emergency_contact: pRow.emergency_contact || '',
-        emergency_phone: pRow.emergency_phone || '',
-        preferred_modalities: pRow.preferred_modalities || [],
-        focus_areas: pRow.focus_areas || [],
-        preferred_business_model: pRow.preferred_business_model || '',
-        insurance_type: pRow.insurance_type || '',
-        budget_range: pRow.budget_range || '',
-        city: pRow.city || '',
-        state: pRow.state || '',
-        zip_code: pRow.zip_code || pRow.preferred_zip_code || '',
-        search_radius: clampSearchRadiusMiles(
-          pRow.search_radius ?? pRow.search_radius_miles ?? 25
-        ),
-        preferred_days: pRow.preferred_days || [],
-        preferred_times: pRow.preferred_times || [],
+    const org = row.organizations;
+    if (org) {
+      setOrganizationId(org.id);
+      setOrgForm({
+        name: org.name || '',
+        address_line_1: org.address_line_1 || '',
+        city: org.city || '',
+        state: org.state || '',
+        zip_code: org.zip_code || '',
+        phone: org.phone || '',
       });
+    } else if (row.organization_id) {
+      // Join didn't return the org row (e.g., RLS) — fetch separately in the
+      // background; the rest of the dashboard can render in the meantime.
+      setOrganizationId(row.organization_id);
+      void supabase
+        .from('organizations')
+        .select('id, name, address_line_1, city, state, zip_code, phone')
+        .eq('id', row.organization_id)
+        .single()
+        .then(({ data: orgOnly }) => {
+          if (!orgOnly) return;
+          setOrgForm({
+            name: orgOnly.name || '',
+            address_line_1: orgOnly.address_line_1 || '',
+            city: orgOnly.city || '',
+            state: orgOnly.state || '',
+            zip_code: orgOnly.zip_code || '',
+            phone: orgOnly.phone || '',
+          });
+        });
+    } else {
+      setOrganizationId(null);
+      setOrgForm({
+        name: '',
+        address_line_1: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        phone: '',
+      });
+    }
+  }, []);
+
+  const applyPatientRow = useCallback((pRow: PatientProfile | null) => {
+    if (!pRow) return;
+    setPatientProfile(pRow);
+    setPatientForm({
+      phone: pRow.phone || '',
+      date_of_birth: pRow.date_of_birth?.slice(0, 10) || '',
+      emergency_contact: pRow.emergency_contact || '',
+      emergency_phone: pRow.emergency_phone || '',
+      preferred_modalities: pRow.preferred_modalities || [],
+      focus_areas: pRow.focus_areas || [],
+      preferred_business_model: pRow.preferred_business_model || '',
+      insurance_type: pRow.insurance_type || '',
+      budget_range: pRow.budget_range || '',
+      city: pRow.city || '',
+      state: pRow.state || '',
+      zip_code: pRow.zip_code || pRow.preferred_zip_code || '',
+      search_radius: clampSearchRadiusMiles(
+        pRow.search_radius ?? pRow.search_radius_miles ?? 25,
+      ),
+      preferred_days: pRow.preferred_days || [],
+      preferred_times: pRow.preferred_times || [],
+    });
+  }, []);
+
+  /**
+   * Loads everything the dashboard needs in one parallel fan-out.
+   *
+   * Auth was already validated by `middleware.ts`, so we trust the cookie
+   * `getSession()` returns and skip the (slow) `getUser()` network round trip.
+   * All role-relevant queries fire concurrently keyed on the user id; RLS
+   * cleanly returns empty rows for the wrong role. The `flushPending*` signup
+   * helpers run in the background — they short-circuit when nothing is pending,
+   * and when they DO have work it's safe to apply asynchronously after the
+   * dashboard has rendered.
+   */
+  const checkUser = async () => {
+    try {
+      const session = await resolveSessionFast();
+      if (!session?.user) {
+        router.replace('/signin');
+        return;
+      }
+      const authUser = session.user;
+      setUser(authUser);
+
+      void Promise.allSettled([
+        flushPendingChiropractorSignupIfAny(supabase),
+        flushPendingPatientSignupIfAny(supabase),
+      ]);
+
+      const userId = authUser.id;
+      const [profileRes, chiroRes, patientRes, modsRes, focusRes, philRes, payRes, insRes] =
+        await Promise.all([
+          supabase.from('profiles').select('*').eq('id', userId).single(),
+          supabase
+            .from('chiropractors')
+            .select(
+              `*, organizations ( id, name, address_line_1, city, state, zip_code, phone )`,
+            )
+            .eq('id', userId)
+            .maybeSingle(),
+          supabase.from('patients').select('*').eq('id', userId).maybeSingle(),
+          supabase.from('chiropractor_modalities').select('modalities(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_focus_areas').select('focus_areas(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_philosophies').select('philosophies(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_payment_models').select('payment_models(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_insurances').select('insurances(name)').eq('chiropractor_id', userId),
+        ]);
+
+      if (profileRes.error || !profileRes.data) {
+        console.error('Error fetching profile:', profileRes.error);
+        return;
+      }
+
+      const profileData = profileRes.data as UserProfile;
+      setProfile(profileData);
+      setProfileForm({
+        first_name: profileData.first_name || '',
+        last_name: profileData.last_name || '',
+        email: profileData.email || '',
+      });
+
+      if (
+        profileData.role === 'chiropractor' &&
+        authUser.email_confirmed_at &&
+        !profileData.chiropractor_welcome_email_sent_at
+      ) {
+        void fetch('/api/email/chiropractor-welcome', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      }
+
+      const isChiroRole = profileData.role === 'chiropractor' || profileData.role === 'admin';
+      const isPatientRole = profileData.role === 'patient' || profileData.role === 'admin';
+
+      if (isChiroRole) {
+        applyChiroRow((chiroRes.data as ChiroRowWithOrg | null) ?? null);
+        setChiroModalityNames(
+          (modsRes.data?.map((r) => pickRelName((r as { modalities?: unknown }).modalities)).filter(Boolean) as string[]) || [],
+        );
+        setChiroFocusNames(
+          (focusRes.data?.map((r) => pickRelName((r as { focus_areas?: unknown }).focus_areas)).filter(Boolean) as string[]) || [],
+        );
+        setChiroPhilosophyNames(
+          (philRes.data?.map((r) => pickRelName((r as { philosophies?: unknown }).philosophies)).filter(Boolean) as string[]) || [],
+        );
+        setChiroPaymentNames(
+          (payRes.data?.map((r) => pickRelName((r as { payment_models?: unknown }).payment_models)).filter(Boolean) as string[]) || [],
+        );
+        setChiroInsuranceNames(
+          (insRes.data?.map((r) => pickRelName((r as { insurances?: unknown }).insurances)).filter(Boolean) as string[]) || [],
+        );
+      }
+
+      if (isPatientRole) {
+        applyPatientRow((patientRes.data as PatientProfile | null) ?? null);
+      }
+    } catch (e) {
+      console.error('Error checking user:', e);
+      router.replace('/');
+    } finally {
+      setLoading(false);
     }
   };
 

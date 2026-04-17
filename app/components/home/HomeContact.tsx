@@ -39,7 +39,7 @@ export function HomeContact() {
                 <div className="font-bold">For chiropractors</div>
               </div>
               <div className="text-muted-foreground">
-                Questions about listing, verification, or the Pro plan? Email{" "}
+                Questions about listing, verification, or the Premium plan? Email{" "}
                 <a className="underline-offset-2 hover:underline" href="mailto:practices@movyn.com">
                   practices@movyn.com
                 </a>

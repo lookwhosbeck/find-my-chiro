@@ -172,6 +172,10 @@ const faqItems = [
     q: "I'm a chiropractor—how do I list my practice?",
     a: "Create a free account, add your practice details, and submit your license for verification. Once you're approved, you can publish your profile and start receiving fit-matched patient inquiries.",
   },
+  {
+    q: "How much does it cost to be on Movyn?",
+    a: "A verified profile is free—there's no monthly cost. Premium is $30/month (or 20% off when billed annually) and unlocks unlimited modalities, priority placement, direct messages, and provider referrals. Every plan includes a one-time $50 license verification fee, which is waived for our first 250 founding members.",
+  },
 ] as const;
 
 export function HomeBenefits() {
