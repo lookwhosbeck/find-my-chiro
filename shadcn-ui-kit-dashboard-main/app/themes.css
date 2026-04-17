@@ -178,7 +178,7 @@ body {
     --sidebar-ring: var(--primary-600);
 
     --text-family: var(--font-poppins), sans-serif;
-    --display-weight: 600;
+    --display-weight: 300;
 
     @variant dark {
         --background: var(--base-950);
