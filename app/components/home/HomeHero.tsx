@@ -28,12 +28,10 @@ export function HomeHero({ mapChiropractors }: HomeHeroProps) {
               <span>The chiropractor finder built around fit</span>
             </Badge>
             <div className="mx-auto max-w-3xl text-center text-4xl font-bold md:text-6xl">
-              <h1>Find a chiropractor who actually fits how you want to be cared for.</h1>
+              <h1>Find a chiropractor that fits.</h1>
             </div>
-            <p className="text-muted-foreground mx-auto max-w-xl text-xl">
-              Most directories show you whoever is closest. Movyn matches you on the things that
-              actually shape your visit—technique, treatment style, payment model, and what each
-              practice focuses on—so the first appointment feels like the right one.
+            <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+              Most directories show you whoever is closest. Movyn matches you on the things that actually shape your experience. Treatment style, payment model, and more because we know a good fit is more than just proximity.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-4 md:flex-row">
               <Button className="h-12 px-10 text-base" asChild>

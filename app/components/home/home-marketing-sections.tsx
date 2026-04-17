@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   BadgeCheck,
@@ -140,11 +141,22 @@ const testimonials = [
   },
 ] as const;
 
-const teamPlaceholders = [
-  { initials: "NB", name: "Coming soon", role: "Founder" },
-  { initials: "TM", name: "Coming soon", role: "Engineering" },
-  { initials: "CK", name: "Coming soon", role: "Provider experience" },
-  { initials: "DL", name: "Coming soon", role: "Patient experience" },
+const founders = [
+  {
+    name: "Dr. Lance Gard",
+    role: "Co-founder",
+    bio: "Practicing chiropractor shaping how Movyn represents real-world care—so patients find the right fit on the first visit, not the fifth.",
+  },
+  {
+    name: "Dr. Stephen Kosterman",
+    role: "Co-founder",
+    bio: "Brings the provider's perspective to every feature, making sure Movyn works for the way chiropractors actually run their practices.",
+  },
+  {
+    name: "Nick Becker",
+    role: "Co-founder",
+    bio: "Leads product and design, turning conversations with patients and providers into the Movyn experience you see today.",
+  },
 ] as const;
 
 const faqItems = [
@@ -312,33 +324,45 @@ export function HomeTestimonials() {
 export function HomeTeam() {
   return (
     <SectionContainer id="team">
-      <SectionHeader
-        subTitle="Team"
-        title="A small team, building closely with chiropractors."
-        description="Movyn is shaped by ongoing conversations with the providers and patients it serves. The full team will be introduced here as we grow."
-      />
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {teamPlaceholders.map((member) => (
-          <Card
-            key={member.initials}
-            className="bg-muted group/hoverimg flex h-full flex-col overflow-hidden pt-0"
-          >
-            <figure className="overflow-hidden">
-              <div className="bg-muted-foreground/15 text-muted-foreground flex aspect-square w-full items-center justify-center text-3xl font-bold transition-all duration-200 ease-linear group-hover/hoverimg:scale-[1.05]">
-                {member.initials}
-              </div>
-            </figure>
-            <CardHeader className="pt-0">
-              <CardTitle className="text-lg">{member.name}</CardTitle>
-              <CardDescription>{member.role}</CardDescription>
-            </CardHeader>
-            <CardFooter className="mt-auto space-x-4">
-              <Button variant="ghost" size="sm" className="px-0" type="button" disabled>
-                Social links TBD
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+      <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <figure className="relative aspect-square w-full overflow-hidden rounded-lg">
+          <Image
+            src="/homepage/founders-photo.jpg"
+            alt="Movyn founders Dr. Lance Gard, Dr. Stephen Kosterman, and Nick Becker"
+            fill
+            sizes="(max-width: 1024px) 100vw, 560px"
+            className="object-cover"
+            priority={false}
+          />
+        </figure>
+
+        <div className="flex w-full flex-col justify-center">
+          <div className="max-w-lg">
+            <Badge variant="outline" className="text-muted-foreground mb-3">
+              Meet the founders
+            </Badge>
+
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl lg:mb-6">
+              Built by chiropractors and patients who wanted better.
+            </h2>
+
+            <p className="text-muted-foreground mb-8 lg:mb-10">
+              Movyn is shaped by ongoing conversations with the providers and patients it serves.
+              Here&apos;s the team making sure the product keeps reflecting how chiropractic care
+              actually works.
+            </p>
+
+            <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:gap-y-8">
+              {founders.map((person) => (
+                <div key={person.name}>
+                  <h6 className="font-semibold">{person.name}</h6>
+                  <p className="text-primary mb-2 text-sm font-medium">{person.role}</p>
+                  <p className="text-muted-foreground text-sm">{person.bio}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </SectionContainer>
   );
