@@ -58,7 +58,7 @@ export function SignInForms03({
 
   return (
     <AuthMarketingBackdrop>
-      <Card className="mx-auto flex w-full max-w-sm flex-col items-center gap-8 border-0 bg-card/95 shadow-lg backdrop-blur-sm supports-[backdrop-filter]:bg-card/80">
+      <Card className="mx-auto flex w-full max-w-sm flex-col items-center gap-8 border-0 bg-card shadow-lg">
         <CardContent className="w-full space-y-8 pt-8 text-center">
           <div className="flex flex-col items-center justify-center gap-4 text-center">
             <MovynLogo variant="standard" className="h-9 w-auto max-w-[200px]" />

@@ -3,28 +3,99 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { resolveBrowserSession } from '@/app/lib/auth-session-client';
 import { supabase } from '@/app/lib/supabase';
 import { MovynLogo } from '@/app/components/MovynLogo';
-import { AuthMarketingBackdrop } from '@/components/auth-marketing-backdrop';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import styles from './page.module.css';
 
 const MIN_PASSWORD_LENGTH = 8;
 
+type LinkError = { message: string; expired: boolean };
+
 /**
- * After a user clicks the recovery link in the password reset email,
- * Supabase redirects through `/auth/callback` which exchanges the code
- * for a recovery session and then forwards the user here. This page lets
- * the authenticated (recovery-session) user set a new password via
- * `supabase.auth.updateUser({ password })`.
+ * Parse recovery error info out of both the query string and the hash fragment.
+ * Supabase returns errors in `#error=...&error_code=otp_expired&error_description=...`
+ * for implicit-style redirects and sometimes in `?error=...` for PKCE-style redirects.
+ */
+function readRecoveryError(): LinkError | null {
+  if (typeof window === 'undefined') return null;
+
+  const fromQuery = new URLSearchParams(window.location.search);
+  const fromHash = new URLSearchParams(
+    window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash,
+  );
+
+  const err = fromHash.get('error') || fromQuery.get('error');
+  const code = fromHash.get('error_code') || fromQuery.get('error_code');
+  const description =
+    fromHash.get('error_description') || fromQuery.get('error_description') || '';
+
+  if (!err && !code) return null;
+
+  const expired = code === 'otp_expired' || /expired/i.test(description);
+  const pretty = description.replace(/\+/g, ' ');
+  return {
+    expired,
+    message: expired
+      ? 'This reset link has expired. Request a new one to set a new password.'
+      : pretty || 'This reset link is invalid. Request a new one to continue.',
+  };
+}
+
+/** Strip tokens/codes from the URL bar once we've consumed them. */
+function cleanUrl() {
+  if (typeof window === 'undefined') return;
+  const { origin, pathname } = window.location;
+  window.history.replaceState({}, document.title, `${origin}${pathname}`);
+}
+
+/**
+ * Establishes a recovery session from whatever the email link produced:
+ * - `#access_token=...&refresh_token=...&type=recovery` (implicit)
+ * - `?code=...` (PKCE)
+ * - `?token_hash=...&type=recovery` (OTP hash)
+ * supabase-js handles the first two automatically when `detectSessionInUrl`
+ * is on (the default), but we also try `verifyOtp` for the third form.
+ */
+async function establishRecoverySession(): Promise<boolean> {
+  const url = new URL(window.location.href);
+  const tokenHash = url.searchParams.get('token_hash');
+  const type = url.searchParams.get('type');
+
+  if (tokenHash && type === 'recovery') {
+    try {
+      const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+      if (error) {
+        console.error('reset-password: verifyOtp', error);
+        return false;
+      }
+      cleanUrl();
+      return true;
+    } catch (err) {
+      console.error('reset-password: verifyOtp threw', err);
+      return false;
+    }
+  }
+
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.user) {
+    cleanUrl();
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * After the user clicks the recovery link in the password reset email,
+ * Supabase redirects them here. This page reads the URL, creates a
+ * recovery session (via `detectSessionInUrl` or `verifyOtp`), then lets
+ * the user pick a new password via `supabase.auth.updateUser({ password })`.
  */
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
+  const [linkError, setLinkError] = useState<LinkError | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,11 +105,20 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const verifySession = async () => {
+    const init = async () => {
+      const existing = readRecoveryError();
+      if (existing) {
+        if (!cancelled) {
+          setLinkError(existing);
+          setChecking(false);
+        }
+        return;
+      }
+
       try {
-        const session = await resolveBrowserSession(supabase);
+        const ok = await establishRecoverySession();
         if (cancelled) return;
-        if (session?.user) {
+        if (ok) {
           setHasRecoverySession(true);
         }
       } catch (err) {
@@ -49,13 +129,15 @@ export default function ResetPasswordPage() {
       }
     };
 
-    void verifySession();
+    void init();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
-      if (event === 'PASSWORD_RECOVERY' || session?.user) {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session?.user)) {
         setHasRecoverySession(true);
+        setLinkError(null);
         setChecking(false);
+        cleanUrl();
       }
     });
 
@@ -99,95 +181,108 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <AuthMarketingBackdrop>
-      <Card className="mx-auto flex w-full max-w-sm flex-col items-center gap-8 border-0 bg-card/95 shadow-lg backdrop-blur-sm supports-[backdrop-filter]:bg-card/80">
-        <CardContent className="w-full space-y-8 pt-8 text-center">
-          <div className="flex flex-col items-center justify-center gap-4 text-center">
-            <MovynLogo variant="standard" className="h-9 w-auto max-w-[200px]" />
-            <h1 className="text-center text-2xl font-semibold tracking-tight text-foreground [font-family:var(--font-display)] sm:text-3xl">
-              Choose a new password
-            </h1>
-          </div>
+    <div className={styles.resetPage}>
+      <div className={styles.resetSplit}>
+        <div className={styles.resetMain}>
+          <h1 className={styles.resetTitle}>Choose a new password</h1>
 
-          <div className="w-full space-y-6 text-left">
+          <div className={styles.resetCard}>
             {checking ? (
-              <p className="text-center text-sm text-muted-foreground">Verifying your reset link…</p>
+              <p className={styles.resetIntro}>Verifying your reset link…</p>
+            ) : linkError ? (
+              <>
+                <div className={styles.resetError}>{linkError.message}</div>
+                <Link href="/forgot-password" className={styles.resetSubmit}>
+                  Request a new reset link
+                </Link>
+              </>
             ) : !hasRecoverySession ? (
-              <div className="space-y-6">
-                <p className="text-sm text-muted-foreground">
-                  This reset link is invalid or has expired. Request a new one to set a new password.
+              <>
+                <p className={styles.resetIntro}>
+                  This reset link is invalid or has expired. Request a new one to set a new
+                  password.
                 </p>
-                <Button className="w-full" asChild>
-                  <Link href="/forgot-password">Request a new reset link</Link>
-                </Button>
-              </div>
+                <Link href="/forgot-password" className={styles.resetSubmit}>
+                  Request a new reset link
+                </Link>
+              </>
             ) : done ? (
-              <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-center text-sm text-emerald-900 dark:text-emerald-100">
+              <p className={styles.resetNotice}>
                 Password updated. Redirecting you to your account…
               </p>
             ) : (
-              <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-                <p className="text-sm text-muted-foreground">
-                  Pick a strong password you don&apos;t use anywhere else. We&apos;ll sign you in right after.
+              <>
+                <p className={styles.resetIntro}>
+                  Pick a strong password you don&apos;t use anywhere else. We&apos;ll sign you in
+                  right after.
                 </p>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reset-password">New password</Label>
-                  <Input
-                    id="reset-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={MIN_PASSWORD_LENGTH}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Minimum {MIN_PASSWORD_LENGTH} characters.</p>
-                </div>
+                <form className={styles.resetForm} onSubmit={handleSubmit} noValidate>
+                  <div className={styles.resetFields}>
+                    <div className={styles.resetField}>
+                      <label className={styles.resetLabel} htmlFor="reset-password">
+                        New password
+                      </label>
+                      <input
+                        id="reset-password"
+                        className={styles.resetInput}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="At least 8 characters"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={MIN_PASSWORD_LENGTH}
+                        required
+                      />
+                      <span className={styles.resetHint}>Minimum {MIN_PASSWORD_LENGTH} characters.</span>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reset-password-confirm">Confirm new password</Label>
-                  <Input
-                    id="reset-password-confirm"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter your new password"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={MIN_PASSWORD_LENGTH}
-                    required
-                  />
-                </div>
-
-                {error ? (
-                  <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    {error}
+                    <div className={styles.resetField}>
+                      <label className={styles.resetLabel} htmlFor="reset-password-confirm">
+                        Confirm new password
+                      </label>
+                      <input
+                        id="reset-password-confirm"
+                        className={styles.resetInput}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter your new password"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={MIN_PASSWORD_LENGTH}
+                        required
+                      />
+                    </div>
                   </div>
-                ) : null}
 
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? 'Updating…' : 'Update password'}
-                </Button>
-              </form>
+                  {error ? <div className={styles.resetError}>{error}</div> : null}
+
+                  <button type="submit" className={styles.resetSubmit} disabled={submitting}>
+                    {submitting ? 'Updating…' : 'Update password'}
+                  </button>
+                </form>
+              </>
             )}
 
-            <p className="text-center text-sm text-muted-foreground">
+            <p className={styles.resetCardFooter}>
               Back to{' '}
-              <Link href="/signin" className="font-medium text-foreground underline underline-offset-4">
+              <Link href="/signin" className={styles.resetInlineLink}>
                 Sign in
               </Link>
             </p>
           </div>
 
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
+          <Link href="/" className={styles.resetBack}>
             Back to home
           </Link>
-        </CardContent>
-      </Card>
-    </AuthMarketingBackdrop>
+        </div>
+
+        <div className={styles.resetAsideWrap}>
+          <div className={styles.resetAside}>
+            <MovynLogo variant="onDark" className={styles.resetLogoSvg} />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

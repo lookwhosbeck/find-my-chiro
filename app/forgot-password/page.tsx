@@ -4,17 +4,26 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import { MovynLogo } from '@/app/components/MovynLogo';
-import styles from './page.module.css';
+import { AuthMarketingBackdrop } from '@/components/auth-marketing-backdrop';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 /**
- * Builds the redirect target Supabase appends `?code=...` to after the user
- * clicks the recovery link. We bounce through `/auth/callback` so the code
- * gets exchanged for a recovery session, then land on `/reset-password`.
+ * Recovery links must land directly on `/reset-password` — not on the server
+ * `/auth/callback` route. Supabase's verify endpoint for `type=recovery`
+ * redirects back with a URL hash fragment (`#access_token=...`) that the
+ * server can't read. The browser Supabase client on `/reset-password` picks
+ * it up automatically and fires `PASSWORD_RECOVERY`.
+ *
+ * Note: this exact URL must be in the Supabase Dashboard →
+ * Authentication → URL Configuration → Redirect URLs allow list
+ * (e.g. `https://movynalong.com/reset-password` and any preview origins).
  */
 function buildRecoveryRedirectUrl(): string {
   if (typeof window === 'undefined') return '';
-  const next = encodeURIComponent('/reset-password');
-  return `${window.location.origin}/auth/callback?next=${next}`;
+  return `${window.location.origin}/reset-password`;
 }
 
 export default function ForgotPasswordPage() {
@@ -52,75 +61,77 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className={styles.recoverPage}>
-      <div className={styles.recoverSplit}>
-        <div className={styles.recoverMain}>
-          <h1 className={styles.recoverTitle}>Reset your password</h1>
+    <AuthMarketingBackdrop>
+      <Card className="mx-auto flex w-full max-w-sm flex-col items-center gap-8 border-0 bg-card shadow-lg">
+        <CardContent className="w-full space-y-8 pt-8 text-center">
+          <div className="flex flex-col items-center justify-center gap-4 text-center">
+            <MovynLogo variant="standard" className="h-9 w-auto max-w-[200px]" />
+            <h1 className="text-center text-2xl font-semibold tracking-tight text-foreground [font-family:var(--font-display)] sm:text-3xl">
+              Reset your password
+            </h1>
+          </div>
 
-          <div className={styles.recoverCard}>
+          <div className="w-full space-y-6 text-left">
             {sent ? (
-              <>
-                <p className={styles.recoverNotice}>
-                  If an account exists for <strong>{email}</strong>, we just sent a password reset
-                  link. Check your inbox (and spam) and follow the link to choose a new password.
+              <div className="space-y-4 text-sm text-muted-foreground">
+                <p>
+                  If an account exists for <strong className="text-foreground">{email}</strong>, we
+                  just sent a password reset link. Check your inbox (and spam) and follow the link to
+                  choose a new password.
                 </p>
-                <p className={styles.recoverIntro}>
+                <p>
                   The link is valid for a limited time. Didn&apos;t get it? Try again in a minute or
                   contact support.
                 </p>
-              </>
+              </div>
             ) : (
-              <>
-                <p className={styles.recoverIntro}>
+              <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+                <p className="text-sm text-muted-foreground">
                   Enter the email you used to sign up and we&apos;ll send you a link to choose a new
                   password.
                 </p>
 
-                <form className={styles.recoverForm} onSubmit={handleSubmit} noValidate>
-                  <div className={styles.recoverField}>
-                    <label className={styles.recoverLabel} htmlFor="recover-email">
-                      Email
-                    </label>
-                    <input
-                      id="recover-email"
-                      className={styles.recoverInput}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@email.com"
-                      type="email"
-                      autoComplete="email"
-                      required
-                    />
+                <div className="space-y-2">
+                  <Label htmlFor="recover-email">Email</Label>
+                  <Input
+                    id="recover-email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    type="email"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+
+                {error ? (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {error}
                   </div>
+                ) : null}
 
-                  {error ? <div className={styles.recoverError}>{error}</div> : null}
-
-                  <button type="submit" className={styles.recoverSubmit} disabled={submitting}>
-                    {submitting ? 'Sending…' : 'Send reset link'}
-                  </button>
-                </form>
-              </>
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? 'Sending…' : 'Send reset link'}
+                </Button>
+              </form>
             )}
 
-            <p className={styles.recoverCardFooter}>
+            <p className="text-center text-sm text-muted-foreground">
               Remembered it?{' '}
-              <Link href="/signin" className={styles.recoverInlineLink}>
+              <Link href="/signin" className="font-medium text-foreground underline underline-offset-4">
                 Back to sign in
               </Link>
             </p>
           </div>
 
-          <Link href="/" className={styles.recoverBack}>
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
             Back to home
           </Link>
-        </div>
-
-        <div className={styles.recoverAsideWrap}>
-          <div className={styles.recoverAside}>
-            <MovynLogo variant="onDark" className={styles.recoverLogoSvg} />
-          </div>
-        </div>
-      </div>
-    </div>
+        </CardContent>
+      </Card>
+    </AuthMarketingBackdrop>
   );
 }
