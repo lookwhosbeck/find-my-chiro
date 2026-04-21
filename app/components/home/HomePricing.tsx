@@ -2,17 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionContainer, SectionHeader } from "@/app/components/home/section-layout";
 import { HomePricingCta } from "@/app/components/home/HomePricingCta";
-import {
-  FOUNDING_COUPON_CODE,
-  FOUNDING_MEMBERS_CAP,
-  LICENSE_VERIFICATION_FEE_USD,
-} from "@/lib/founding-promo";
+import { LICENSE_VERIFICATION_FEE_USD } from "@/lib/founding-promo";
+import { FoundingCouponCallout } from "@/app/components/home/FoundingCouponCallout";
 import { cn } from "@/lib/utils";
 
 type Period = "monthly" | "annually";
@@ -89,21 +86,8 @@ export function HomePricing() {
         description="Patients always search Movyn for free. Chiropractors choose between a free verified profile or a Premium membership that unlocks every match-making feature—no contracts, cancel anytime."
       />
       <div className="mx-auto max-w-5xl">
-        <div className="mb-10 flex flex-col gap-3 rounded-xl border border-[#0190ff]/35 bg-[#e6f6ff] px-6 py-4 text-center shadow-sm sm:text-left dark:border-blue-500/40 dark:bg-blue-950/85 dark:shadow-none">
-          <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-start sm:gap-3">
-            <Badge className="shrink-0 gap-1 border-0 bg-[#0190ff] text-white hover:bg-[#0190ff]">
-              <Sparkles className="size-3.5" />
-              Coupon · {FOUNDING_COUPON_CODE}
-            </Badge>
-            <p className="text-sm text-[#0c4a6e] sm:text-base dark:text-blue-50">
-              <span className="font-semibold">Use coupon code {FOUNDING_COUPON_CODE} at sign up</span> for free
-              license verification.{" "}
-              <span className="text-[#0369a1] dark:text-blue-200/95">
-                Limited to the first {FOUNDING_MEMBERS_CAP} chiropractors (waives the usual ${verificationFee}{" "}
-                verification). After that, a one-time ${verificationFee} verification fee on any plan.
-              </span>
-            </p>
-          </div>
+        <div className="mb-10">
+          <FoundingCouponCallout />
         </div>
         <div className="flex justify-center">
           <div className="mb-8 flex justify-center rounded-lg border p-1">

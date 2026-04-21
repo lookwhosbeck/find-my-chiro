@@ -2,11 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  FOUNDING_COUPON_CODE,
-  FOUNDING_MEMBERS_CAP,
-  LICENSE_VERIFICATION_FEE_USD,
-} from "@/lib/founding-promo";
+import { FoundingCouponCallout } from "@/app/components/home/FoundingCouponCallout";
 
 const CTA_IMAGE = "/hero/home-hero-bg.jpg";
 
@@ -24,11 +20,7 @@ export function HomePricingCta() {
             patients who are looking for exactly that. Setup takes about ten minutes, and listing is
             free.
           </p>
-          <p className="rounded-lg border border-[#0190ff]/35 bg-[#e6f6ff] px-4 py-3 text-sm leading-snug text-[#0c4a6e] dark:border-blue-500/40 dark:bg-blue-950/85 dark:text-blue-50">
-            <span className="font-semibold">Use coupon code {FOUNDING_COUPON_CODE} at sign up</span> for free
-            license verification — limited to the first {FOUNDING_MEMBERS_CAP} chiropractors (${LICENSE_VERIFICATION_FEE_USD}{" "}
-            value).
-          </p>
+          <FoundingCouponCallout />
           <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
             <Button variant="outline" className="w-full sm:w-auto" asChild>
               <Link href="/search">Browse the directory</Link>
