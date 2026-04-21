@@ -25,9 +25,9 @@ export function HomeHero({ mapPreview }: HomeHeroProps) {
               className="bg-muted mx-auto max-w-full whitespace-normal px-3 py-2 text-center text-xs leading-tight sm:text-sm"
             >
               <span className="text-primary mr-2">
-                <Badge className="bg-background text-foreground hover:bg-background">New</Badge>
+                <Badge className="bg-background text-foreground hover:bg-background">FNDR250</Badge>
               </span>
-              <span>The chiropractor finder built around fit</span>
+              <span>The first 250 members get free license verification</span>
             </Badge>
             <div className="mx-auto max-w-3xl text-center text-3xl font-bold tracking-tight sm:text-4xl md:text-6xl">
               <h1 className="text-balance">Find a chiropractor that fits.</h1>
