@@ -131,9 +131,9 @@ html {
 }
 
 :root {
-  /* Typography - SF Pro system stack for body, Untitled Serif for display */
+  /* Typography - SF Pro system stack for body, Host Grotesk for display */
   --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-  --font-display: "Untitled Serif", Georgia, serif;
+  --font-display: var(--font-host-grotesk), "Host Grotesk", sans-serif;
   
   /* Type scale based on Apple's SF Pro sizing */
   --text-xs: 11px;     /* Caption, fine print */

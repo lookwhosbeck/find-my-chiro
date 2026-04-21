@@ -1,6 +1,6 @@
-/* Sign-in — Figma node 33:1927: exact layout + proportions */
+/* Reset password — mirrors /signin and /forgot-password layout */
 
-.signinPage {
+.resetPage {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -9,7 +9,7 @@
   background: #ffffff;
 }
 
-.signinSplit {
+.resetSplit {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -17,7 +17,7 @@
   min-height: min(900px, 100vh);
 }
 
-.signinMain {
+.resetMain {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
@@ -28,18 +28,17 @@
   padding: 24px 16px;
 }
 
-.signinTitle {
+.resetTitle {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  line-height: 20px;
+  line-height: 28px;
   letter-spacing: -0.72px;
   color: #202020;
   text-align: center;
 }
 
-/* Login card — node 33:1881: w 433.33, radius 24, pt 24 px 24 pb 48, gap 32 */
-.signinCard {
+.resetCard {
   box-sizing: border-box;
   width: 433.33px;
   max-width: 100%;
@@ -55,52 +54,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
 }
 
-.signinTabs {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.signinTab {
-  box-sizing: border-box;
-  width: 116px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
+.resetIntro {
+  margin: 0;
+  width: 100%;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 20px;
   letter-spacing: -0.14px;
-  cursor: pointer;
-  background: #f3f3f3;
-  color: #202020;
-  font-family: inherit;
-  transition: background 0.15s ease, color 0.15s ease;
+  color: #5b5b60;
+  text-align: left;
 }
 
-.signinTab:hover {
-  filter: brightness(0.97);
-}
-
-.signinTab:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-}
-
-.signinTabActive {
-  background: #2563eb;
-  color: #ffffff;
-}
-
-.signinTabActive:hover {
-  filter: brightness(1.05);
-}
-
-/* Node 33:1891: gap 16 between tabpanel stack and Sign in button */
-.signinForm {
+.resetForm {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -108,56 +76,35 @@
   align-items: stretch;
 }
 
-/* Node 33:1893: gap 16 between Email block and Password block */
-.signinFields {
+.resetFields {
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 100%;
 }
 
-/* Node 33:1896 / 33:1906: gap 4 label to input */
-.signinField {
+.resetField {
   display: flex;
   flex-direction: column;
   gap: 4px;
   width: 100%;
 }
 
-.signinLabelRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.signinLabel {
+.resetLabel {
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;
   color: #202020;
 }
 
-.signinForgotLink {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: -0.13px;
-  color: #2563eb;
-  text-decoration: none;
+.resetHint {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: #5b5b60;
 }
 
-.signinForgotLink:hover {
-  text-decoration: underline;
-}
-
-.signinForgotLink:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.signinInput {
+.resetInput {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 14px;
@@ -166,24 +113,23 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
-  letter-spacing: 0;
   font-family: inherit;
   color: #202020;
   background: #ffffff;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.signinInput::placeholder {
-  color: #e8e8e8;
+.resetInput::placeholder {
+  color: #c9c9cc;
 }
 
-.signinInput:focus {
+.resetInput:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 1px #2563eb;
 }
 
-.signinError {
+.resetError {
   padding: 10px 12px;
   border-radius: 8px;
   background: var(--red-3, #fee7e9);
@@ -193,8 +139,17 @@
   line-height: 20px;
 }
 
-/* Node 33:3456: h 40, radius 6, 14px medium */
-.signinSubmit {
+.resetNotice {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  border: 1px solid #34d399;
+  color: #047857;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.resetSubmit {
   box-sizing: border-box;
   width: 100%;
   height: 40px;
@@ -215,22 +170,21 @@
   transition: background 0.15s ease, opacity 0.15s ease;
 }
 
-.signinSubmit:hover:not(:disabled) {
+.resetSubmit:hover:not(:disabled) {
   background: #1d4ed8;
 }
 
-.signinSubmit:disabled {
+.resetSubmit:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
 
-.signinSubmit:focus-visible {
+.resetSubmit:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-/* Node 33:2265: w 261, 16px, tracking -0.48px */
-.signinCardFooter {
+.resetCardFooter {
   margin: 0;
   width: 261px;
   max-width: 100%;
@@ -242,18 +196,17 @@
   text-align: center;
 }
 
-.signinInlineLink {
+.resetInlineLink {
   color: #2563eb;
   text-decoration: none;
   font-weight: 400;
 }
 
-.signinInlineLink:hover {
+.resetInlineLink:hover {
   text-decoration: underline;
 }
 
-/* Node 33:2267 */
-.signinBack {
+.resetBack {
   display: block;
   margin: 0;
   width: 261px;
@@ -272,18 +225,17 @@
   padding: 0;
 }
 
-.signinBack:hover {
+.resetBack:hover {
   text-decoration: underline;
 }
 
-.signinBack:focus-visible {
+.resetBack:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
   border-radius: 6px;
 }
 
-/* Node 33:2128: p 16 */
-.signinAsideWrap {
+.resetAsideWrap {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
@@ -292,8 +244,7 @@
   min-height: 240px;
 }
 
-/* Node 33:2129: radius 24, py 24 px 136 */
-.signinAside {
+.resetAside {
   flex: 1 1 auto;
   display: flex;
   align-items: center;
@@ -305,15 +256,14 @@
   overflow: hidden;
 }
 
-/* Full logo SVG 482×85 — scale by width only so viewBox keeps proportions */
-.signinLogoSvg {
+.resetLogoSvg {
   display: block;
   width: 100%;
   max-width: 400px;
   height: auto;
 }
 
-.signinLoading {
+.resetLoading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -323,22 +273,22 @@
 }
 
 @media (min-width: 900px) {
-  .signinSplit {
+  .resetSplit {
     flex-direction: row;
     align-items: stretch;
     min-height: max(900px, 100vh);
   }
 
-  .signinMain {
+  .resetMain {
     padding: 24px 16px;
   }
 
-  .signinAsideWrap {
+  .resetAsideWrap {
     min-height: 0;
     align-self: stretch;
   }
 
-  .signinAside {
+  .resetAside {
     min-height: min(900px, calc(100vh - 32px));
   }
 }

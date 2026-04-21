@@ -22,7 +22,7 @@ Numeric IDs below match the current Brevo transactional templates (names as in B
 |---|---|---|---|
 | 11 | E1 Email verification | user signup / verify flows | Supabase Send Email hook (`/api/webhooks/supabase-auth-email`) |
 | 12 | E2 Welcome + Loom | first confirmed chiropractor login | `sendChiropractorWelcomeEmailIfNeeded()` |
-| 13 | Password reset | recovery flow | Supabase Send Email hook |
+| 13 | Password reset | recovery flow (`/forgot-password` → Supabase `resetPasswordForEmail`) | Supabase Send Email hook → [`brevo-password-reset-template.md`](./brevo-password-reset-template.md) |
 | 14 | E3 Complete profile nudge | 48h after email confirmed AND required profile fields are incomplete | `/api/cron/chiropractor-profile-nudge` |
 | 15 | E4 Profile is live | admin transition to `approved` license status | `PATCH /api/admin/chiropractors` |
 | 17 | E6 Patient Intro (HIPAA-Safe) | `POST /api/referrals` after row insert | `sendInitialReferralEmailsIfNeeded()` → `BREVO_REFERRAL_PATIENT_TEMPLATE_ID` |

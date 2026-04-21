@@ -22,7 +22,7 @@ export function Testimonial({
       <div
         className="relative flex flex-1 flex-col gap-2"
         style={{
-          fontFamily: "'Untitled Serif', Georgia, serif",
+          fontFamily: "var(--font-display)",
           fontStyle: 'italic',
           fontSize: '32px',
           lineHeight: '38.4px',
@@ -41,7 +41,7 @@ export function Testimonial({
             transform: 'translateY(-50%)',
             fontSize: '32px',
             lineHeight: '38.4px',
-            fontFamily: "'Untitled Serif', Georgia, serif",
+            fontFamily: "var(--font-display)",
             fontStyle: 'italic',
           }}
         >

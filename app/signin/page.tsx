@@ -190,9 +190,17 @@ export default function SignInPage() {
                 </div>
 
                 <div className={styles.signinField}>
-                  <label className={styles.signinLabel} htmlFor="signin-password">
-                    Password
-                  </label>
+                  <div className={styles.signinLabelRow}>
+                    <label className={styles.signinLabel} htmlFor="signin-password">
+                      Password
+                    </label>
+                    <Link
+                      href={`/forgot-password${formData.email ? `?email=${encodeURIComponent(formData.email)}` : ''}`}
+                      className={styles.signinForgotLink}
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <input
                     id="signin-password"
                     className={styles.signinInput}
