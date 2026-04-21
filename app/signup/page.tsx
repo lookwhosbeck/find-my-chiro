@@ -126,7 +126,9 @@ export default function SignUpPage() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout_canceled") === "1") {
-      setSubmitError("Checkout was canceled. You can try again or start free.");
+      setSubmitError(
+        "Checkout was canceled. You can try again to complete license verification.",
+      );
       window.history.replaceState({}, "", "/signup");
       return;
     }
@@ -161,7 +163,12 @@ export default function SignUpPage() {
           return;
         }
         verifiedSessionRef.current = sessionId;
-        const plan = json.plan === "annual" ? "annual" : "monthly";
+        const plan: SignupPlan =
+          json.plan === "free"
+            ? "free"
+            : json.plan === "annual"
+              ? "annual"
+              : "monthly";
         setPaidCheckoutInfo({
           email: json.email || "",
           plan,
@@ -216,7 +223,7 @@ export default function SignUpPage() {
     });
   };
 
-  const startGuestCheckout = async (plan: "monthly" | "annual") => {
+  const startGuestCheckout = async (plan: SignupPlan) => {
     setCheckoutStartLoading(true);
     setSubmitError(null);
     setFormData((prev) => ({ ...prev, signupPlan: plan }));
@@ -243,10 +250,7 @@ export default function SignUpPage() {
   };
 
   const handleStartFree = () => {
-    setPaidCheckoutInfo(null);
-    setFormData((prev) => ({ ...prev, signupPlan: "free" }));
-    setSubmitError(null);
-    setStep(2);
+    void startGuestCheckout("free");
   };
 
   const validateAccountStep = (): string | null => {
@@ -320,10 +324,10 @@ export default function SignUpPage() {
       return;
     }
 
-    const isPaid =
-      formData.signupPlan === "monthly" || formData.signupPlan === "annual";
-    if (isPaid && !paidCheckoutInfo) {
-      setSubmitError("Complete secure checkout first, or choose Start free.");
+    if (!paidCheckoutInfo) {
+      setSubmitError(
+        "Complete the license verification checkout on step 1 before continuing.",
+      );
       setStep(1);
       return;
     }
@@ -347,7 +351,7 @@ export default function SignUpPage() {
 
       const session = await resolveBrowserSession(supabase);
 
-      if (isPaid && session?.access_token) {
+      if (session?.access_token) {
         const linkRes = await fetch("/api/signup/link-stripe-checkout", {
           method: "POST",
           headers: { Authorization: `Bearer ${session.access_token}` },
@@ -358,7 +362,7 @@ export default function SignUpPage() {
           };
           setSubmitError(
             lj.error ||
-              "Account created but subscription could not be linked. Use Membership in your account to fix billing, or contact support.",
+              "Account created but billing could not be linked. Use Membership in your account to fix billing, or contact support.",
           );
           setTimeout(() => router.push("/account"), 4000);
           return;
@@ -502,9 +506,10 @@ export default function SignUpPage() {
                   >
                     <CheckCircledIcon className={layoutStyles.signupAlertIcon} />
                     <span>
-                      Payment received ({paidCheckoutInfo.plan} ·{" "}
-                      {paidCheckoutInfo.subscriptionStatus}). Continue with your
-                      profile below.
+                      {paidCheckoutInfo.plan === "free"
+                        ? `Verification fee paid (${paidCheckoutInfo.subscriptionStatus}). `
+                        : `Payment received (${paidCheckoutInfo.plan} · ${paidCheckoutInfo.subscriptionStatus}). `}
+                      Continue with your profile below.
                     </span>
                   </div>
                 )}
@@ -615,9 +620,12 @@ export default function SignUpPage() {
               <button
                 type="button"
                 className={layoutStyles.signupMembershipMutedButton}
+                disabled={checkoutStartLoading}
                 onClick={handleStartFree}
               >
-                Start free
+                {checkoutStartLoading
+                  ? "Redirecting to Stripe…"
+                  : "Free profile — verify license ($50)"}
               </button>
               <Link href="/" className={layoutStyles.signupMembershipBlueLink}>
                 Back to home
@@ -683,8 +691,10 @@ export default function SignUpPage() {
                         className={layoutStyles.signupAlertIcon}
                       />
                       <span>
-                        Subscribed as {paidCheckoutInfo.email}. Use the same
-                        email below.
+                        {paidCheckoutInfo.plan === "free"
+                          ? `Verified checkout as ${paidCheckoutInfo.email}.`
+                          : `Subscribed as ${paidCheckoutInfo.email}.`}{" "}
+                        Use the same email below.
                       </span>
                     </div>
                   )}

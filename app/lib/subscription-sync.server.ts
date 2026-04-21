@@ -7,9 +7,10 @@ export async function syncProfileFromStripeSubscription(
   userId: string,
   customerId: string,
   subscription: Stripe.Subscription,
+  opts?: { licenseVerificationFeePaid?: boolean },
 ): Promise<void> {
   const priceId = subscription.items.data[0]?.price?.id ?? null;
-  const row = {
+  const row: Record<string, unknown> = {
     stripe_customer_id: customerId,
     subscription_status: subscription.status,
     subscription_price_id: priceId,
@@ -18,9 +19,35 @@ export async function syncProfileFromStripeSubscription(
       : null,
     updated_at: new Date().toISOString(),
   };
+  if (opts?.licenseVerificationFeePaid) {
+    row.license_verification_fee_paid_at = new Date().toISOString();
+  }
   const { error } = await admin.from('profiles').update(row).eq('id', userId);
   if (error) {
     console.error('syncProfileFromStripeSubscription:', error);
+    throw error;
+  }
+}
+
+/** Free tier after verification-only Checkout; keeps subscription fields cleared. */
+export async function syncProfileAfterVerificationPayment(
+  admin: SupabaseClient,
+  userId: string,
+  customerId: string,
+): Promise<void> {
+  const { error } = await admin
+    .from('profiles')
+    .update({
+      stripe_customer_id: customerId,
+      subscription_status: 'free',
+      subscription_price_id: null,
+      current_period_end: null,
+      license_verification_fee_paid_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+  if (error) {
+    console.error('syncProfileAfterVerificationPayment:', error);
     throw error;
   }
 }

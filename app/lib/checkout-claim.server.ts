@@ -7,9 +7,10 @@ export type CheckoutClaimPayload = {
   sessionId: string;
   email: string;
   customerId: string;
-  subscriptionId: string;
+  /** Null when checkout was verification fee only (free plan). */
+  subscriptionId: string | null;
   priceId: string | null;
-  plan: 'monthly' | 'annual';
+  plan: 'free' | 'monthly' | 'annual';
   exp: number;
 };
 
@@ -48,6 +49,9 @@ export function verifyCheckoutClaimToken(token: string): CheckoutClaimPayload | 
     const payload = JSON.parse(Buffer.from(json, 'base64url').toString('utf8')) as CheckoutClaimPayload;
     if (typeof payload.exp !== 'number' || payload.exp < Math.floor(Date.now() / 1000)) return null;
     if (!payload.sessionId?.startsWith('cs_')) return null;
+    if (payload.subscriptionId !== null && !payload.subscriptionId.startsWith('sub_')) {
+      return null;
+    }
     if (!payload.email?.trim()) return null;
     return payload;
   } catch {

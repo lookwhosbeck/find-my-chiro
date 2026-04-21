@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe } from '@/app/lib/stripe.server';
-import { syncProfileFromStripeSubscription } from '@/app/lib/subscription-sync.server';
+import { checkoutSessionIncludesVerificationPrice, getStripe } from '@/app/lib/stripe.server';
+import {
+  syncProfileAfterVerificationPayment,
+  syncProfileFromStripeSubscription,
+} from '@/app/lib/subscription-sync.server';
 import {
   CHECKOUT_CLAIM_COOKIE,
   verifyCheckoutClaimToken,
@@ -84,27 +87,43 @@ export async function POST(req: NextRequest) {
   }
 
   const customerId = row.stripe_customer_id as string;
-  const subId = row.stripe_subscription_id as string;
+  const subId = row.stripe_subscription_id as string | null;
 
-  try {
-    const subBefore = await stripe.subscriptions.retrieve(subId);
-    await stripe.subscriptions.update(subId, {
-      metadata: {
-        ...subBefore.metadata,
-        supabase_user_id: user.id,
-      },
-    });
-  } catch (e) {
-    console.error('link-stripe-checkout subscription metadata:', e);
-    return NextResponse.json({ error: 'Could not link subscription' }, { status: 500 });
-  }
+  if (!subId) {
+    try {
+      const includesVerification = await checkoutSessionIncludesVerificationPrice(stripe, claim.sessionId);
+      if (!includesVerification) {
+        return NextResponse.json({ error: 'Invalid verification checkout' }, { status: 400 });
+      }
+      await syncProfileAfterVerificationPayment(admin, user.id, customerId);
+    } catch (e) {
+      console.error('link-stripe-checkout verification sync:', e);
+      return NextResponse.json({ error: 'Could not sync verification payment to profile' }, { status: 500 });
+    }
+  } else {
+    try {
+      const subBefore = await stripe.subscriptions.retrieve(subId);
+      await stripe.subscriptions.update(subId, {
+        metadata: {
+          ...subBefore.metadata,
+          supabase_user_id: user.id,
+        },
+      });
+    } catch (e) {
+      console.error('link-stripe-checkout subscription metadata:', e);
+      return NextResponse.json({ error: 'Could not link subscription' }, { status: 500 });
+    }
 
-  const sub = await stripe.subscriptions.retrieve(subId);
-  try {
-    await syncProfileFromStripeSubscription(admin, user.id, customerId, sub);
-  } catch (e) {
-    console.error('link-stripe-checkout sync:', e);
-    return NextResponse.json({ error: 'Could not sync subscription to profile' }, { status: 500 });
+    const sub = await stripe.subscriptions.retrieve(subId);
+    const feePaid = await checkoutSessionIncludesVerificationPrice(stripe, claim.sessionId);
+    try {
+      await syncProfileFromStripeSubscription(admin, user.id, customerId, sub, {
+        licenseVerificationFeePaid: feePaid,
+      });
+    } catch (e) {
+      console.error('link-stripe-checkout sync:', e);
+      return NextResponse.json({ error: 'Could not sync subscription to profile' }, { status: 500 });
+    }
   }
 
   const { error: updErr } = await admin

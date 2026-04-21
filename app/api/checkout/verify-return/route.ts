@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 const GUEST_FLOW = 'chiropractor_guest';
 
-function planFromPriceId(priceId: string | null): 'monthly' | 'annual' {
+function planFromSubscriptionPriceId(priceId: string | null): 'monthly' | 'annual' {
   const m = getStripePriceIdMonthly();
   const a = getStripePriceIdAnnual();
   if (priceId && a && priceId === a) return 'annual';
@@ -47,10 +47,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
   }
 
-  if (session.mode !== 'subscription') {
-    return NextResponse.json({ error: 'Invalid checkout mode' }, { status: 400 });
-  }
-
   if (session.metadata?.app_signup_flow !== GUEST_FLOW) {
     return NextResponse.json({ error: 'Not a guest signup checkout' }, { status: 400 });
   }
@@ -63,10 +59,8 @@ export async function POST(req: NextRequest) {
   }
 
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
-  const subRef = session.subscription;
-  const subId = typeof subRef === 'string' ? subRef : subRef?.id;
-  if (!customerId || !subId) {
-    return NextResponse.json({ error: 'Missing customer or subscription' }, { status: 400 });
+  if (!customerId) {
+    return NextResponse.json({ error: 'Missing customer' }, { status: 400 });
   }
 
   const emailRaw =
@@ -80,14 +74,74 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No email on checkout session' }, { status: 400 });
   }
 
+  const admin = createClient(url, service);
+
+  if (session.mode === 'payment') {
+    if (session.metadata?.signup_plan?.trim() !== 'free') {
+      return NextResponse.json({ error: 'Unexpected payment checkout' }, { status: 400 });
+    }
+    const signupPlan: CheckoutClaimPayload['plan'] = 'free';
+
+    const { error: upsertErr } = await admin.from('checkout_signup_claims').upsert(
+      {
+        stripe_checkout_session_id: sessionId,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: null,
+        email: emailRaw.toLowerCase(),
+        price_id: null,
+      },
+      { onConflict: 'stripe_checkout_session_id' },
+    );
+
+    if (upsertErr) {
+      console.error('verify-return upsert (payment):', upsertErr);
+      return NextResponse.json({ error: 'Could not save checkout claim' }, { status: 500 });
+    }
+
+    const payload: Omit<CheckoutClaimPayload, 'exp'> = {
+      sessionId,
+      email: emailRaw.toLowerCase(),
+      customerId,
+      subscriptionId: null,
+      priceId: null,
+      plan: signupPlan,
+    };
+    const token = signCheckoutClaim(payload);
+
+    const cookieStore = await cookies();
+    cookieStore.set(CHECKOUT_CLAIM_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 2,
+    });
+
+    return NextResponse.json({
+      email: emailRaw,
+      plan: signupPlan,
+      subscriptionStatus: 'free',
+      priceId: null,
+    });
+  }
+
+  if (session.mode !== 'subscription') {
+    return NextResponse.json({ error: 'Invalid checkout mode' }, { status: 400 });
+  }
+
+  const subRef = session.subscription;
+  const subId = typeof subRef === 'string' ? subRef : subRef?.id;
+  if (!subId) {
+    return NextResponse.json({ error: 'Missing subscription' }, { status: 400 });
+  }
+
   const sub =
     typeof subRef === 'object' && subRef && 'status' in subRef
       ? subRef
       : await stripe.subscriptions.retrieve(subId);
   const priceId = sub.items.data[0]?.price?.id ?? null;
-  const plan = planFromPriceId(priceId);
+  const plan = planFromSubscriptionPriceId(priceId);
 
-  const admin = createClient(url, service);
   const { error: upsertErr } = await admin.from('checkout_signup_claims').upsert(
     {
       stripe_checkout_session_id: sessionId,

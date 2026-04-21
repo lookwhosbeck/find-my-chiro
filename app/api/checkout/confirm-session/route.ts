@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe } from '@/app/lib/stripe.server';
-import { syncProfileFromStripeSubscription } from '@/app/lib/subscription-sync.server';
+import { checkoutSessionIncludesVerificationPrice, getStripe } from '@/app/lib/stripe.server';
+import {
+  syncProfileAfterVerificationPayment,
+  syncProfileFromStripeSubscription,
+} from '@/app/lib/subscription-sync.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,9 +61,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
   }
 
-  if (session.mode !== 'subscription') {
-    return NextResponse.json({ error: 'Invalid checkout mode' }, { status: 400 });
-  }
   if (session.status !== 'complete') {
     return NextResponse.json({ error: 'Checkout session is not complete' }, { status: 409 });
   }
@@ -72,10 +72,32 @@ export async function POST(req: NextRequest) {
   }
 
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+  if (!customerId) {
+    return NextResponse.json({ error: 'Missing customer' }, { status: 400 });
+  }
+
+  if (session.mode === 'payment') {
+    const paidVerification = await checkoutSessionIncludesVerificationPrice(stripe, sessionId);
+    if (!paidVerification) {
+      return NextResponse.json({ error: 'Invalid payment checkout' }, { status: 400 });
+    }
+    try {
+      await syncProfileAfterVerificationPayment(admin, user.id, customerId);
+      return NextResponse.json({ ok: true, subscriptionStatus: 'free' });
+    } catch (e) {
+      console.error('confirm-session verification sync:', e);
+      return NextResponse.json({ error: 'Could not sync verification payment to profile' }, { status: 500 });
+    }
+  }
+
+  if (session.mode !== 'subscription') {
+    return NextResponse.json({ error: 'Invalid checkout mode' }, { status: 400 });
+  }
+
   const subRef = session.subscription;
   const subId = typeof subRef === 'string' ? subRef : subRef?.id;
-  if (!customerId || !subId) {
-    return NextResponse.json({ error: 'Missing customer or subscription' }, { status: 400 });
+  if (!subId) {
+    return NextResponse.json({ error: 'Missing subscription' }, { status: 400 });
   }
 
   try {
@@ -96,7 +118,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const sub = await stripe.subscriptions.retrieve(subId);
-    await syncProfileFromStripeSubscription(admin, user.id, customerId, sub);
+    const feePaid = await checkoutSessionIncludesVerificationPrice(stripe, sessionId);
+    await syncProfileFromStripeSubscription(admin, user.id, customerId, sub, {
+      licenseVerificationFeePaid: feePaid,
+    });
     return NextResponse.json({ ok: true, subscriptionStatus: sub.status });
   } catch (e) {
     console.error('confirm-session sync:', e);

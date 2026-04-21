@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
-import { getStripe } from '@/app/lib/stripe.server';
+import { checkoutSessionIncludesVerificationPrice, getStripe } from '@/app/lib/stripe.server';
 import {
   clearSubscriptionToFree,
   syncProfileFromStripeSubscription,
@@ -29,7 +29,7 @@ async function upsertGuestCheckoutClaim(
   admin: SupabaseClient,
   session: Stripe.Checkout.Session,
   customerId: string,
-  subId: string,
+  subId: string | null,
   email: string,
   priceId: string | null,
 ): Promise<void> {
@@ -54,20 +54,39 @@ async function handleCheckoutSessionCompleted(
   admin: SupabaseClient,
   session: Stripe.Checkout.Session,
 ): Promise<void> {
-  if (session.mode !== 'subscription') return;
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
-  const subRef = session.subscription;
-  const subId = typeof subRef === 'string' ? subRef : subRef?.id;
-  if (!customerId || !subId) {
-    console.warn('checkout.session.completed: missing customer or subscription', {
-      customerId,
-      subId,
-    });
+  if (!customerId) {
+    console.warn('checkout.session.completed: missing customer', session.id);
     return;
   }
 
   const userId =
     (session.client_reference_id?.trim() || session.metadata?.supabase_user_id?.trim()) ?? null;
+
+  if (session.mode === 'payment' && session.metadata?.app_signup_flow === GUEST_SIGNUP_FLOW) {
+    const emailRaw =
+      session.customer_details?.email?.trim() ||
+      session.customer_email?.trim() ||
+      '';
+    if (!emailRaw) {
+      console.warn('checkout.session.completed: guest payment missing email', session.id);
+      return;
+    }
+    await upsertGuestCheckoutClaim(admin, session, customerId, null, emailRaw, null);
+    return;
+  }
+
+  if (session.mode !== 'subscription') return;
+
+  const subRef = session.subscription;
+  const subId = typeof subRef === 'string' ? subRef : subRef?.id;
+  if (!subId) {
+    console.warn('checkout.session.completed: missing subscription', {
+      customerId,
+      sessionId: session.id,
+    });
+    return;
+  }
 
   if (!userId && session.metadata?.app_signup_flow === GUEST_SIGNUP_FLOW) {
     const sub = await stripe.subscriptions.retrieve(subId);
@@ -90,7 +109,10 @@ async function handleCheckoutSessionCompleted(
   }
 
   const sub = await stripe.subscriptions.retrieve(subId);
-  await syncProfileFromStripeSubscription(admin, userId, customerId, sub);
+  const feePaid = await checkoutSessionIncludesVerificationPrice(stripe, session.id);
+  await syncProfileFromStripeSubscription(admin, userId, customerId, sub, {
+    licenseVerificationFeePaid: feePaid,
+  });
 }
 
 async function handleSubscriptionUpdated(
