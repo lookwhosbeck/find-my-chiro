@@ -17,9 +17,9 @@ interface HomeHeroProps {
 export function HomeHero({ mapPreview }: HomeHeroProps) {
   return (
     <section className="app-container w-full">
-      <div className="mx-auto grid max-w-screen-xl place-items-center py-12 pb-8 sm:py-16 md:py-32 md:pb-14">
-        <div className="relative flex w-full items-center justify-center">
-          <div className="relative z-10 w-full space-y-6 pb-8 text-center sm:space-y-8 lg:pb-20">
+      <div className="mx-auto grid w-full max-w-screen-xl grid-cols-1 place-items-center py-12 pb-8 sm:py-16 md:py-32 md:pb-14">
+        <div className="relative flex w-full min-w-0 items-center justify-center">
+          <div className="relative z-10 w-full min-w-0 space-y-6 pb-8 text-center sm:space-y-8 lg:pb-20">
             <Badge
               variant="outline"
               className="bg-muted mx-auto max-w-full whitespace-normal px-3 py-2 text-center text-xs leading-tight sm:text-sm"
@@ -70,7 +70,7 @@ export function HomeHero({ mapPreview }: HomeHeroProps) {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full">{mapPreview}</div>
+        <div className="relative mx-auto w-full min-w-0">{mapPreview}</div>
       </div>
     </section>
   );
