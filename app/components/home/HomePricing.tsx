@@ -8,6 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionContainer, SectionHeader } from "@/app/components/home/section-layout";
 import { HomePricingCta } from "@/app/components/home/HomePricingCta";
+import {
+  FOUNDING_COUPON_CODE,
+  FOUNDING_MEMBERS_CAP,
+  LICENSE_VERIFICATION_FEE_USD,
+} from "@/lib/founding-promo";
 import { cn } from "@/lib/utils";
 
 type Period = "monthly" | "annually";
@@ -16,8 +21,7 @@ const discountRatio = 0.2;
 const premiumMonthly = 30;
 const premiumAnnualTotal = Math.round(premiumMonthly * 12 * (1 - discountRatio));
 const premiumAnnualMonthly = Math.round(premiumMonthly * (1 - discountRatio));
-const verificationFee = 50;
-const foundingMembersCap = 250;
+const verificationFee = LICENSE_VERIFICATION_FEE_USD;
 
 type PlanRow = {
   name: string;
@@ -46,8 +50,8 @@ const plans: PlanRow[] = [
       "Up to 3 modalities and 3 focus areas",
       `One-time $${verificationFee} license verification fee`,
     ],
-    cta: "Create your free profile",
-    href: "/join",
+    cta: "Sign up — Free",
+    href: "/signup",
     popular: false,
   },
   {
@@ -68,8 +72,8 @@ const plans: PlanRow[] = [
       "Provider-to-provider referrals",
       `One-time $${verificationFee} license verification fee`,
     ],
-    cta: "Start Premium",
-    href: "/join",
+    cta: "Sign up — Premium",
+    href: "/signup",
     popular: true,
   },
 ];
@@ -85,16 +89,21 @@ export function HomePricing() {
         description="Patients always search Movyn for free. Chiropractors choose between a free verified profile or a Premium membership that unlocks every match-making feature—no contracts, cancel anytime."
       />
       <div className="mx-auto max-w-5xl">
-        <div className="bg-primary/5 border-primary/20 mb-10 flex flex-col items-center gap-2 rounded-xl border px-6 py-4 text-center sm:flex-row sm:justify-center sm:gap-3 sm:text-left">
-          <Badge className="bg-primary text-primary-foreground gap-1 border-0">
-            <Sparkles className="size-3.5" />
-            Founding {foundingMembersCap}
-          </Badge>
-          <p className="text-sm sm:text-base">
-            <span className="font-medium">License verification is free</span> for our first{" "}
-            {foundingMembersCap} members—a ${verificationFee} value. After that it&apos;s a one-time
-            ${verificationFee} fee on any plan.
-          </p>
+        <div className="mb-10 flex flex-col gap-3 rounded-xl border border-[#0190ff]/35 bg-[#e6f6ff] px-6 py-4 text-center shadow-sm sm:text-left dark:border-blue-500/40 dark:bg-blue-950/85 dark:shadow-none">
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-start sm:gap-3">
+            <Badge className="shrink-0 gap-1 border-0 bg-[#0190ff] text-white hover:bg-[#0190ff]">
+              <Sparkles className="size-3.5" />
+              Coupon · {FOUNDING_COUPON_CODE}
+            </Badge>
+            <p className="text-sm text-[#0c4a6e] sm:text-base dark:text-blue-50">
+              <span className="font-semibold">Use coupon code {FOUNDING_COUPON_CODE} at sign up</span> for free
+              license verification.{" "}
+              <span className="text-[#0369a1] dark:text-blue-200/95">
+                Limited to the first {FOUNDING_MEMBERS_CAP} chiropractors (waives the usual ${verificationFee}{" "}
+                verification). After that, a one-time ${verificationFee} verification fee on any plan.
+              </span>
+            </p>
+          </div>
         </div>
         <div className="flex justify-center">
           <div className="mb-8 flex justify-center rounded-lg border p-1">
