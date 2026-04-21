@@ -30,7 +30,7 @@ export function SectionHeader({
 }) {
   return (
     <header
-      className={cn("mx-auto mb-6 max-w-sm text-center lg:mb-12", className)}
+      className={cn("mx-auto mb-6 max-w-xl text-center lg:mb-12", className)}
     >
       {subTitle ? (
         <div className="mb-4 bg-gradient-to-b from-primary/60 to-primary bg-clip-text font-semibold tracking-wider text-transparent uppercase">
