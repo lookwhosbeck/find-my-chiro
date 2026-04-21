@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import { MovynLogo } from '@/app/components/MovynLogo';
-import styles from './page.module.css';
+import { AuthMarketingBackdrop } from '@/components/auth-marketing-backdrop';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -181,108 +185,111 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className={styles.resetPage}>
-      <div className={styles.resetSplit}>
-        <div className={styles.resetMain}>
-          <h1 className={styles.resetTitle}>Choose a new password</h1>
+    <AuthMarketingBackdrop>
+      <Card className="mx-auto flex w-full max-w-sm flex-col items-center gap-8 border-0 bg-card shadow-lg">
+        <CardContent className="w-full space-y-8 pt-8 text-center">
+          <div className="flex flex-col items-center justify-center gap-4 text-center">
+            <MovynLogo variant="standard" className="h-9 w-auto max-w-[200px]" />
+            <h1 className="text-center text-2xl font-semibold tracking-tight text-foreground [font-family:var(--font-display)] sm:text-3xl">
+              Choose a new password
+            </h1>
+          </div>
 
-          <div className={styles.resetCard}>
+          <div className="w-full space-y-6 text-left">
             {checking ? (
-              <p className={styles.resetIntro}>Verifying your reset link…</p>
+              <p className="text-sm text-muted-foreground">Verifying your reset link…</p>
             ) : linkError ? (
-              <>
-                <div className={styles.resetError}>{linkError.message}</div>
-                <Link href="/forgot-password" className={styles.resetSubmit}>
-                  Request a new reset link
-                </Link>
-              </>
+              <div className="space-y-4">
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {linkError.message}
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/forgot-password">Request a new reset link</Link>
+                </Button>
+              </div>
             ) : !hasRecoverySession ? (
-              <>
-                <p className={styles.resetIntro}>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
                   This reset link is invalid or has expired. Request a new one to set a new
                   password.
                 </p>
-                <Link href="/forgot-password" className={styles.resetSubmit}>
-                  Request a new reset link
-                </Link>
-              </>
+                <Button asChild className="w-full">
+                  <Link href="/forgot-password">Request a new reset link</Link>
+                </Button>
+              </div>
             ) : done ? (
-              <p className={styles.resetNotice}>
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200">
                 Password updated. Redirecting you to your account…
-              </p>
+              </div>
             ) : (
-              <>
-                <p className={styles.resetIntro}>
+              <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+                <p className="text-sm text-muted-foreground">
                   Pick a strong password you don&apos;t use anywhere else. We&apos;ll sign you in
                   right after.
                 </p>
 
-                <form className={styles.resetForm} onSubmit={handleSubmit} noValidate>
-                  <div className={styles.resetFields}>
-                    <div className={styles.resetField}>
-                      <label className={styles.resetLabel} htmlFor="reset-password">
-                        New password
-                      </label>
-                      <input
-                        id="reset-password"
-                        className={styles.resetInput}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="At least 8 characters"
-                        type="password"
-                        autoComplete="new-password"
-                        minLength={MIN_PASSWORD_LENGTH}
-                        required
-                      />
-                      <span className={styles.resetHint}>Minimum {MIN_PASSWORD_LENGTH} characters.</span>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reset-password">New password</Label>
+                  <Input
+                    id="reset-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={MIN_PASSWORD_LENGTH}
+                    required
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Minimum {MIN_PASSWORD_LENGTH} characters.
+                  </span>
+                </div>
 
-                    <div className={styles.resetField}>
-                      <label className={styles.resetLabel} htmlFor="reset-password-confirm">
-                        Confirm new password
-                      </label>
-                      <input
-                        id="reset-password-confirm"
-                        className={styles.resetInput}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter your new password"
-                        type="password"
-                        autoComplete="new-password"
-                        minLength={MIN_PASSWORD_LENGTH}
-                        required
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reset-password-confirm">Confirm new password</Label>
+                  <Input
+                    id="reset-password-confirm"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your new password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={MIN_PASSWORD_LENGTH}
+                    required
+                  />
+                </div>
+
+                {error ? (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {error}
                   </div>
+                ) : null}
 
-                  {error ? <div className={styles.resetError}>{error}</div> : null}
-
-                  <button type="submit" className={styles.resetSubmit} disabled={submitting}>
-                    {submitting ? 'Updating…' : 'Update password'}
-                  </button>
-                </form>
-              </>
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? 'Updating…' : 'Update password'}
+                </Button>
+              </form>
             )}
 
-            <p className={styles.resetCardFooter}>
+            <p className="text-center text-sm text-muted-foreground">
               Back to{' '}
-              <Link href="/signin" className={styles.resetInlineLink}>
+              <Link
+                href="/signin"
+                className="font-medium text-foreground underline underline-offset-4"
+              >
                 Sign in
               </Link>
             </p>
           </div>
 
-          <Link href="/" className={styles.resetBack}>
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
             Back to home
           </Link>
-        </div>
-
-        <div className={styles.resetAsideWrap}>
-          <div className={styles.resetAside}>
-            <MovynLogo variant="onDark" className={styles.resetLogoSvg} />
-          </div>
-        </div>
-      </div>
-    </div>
+        </CardContent>
+      </Card>
+    </AuthMarketingBackdrop>
   );
 }
