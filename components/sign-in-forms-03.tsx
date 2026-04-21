@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { MovynLogo } from '@/app/components/MovynLogo';
+import { AuthMarketingBackdrop } from '@/components/auth-marketing-backdrop';
 import { cn } from '@/lib/utils';
 
 export type SignInAccountTab = 'chiropractor' | 'patient';
@@ -56,7 +57,7 @@ export function SignInForms03({
   const forgotHref = `/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ''}`;
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-[url('https://images.unsplash.com/photo-1755593574938-6d66d28f8e57?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1080')] bg-cover bg-center bg-no-repeat px-4 py-10">
+    <AuthMarketingBackdrop>
       <Card className="mx-auto flex w-full max-w-sm flex-col items-center gap-8 border-0 bg-card/95 shadow-lg backdrop-blur-sm supports-[backdrop-filter]:bg-card/80">
         <CardContent className="w-full space-y-8 pt-8 text-center">
           <div className="flex flex-col items-center justify-center gap-4 text-center">
@@ -162,6 +163,6 @@ export function SignInForms03({
           </Link>
         </CardContent>
       </Card>
-    </div>
+    </AuthMarketingBackdrop>
   );
 }
