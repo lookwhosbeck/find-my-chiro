@@ -19,6 +19,9 @@
   },
   "iconLibrary": "lucide",
   "registries": {
+    "@bundui": {
+      "url": "https://bundui.io/r/{name}.json"
+    },
     "@shadcnuikit": {
       "url": "https://shadcnuikit.com/r/{name}.json",
       "headers": {

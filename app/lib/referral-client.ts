@@ -1,18 +1,11 @@
+import { resolveBrowserSession } from './auth-session-client';
 import { createSupabaseClient } from './supabase-client';
 
 export async function getAccessTokenOrNull(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
   try {
     const supabase = createSupabaseClient();
-    let {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      await supabase.auth.getUser();
-      ({
-        data: { session },
-      } = await supabase.auth.getSession());
-    }
+    const session = await resolveBrowserSession(supabase);
     return session?.access_token ?? null;
   } catch {
     return null;

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { resolveBrowserSession } from './auth-session-client';
 import { createSupabaseClient } from './supabase-client';
 import { clampSearchRadiusMiles } from './search-radius';
 
@@ -184,8 +185,11 @@ async function resolveAccessTokenAfterSignup(
   const first = signupSessionToken?.trim();
   if (first) return first;
   for (let i = 0; i < maxAttempts; i++) {
-    const { data } = await supabase.auth.getSession();
-    const t = data.session?.access_token?.trim();
+    const session =
+      typeof window === 'undefined'
+        ? (await supabase.auth.getSession()).data.session
+        : await resolveBrowserSession(supabase);
+    const t = session?.access_token?.trim();
     if (t) return t;
     await new Promise((r) => setTimeout(r, delayMs));
   }
@@ -377,9 +381,7 @@ export async function flushPendingChiropractorSignupIfAny(supabase: SupabaseClie
     sessionStorage.removeItem(PENDING_CHIRO_SIGNUP_STORAGE_KEY);
     return;
   }
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await resolveBrowserSession(supabase);
   if (!session?.user?.id || session.user.id !== parsed.userId) return;
 
   const full: SignUpData = { ...parsed.data, password: '' };
@@ -409,9 +411,7 @@ export async function flushPendingPatientSignupIfAny(supabase: SupabaseClient): 
     sessionStorage.removeItem(PENDING_PATIENT_SIGNUP_STORAGE_KEY);
     return;
   }
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await resolveBrowserSession(supabase);
   if (!session?.user?.id || session.user.id !== parsed.userId) return;
 
   const full: PatientSignUpData = { ...parsed.data, password: '' };

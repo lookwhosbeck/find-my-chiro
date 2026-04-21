@@ -21,6 +21,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+import { resolveBrowserSession } from "@/app/lib/auth-session-client";
 import { supabase } from "@/app/lib/supabase";
 import { PROFILE_UPDATED_EVENT } from "@/app/lib/profile-events";
 import { MovynLogo } from "@/app/components/MovynLogo";
@@ -131,9 +132,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
 
   useEffect(() => {
     const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await resolveBrowserSession(supabase);
       const u = session?.user ?? null;
       setUser(toHeaderAuthUser(u));
       if (u) await loadProfile(u.id);

@@ -2,12 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { resolveBrowserSession } from '@/app/lib/auth-session-client';
 import { supabase } from '@/app/lib/supabase';
-import { MovynLogo } from '@/app/components/MovynLogo';
-import styles from './page.module.css';
-
-type AccountTab = 'chiropractor' | 'patient';
+import { SignInForms03, type SignInAccountTab, type SignInFormValues } from '@/components/sign-in-forms-03';
 
 function getRedirectPath(): string {
   if (typeof window === 'undefined') return '/account';
@@ -19,11 +16,7 @@ export default function SignInPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
-  const [accountTab, setAccountTab] = useState<AccountTab>('chiropractor');
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [accountTab, setAccountTab] = useState<SignInAccountTab>('chiropractor');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,41 +47,9 @@ export default function SignInPage() {
     };
   }, [router]);
 
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T | null> => {
-    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), ms));
-    return (await Promise.race([promise, timeout])) as T | null;
-  };
-
-  const resolveSessionFast = async () => {
-    const first = await withTimeout(
-      supabase.auth.getSession().then((r) => r.data.session),
-      2500,
-    );
-    if (first?.user) return first;
-
-    await withTimeout(supabase.auth.getUser(), 2500);
-    const second = await withTimeout(
-      supabase.auth.getSession().then((r) => r.data.session),
-      2500,
-    );
-    if (second?.user) return second;
-
-    for (let i = 0; i < 2; i += 1) {
-      await sleep(180);
-      const retry = await withTimeout(
-        supabase.auth.getSession().then((r) => r.data.session),
-        1200,
-      );
-      if (retry?.user) return retry;
-    }
-    return null;
-  };
-
   const checkUser = async () => {
     try {
-      const session = await resolveSessionFast();
+      const session = await resolveBrowserSession(supabase);
       if (session?.user) {
         router.replace(getRedirectPath());
         return;
@@ -100,15 +61,14 @@ export default function SignInPage() {
     }
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async (values: SignInFormValues) => {
     setSigningIn(true);
     setError(null);
 
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+        email: values.email,
+        password: values.password,
       });
 
       if (signInError) {
@@ -137,109 +97,20 @@ export default function SignInPage() {
 
   if (loading) {
     return (
-      <div className={styles.signinPage}>
-        <div className={styles.signinLoading}>Loading...</div>
+      <div className="flex min-h-screen flex-1 flex-col items-center justify-center bg-background text-muted-foreground [font-family:var(--font-body)]">
+        Loading…
       </div>
     );
   }
 
   return (
-    <div className={styles.signinPage}>
-      <div className={styles.signinSplit}>
-        <div className={styles.signinMain}>
-          <h1 className={styles.signinTitle}>Sign in to your account</h1>
-
-          <div className={styles.signinCard}>
-            <div className={styles.signinTabs} role="tablist" aria-label="Account type">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={accountTab === 'chiropractor'}
-                className={`${styles.signinTab} ${accountTab === 'chiropractor' ? styles.signinTabActive : ''}`}
-                onClick={() => setAccountTab('chiropractor')}
-              >
-                Chiropractor
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={accountTab === 'patient'}
-                className={`${styles.signinTab} ${accountTab === 'patient' ? styles.signinTabActive : ''}`}
-                onClick={() => setAccountTab('patient')}
-              >
-                Patient
-              </button>
-            </div>
-
-            <form className={styles.signinForm} onSubmit={handleSignIn} noValidate>
-              <div className={styles.signinFields}>
-                <div className={styles.signinField}>
-                  <label className={styles.signinLabel} htmlFor="signin-email">
-                    Email
-                  </label>
-                  <input
-                    id="signin-email"
-                    className={styles.signinInput}
-                    value={formData.email}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                    placeholder="email@email.com"
-                    type="email"
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-
-                <div className={styles.signinField}>
-                  <div className={styles.signinLabelRow}>
-                    <label className={styles.signinLabel} htmlFor="signin-password">
-                      Password
-                    </label>
-                    <Link
-                      href={`/forgot-password${formData.email ? `?email=${encodeURIComponent(formData.email)}` : ''}`}
-                      className={styles.signinForgotLink}
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <input
-                    id="signin-password"
-                    className={styles.signinInput}
-                    value={formData.password}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    placeholder="Password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                  />
-                </div>
-              </div>
-
-              {error ? <div className={styles.signinError}>{error}</div> : null}
-
-              <button type="submit" className={styles.signinSubmit} disabled={signingIn}>
-                {signingIn ? 'Signing in…' : 'Sign in'}
-              </button>
-            </form>
-
-            <p className={styles.signinCardFooter}>
-              Don&apos;t have an account yet?{' '}
-              <Link href={signUpHref} className={styles.signinInlineLink}>
-                Sign up
-              </Link>
-            </p>
-          </div>
-
-          <Link href="/" className={styles.signinBack}>
-            Back to home
-          </Link>
-        </div>
-
-        <div className={styles.signinAsideWrap}>
-          <div className={styles.signinAside}>
-            <MovynLogo variant="onDark" className={styles.signinLogoSvg} />
-          </div>
-        </div>
-      </div>
-    </div>
+    <SignInForms03
+      accountTab={accountTab}
+      onAccountTabChange={setAccountTab}
+      onSubmit={handleSignIn}
+      error={error}
+      submitting={signingIn}
+      signUpHref={signUpHref}
+    />
   );
 }

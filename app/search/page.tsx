@@ -19,6 +19,7 @@ import {
   patientRowToSearchFilters,
   urlHasSearchCriteriaParams,
 } from '../lib/search-filters-url';
+import { resolveBrowserSession } from '../lib/auth-session-client';
 import { createSupabaseClient } from '../lib/supabase-client';
 
 const BUSINESS_LABELS: Record<string, string> = {
@@ -59,9 +60,7 @@ function SearchPageContent() {
         let base = getDefaultEmptySearchFilters();
         const usePatientDefaults = urlHasSearchCriteriaParams(params);
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const session = await resolveBrowserSession(supabase);
         const user = session?.user ?? null;
         if (usePatientDefaults && user && !cancelled) {
           const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();

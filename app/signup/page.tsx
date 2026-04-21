@@ -18,6 +18,7 @@ import {
   getChiropracticColleges,
   type ChiropracticCollege,
 } from "../lib/queries";
+import { resolveBrowserSession } from "../lib/auth-session-client";
 import { supabase } from "../lib/supabase";
 
 const steps = [
@@ -344,9 +345,7 @@ export default function SignUpPage() {
         return;
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await resolveBrowserSession(supabase);
 
       if (isPaid && session?.access_token) {
         const linkRes = await fetch("/api/signup/link-stripe-checkout", {

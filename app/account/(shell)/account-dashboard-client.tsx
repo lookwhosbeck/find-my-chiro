@@ -19,6 +19,7 @@ import {
   AccountFormPage,
   AccountGridPage,
 } from '@/components/layout/account-content';
+import { resolveBrowserSession } from '@/app/lib/auth-session-client';
 import { supabase } from '@/app/lib/supabase';
 import {
   flushPendingChiropractorSignupIfAny,
@@ -193,6 +194,8 @@ export function MovynAccountDashboardShell({
   const [chiropractorProfile, setChiropractorProfile] = useState<ChiropractorProfile | null>(null);
   const [patientProfile, setPatientProfile] = useState<PatientProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  /** Set when session/profile load fails so we never spin forever and can offer retry. */
+  const [accountLoadIssue, setAccountLoadIssue] = useState<null | 'session' | 'profile' | 'generic'>(null);
   /** Email/id from cookie session for instant sidebar chrome before `checkUser` finishes. */
   const [sessionPreview, setSessionPreview] = useState<{ id: string; email: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -261,18 +264,10 @@ export function MovynAccountDashboardShell({
   /** One-time default tab for pending chiropractors (matches legacy `initialNavSetRef`). */
   const initialChiroWelcomeRef = useRef(false);
 
-  /**
-   * Middleware already validated the session cookie. `getSession()` reads it
-   * locally — no `getUser()` network round trip needed here.
-   */
-  const resolveSessionFast = async () => {
-    return (await supabase.auth.getSession()).data.session;
-  };
-
   /** Hydrate sidebar/footer labels immediately from the session cookie. */
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      const u = data.session?.user;
+    void resolveBrowserSession(supabase).then((session) => {
+      const u = session?.user;
       if (u?.id) {
         setSessionPreview({ id: u.id, email: typeof u.email === 'string' ? u.email : '' });
       }
@@ -393,9 +388,7 @@ export function MovynAccountDashboardShell({
 
     const confirmCheckoutSession = async () => {
       if (!checkoutSessionId) return;
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await resolveBrowserSession(supabase);
       if (!session?.access_token) return;
       const res = await fetch('/api/checkout/confirm-session', {
         method: 'POST',
@@ -427,9 +420,7 @@ export function MovynAccountDashboardShell({
         }
 
         try {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
+          const session = await resolveBrowserSession(supabase);
           const userId = session?.user?.id ?? null;
 
           let synced = false;
@@ -592,9 +583,14 @@ export function MovynAccountDashboardShell({
    */
   const checkUser = async () => {
     try {
-      const session = await resolveSessionFast();
+      setAccountLoadIssue(null);
+      const session = await resolveBrowserSession(supabase);
       if (!session?.user) {
-        router.replace('/signin');
+        if (initialProfileSummary) {
+          setAccountLoadIssue('session');
+        } else {
+          router.replace('/signin');
+        }
         return;
       }
       const authUser = session.user;
@@ -615,6 +611,7 @@ export function MovynAccountDashboardShell({
 
       if (profileErr || !profileData) {
         console.error('Error fetching profile:', profileErr);
+        setAccountLoadIssue('profile');
         return;
       }
 
@@ -711,11 +708,31 @@ export function MovynAccountDashboardShell({
       }
     } catch (e) {
       console.error('Error checking user:', e);
-      router.replace('/');
+      setAccountLoadIssue('generic');
     } finally {
       setLoading(false);
     }
   };
+
+  const checkUserRef = useRef(checkUser);
+  checkUserRef.current = checkUser;
+
+  useEffect(() => {
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN' && event !== 'TOKEN_REFRESHED') return;
+      if (debounce) clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        void checkUserRef.current();
+      }, 200);
+    });
+    return () => {
+      subscription.unsubscribe();
+      if (debounce) clearTimeout(debounce);
+    };
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -726,9 +743,7 @@ export function MovynAccountDashboardShell({
   const startSubscriptionCheckout = async (plan: 'monthly' | 'annual') => {
     setBillingBusy(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await resolveBrowserSession(supabase);
       if (!session?.access_token) throw new Error('You need to be signed in to subscribe.');
 
       const res = await fetch('/api/checkout/session', {
@@ -754,9 +769,7 @@ export function MovynAccountDashboardShell({
   const openBillingPortal = async () => {
     setBillingBusy(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await resolveBrowserSession(supabase);
       if (!session?.access_token) throw new Error('You need to be signed in.');
 
       const res = await fetch('/api/billing/portal', {
@@ -927,8 +940,8 @@ export function MovynAccountDashboardShell({
       setChiropractorProfile((prev) => (prev ? { ...prev, ...merged } : merged));
       practiceSnapshotRef.current = null;
 
-      const { data: sess } = await supabase.auth.getSession();
-      const geoTok = sess.session?.access_token?.trim();
+      const sess = await resolveBrowserSession(supabase);
+      const geoTok = sess?.access_token?.trim();
       if (geoTok && oid) {
         void fetch('/api/organizations/geocode', {
           method: 'POST',
@@ -1104,10 +1117,106 @@ export function MovynAccountDashboardShell({
   }
 
   if (!profile || !user) {
+    if (accountLoadIssue === 'session' && initialProfileSummary) {
+      const previewEmail = initialProfileSummary.email ?? sessionPreview?.email ?? '';
+      const sessionErrorDisplayName =
+        [initialProfileSummary.first_name, initialProfileSummary.last_name].filter(Boolean).join(' ') ||
+        previewEmail.split('@')[0]?.trim() ||
+        'Account';
+      const sessionErrorNavGroups = buildAccountSettingsNavGroups(
+        navAvailableForRole(initialProfileSummary.role),
+        NAV_COMING_SOON_SIDEBAR,
+      );
+      return (
+        <SidebarProvider defaultOpen={defaultOpen} className="min-h-svh" style={getMovynDashboardProviderStyle()}>
+          <MovynAppSidebar
+            variant="inset"
+            navGroups={sessionErrorNavGroups}
+            footer={
+              <MovynNavUser
+                displayName={sessionErrorDisplayName}
+                email={previewEmail}
+                avatarUrl={undefined}
+                firstName={initialProfileSummary.first_name ?? null}
+                lastName={initialProfileSummary.last_name ?? null}
+                showAdminLink={initialProfileSummary.role === 'admin'}
+                onSignOut={() => void handleSignOut()}
+              />
+            }
+          />
+          <SidebarInset>
+            <MovynSiteHeader
+              title={accountPageTitle(activeNav)}
+              breadcrumbParent={{ label: 'Account', href: accountSettingsHref('profile') }}
+              actions={accountToolbarActions({
+                onEdit: () => {},
+                onSave: () => {},
+                editDisabled: true,
+                saveDisabled: true,
+                saving: false,
+              })}
+            />
+            <div className="flex min-h-0 flex-1 flex-col bg-muted/40">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-[--content-padding]">
+                <div className={styles.pageSectionBody}>
+                  <div className="bg-card text-card-foreground space-y-4 rounded-xl border p-6 shadow-sm">
+                    <p className="text-sm leading-relaxed">
+                      We could not load your session in this browser (for example, a brief offline state or a slow
+                      network). You still appear signed in on the server—try again, reload the page, or sign in
+                      again.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setAccountLoadIssue(null);
+                          setLoading(true);
+                          void checkUser();
+                        }}
+                      >
+                        Try again
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => router.refresh()}>
+                        Reload page
+                      </Button>
+                      <Button type="button" variant="outline" asChild>
+                        <Link href="/signin?redirect=/account">Sign in again</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="hidden">{children}</div>
+              </div>
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      );
+    }
+
     return (
       <>
-        <div className="flex min-h-svh items-center justify-center bg-muted/40">
-          <p className="text-muted-foreground text-sm">Unable to load your profile.</p>
+        <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-muted/40 px-4 py-12">
+          <p className="text-muted-foreground max-w-md text-center text-sm leading-relaxed">
+            {accountLoadIssue === 'profile' && 'We could not load your account profile from the server.'}
+            {accountLoadIssue === 'generic' &&
+              'Something went wrong while loading your account. You can try again or return home.'}
+            {!accountLoadIssue && 'Unable to load your profile.'}
+          </p>
+          {(accountLoadIssue === 'profile' || accountLoadIssue === 'generic') && (
+            <Button
+              type="button"
+              onClick={() => {
+                setAccountLoadIssue(null);
+                setLoading(true);
+                void checkUser();
+              }}
+            >
+              Try again
+            </Button>
+          )}
+          <Button type="button" variant="ghost" size="sm" asChild>
+            <Link href="/">Back to home</Link>
+          </Button>
         </div>
         <div className="hidden">{children}</div>
       </>

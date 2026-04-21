@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { resolveBrowserSession } from '@/app/lib/auth-session-client';
 import { createSupabaseClient } from '@/app/lib/supabase-client';
 import { accountSettingsHref } from '@/lib/movyn-account-routes';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
@@ -61,8 +62,8 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
 
   const patchStatus = useCallback(async (id: string, status: 'approved' | 'rejected') => {
     const supabase = createSupabaseClient();
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+    const session = await resolveBrowserSession(supabase);
+    const token = session?.access_token;
     if (!token) return;
 
     setActionId(id);

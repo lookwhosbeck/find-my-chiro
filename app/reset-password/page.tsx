@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { resolveBrowserSession } from '@/app/lib/auth-session-client';
 import { supabase } from '@/app/lib/supabase';
 import { MovynLogo } from '@/app/components/MovynLogo';
 import styles from './page.module.css';
@@ -31,12 +32,9 @@ export default function ResetPasswordPage() {
 
     const verifySession = async () => {
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        const session = await resolveBrowserSession(supabase);
         if (cancelled) return;
-        if (sessionError) {
-          console.error('reset-password: getSession', sessionError);
-        }
-        if (data.session?.user) {
+        if (session?.user) {
           setHasRecoverySession(true);
         }
       } catch (err) {

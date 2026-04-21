@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { resolveBrowserSession } from '@/app/lib/auth-session-client';
 import { supabase } from '@/app/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -58,9 +59,7 @@ function statusBadgeClass(status: string): string {
 }
 
 async function authHeaders(): Promise<HeadersInit | null> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await resolveBrowserSession(supabase);
   if (!session?.access_token) return null;
   return { Authorization: `Bearer ${session.access_token}` };
 }
