@@ -361,3 +361,16 @@ export function scoreChiropractors(chiropractors: Chiropractor[], filters: Patie
     };
   });
 }
+
+/**
+ * Browse mode (no ZIP): re-score the same directory in memory when filters change, matching server sort
+ * (match score descending — no distance tie-break).
+ */
+export function rescoreAndSortBrowseChiropractors(
+  chiropractors: Chiropractor[],
+  filters: PatientSearchFilters,
+): Chiropractor[] {
+  const scored = scoreChiropractors(chiropractors, filters);
+  scored.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+  return scored;
+}

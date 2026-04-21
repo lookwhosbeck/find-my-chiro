@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '../components/Header';
-import { MapView } from '../components/MapView';
+import { MapViewDynamic } from '../components/MapViewDynamic';
 import { ReferPatientModal } from '../components/ReferPatientModal';
 import { fetchReferralCanRefer } from '../lib/referral-client';
-import { searchChiropractors, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
+import { searchChiropractors, searchChiropractorsBrowsePoints, type PatientSearchFilters, type Chiropractor } from '../lib/queries';
+import { rescoreAndSortBrowseChiropractors } from '../lib/patient-match';
 import { normalizeUsZip } from '../lib/geo';
 import {
   appendSearchFiltersToQuery,
@@ -34,11 +35,15 @@ function SearchPageContent() {
   const searchParams = useSearchParams();
   const paramsKey = searchParams.toString();
   const [chiropractors, setChiropractors] = useState<Chiropractor[]>([]);
-  /** Start true so we do not flash “no results” before filter hydration + first fetch. */
+  /** Browse mode: top matches for the card rail while the map uses the full `chiropractors` set. */
+  const [browseListTop, setBrowseListTop] = useState<Chiropractor[] | null>(null);
+  /** Start true so we do not flash “no results” before first fetch. */
   const [loading, setLoading] = useState(true);
-  const [filtersReady, setFiltersReady] = useState(false);
   const [canReferPatient, setCanReferPatient] = useState(false);
   const [referTarget, setReferTarget] = useState<Chiropractor | null>(null);
+
+  /** National browse: full directory from one fetch; preference toggles re-score locally (P2-3). */
+  const browseDirectoryRef = useRef<Chiropractor[] | null>(null);
 
   const [filters, setFilters] = useState<PatientSearchFilters>(() =>
     parseSearchFiltersFromParams(new URLSearchParams(searchParams.toString())),
@@ -55,8 +60,9 @@ function SearchPageContent() {
         const usePatientDefaults = urlHasSearchCriteriaParams(params);
 
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
         if (usePatientDefaults && user && !cancelled) {
           const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
           if (prof?.role === 'patient' && !cancelled) {
@@ -69,12 +75,10 @@ function SearchPageContent() {
 
         if (cancelled) return;
         setFilters(mergeProfileDefaultsWithUrlParams(base, params));
-        setFiltersReady(true);
       } catch (e) {
         console.error('Search filter hydration failed:', e);
         if (!cancelled) {
           setFilters(mergeProfileDefaultsWithUrlParams(getDefaultEmptySearchFilters(), new URLSearchParams(paramsKey)));
-          setFiltersReady(true);
         }
       }
     })();
@@ -109,14 +113,13 @@ function SearchPageContent() {
 
   /** Keep the address bar in sync so back/forward and reload preserve zip + filters. */
   useEffect(() => {
-    if (!filtersReady) return;
     const t = window.setTimeout(() => {
       if (filtersMatchCurrentUrl(filters, searchParams)) return;
       const nextQs = filtersToSearchParams(filters).toString();
       router.replace(nextQs ? `/search?${nextQs}` : '/search', { scroll: false });
     }, URL_SYNC_DEBOUNCE_MS);
     return () => window.clearTimeout(t);
-  }, [filters, filtersReady, router, searchParams]);
+  }, [filters, router, searchParams]);
 
   const modalityOptions = ['Gonstead', 'Diversified', 'Activator', 'TRT', 'SOT', 'Thompson', 'Webster', 'Cox'];
   const focusAreaOptions = ['Pediatrics', 'Sports', 'Auto Injury', 'Wellness', 'Prenatal', 'Geriatric'];
@@ -127,10 +130,24 @@ function SearchPageContent() {
     setLoading(true);
     try {
       const hasSearchZip = Boolean(normalizeUsZip(filters.zipCode));
-      // Browse (no ZIP): load a large slice for the national map. With ZIP: tighter list for radius search.
-      const searchLimit = hasSearchZip ? 20 : 5000;
-      const results = await searchChiropractors(filters, searchLimit);
-      setChiropractors(results);
+      if (hasSearchZip) {
+        browseDirectoryRef.current = null;
+        setBrowseListTop(null);
+        const results = await searchChiropractors(filters, 20);
+        setChiropractors(results);
+      } else {
+        if (browseDirectoryRef.current?.length) {
+          const scored = rescoreAndSortBrowseChiropractors(browseDirectoryRef.current, filters);
+          setChiropractors(scored);
+          setBrowseListTop(scored.slice(0, 50));
+          return;
+        }
+        const mapResults = await searchChiropractorsBrowsePoints(filters, 5000);
+        browseDirectoryRef.current = mapResults;
+        const scored = rescoreAndSortBrowseChiropractors(mapResults, filters);
+        setChiropractors(scored);
+        setBrowseListTop(scored.slice(0, 50));
+      }
     } catch (error) {
       console.error('Search error:', error);
     } finally {
@@ -139,9 +156,8 @@ function SearchPageContent() {
   }, [filters]);
 
   useEffect(() => {
-    if (!filtersReady) return;
-    performSearch();
-  }, [performSearch, filtersReady]);
+    void performSearch();
+  }, [performSearch]);
 
   const handleModalityChange = (modality: string, checked: boolean) => {
     setFilters((prev) => ({
@@ -204,8 +220,9 @@ function SearchPageContent() {
     <div className="search-page-root flex flex-col">
       <Header surface="onLight" />
       <div className="search-page-map-area">
-        <MapView
+        <MapViewDynamic
           chiropractors={chiropractors}
+          listChiropractors={browseListTop ?? undefined}
           profileHrefBuilder={(chiro) => appendSearchFiltersToQuery(`/chiropractor/${chiro.id}`, filters)}
           loading={loading}
           zipCode={filters.zipCode}

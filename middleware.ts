@@ -40,9 +40,15 @@ export async function middleware(request: NextRequest) {
       },
     });
 
+    /**
+     * Use session from cookies (no Auth server round-trip). JWT is validated when
+     * the SSR client reads cookies; `/account` and `/admin` data still enforce
+     * RLS / role checks on the server and in API routes.
+     */
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
 
     if (!user && (pathname.startsWith('/account') || pathname.startsWith('/admin'))) {
       const url = request.nextUrl.clone();

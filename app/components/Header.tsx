@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,8 +120,6 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const pathname = usePathname();
-
   const loadProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
@@ -164,11 +161,6 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
     return () =>
       window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileEvent);
   }, [loadProfile, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    void loadProfile(user.id);
-  }, [pathname, user, loadProfile]);
 
   const handleSignOut = () => {
     if (signingOut) return;

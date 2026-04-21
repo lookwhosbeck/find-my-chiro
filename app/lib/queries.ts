@@ -294,6 +294,31 @@ export async function searchChiropractors(filters: PatientSearchFilters, limit: 
   }
 }
 
+/** Browse-mode map directory (optional cache hints on `/api/search-chiropractors/points`). */
+export async function searchChiropractorsBrowsePoints(
+  filters: PatientSearchFilters,
+  limit: number = 5000,
+): Promise<Chiropractor[]> {
+  try {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+    const res = await fetch('/api/search-chiropractors/points', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filters, limit }),
+    });
+    if (!res.ok) {
+      console.error('Browse points search failed:', res.status);
+      return [];
+    }
+    return (await res.json()) as Chiropractor[];
+  } catch (e) {
+    console.error('Error searching browse points:', e);
+    return [];
+  }
+}
+
 /**
  * Fetch chiropractic colleges (browser → API route so RLS/service role is handled server-side).
  */

@@ -6,8 +6,8 @@ const linkClass = "text-sm opacity-60 transition-opacity hover:opacity-100";
 export function Footer() {
   return (
     <footer id="footer" className="app-container space-y-4 pb-4 lg:pb-8">
-      <div className="bg-muted rounded-2xl border p-10">
-        <div className="grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-4 xl:grid-cols-6">
+      <div className="bg-muted rounded-2xl border p-6 sm:p-8 md:p-10">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-x-10 md:grid-cols-4 md:gap-x-12 xl:grid-cols-6">
           <div className="col-span-full space-y-4 xl:col-span-2">
             <Link href="/" className="inline-block leading-none">
               <MovynLogo variant="standard" className="h-9 w-auto" />

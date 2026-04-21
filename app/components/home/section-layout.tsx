@@ -37,9 +37,11 @@ export function SectionHeader({
           {subTitle}
         </div>
       ) : null}
-      <h2 className="mb-4 text-3xl font-bold md:text-4xl">{title}</h2>
+      <h2 className="mb-4 text-2xl font-bold text-balance sm:text-3xl md:text-4xl">{title}</h2>
       {description ? (
-        <p className="text-muted-foreground mb-8 text-lg">{description}</p>
+        <p className="text-muted-foreground mb-8 text-base text-pretty sm:text-lg">
+          {description}
+        </p>
       ) : null}
     </header>
   );

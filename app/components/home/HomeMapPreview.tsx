@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
 import type { Chiropractor } from '@/app/lib/queries';
 

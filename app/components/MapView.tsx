@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-line';
 import type { Chiropractor } from '../lib/queries';
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
@@ -16,6 +15,13 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 const US_CENTER: [number, number] = [-98.5795, 39.8283];
 const DEFAULT_ZOOM = 4;
 const MOBILE_BP = '(max-width: 768px)';
+
+const CLUSTER_SOURCE_ID = 'chiro-cluster-source';
+const CLUSTER_LAYER_ID = 'chiro-clusters';
+const CLUSTER_COUNT_LAYER_ID = 'chiro-cluster-count';
+const UNCLUSTERED_LAYER_ID = 'chiro-unclustered';
+
+type MapWithClusterHookFlag = mapboxgl.Map & { __movynChiroClusterHooks?: boolean };
 
 function markerColor(score: number | undefined): string {
   if (score == null) return '#86868b';
@@ -44,8 +50,14 @@ function FilterGlyph() {
   );
 }
 
-interface MapViewProps {
+export interface MapViewProps {
+  /** All practices with coords for map markers / clustering (browse may be thousands). */
   chiropractors: Chiropractor[];
+  /**
+   * Optional smaller set for the card rail (e.g. top 50 in browse mode).
+   * Defaults to `chiropractors` when omitted (ZIP search / short lists).
+   */
+  listChiropractors?: Chiropractor[];
   profileHrefBuilder: (chiro: Chiropractor) => string;
   loading?: boolean;
   zipCode: string;
@@ -74,6 +86,7 @@ interface MapViewProps {
 
 export function MapView({
   chiropractors,
+  listChiropractors,
   profileHrefBuilder,
   loading,
   zipCode,
@@ -98,6 +111,7 @@ export function MapView({
   canReferPatient,
   onReferPatient,
 }: MapViewProps) {
+  const listForRail = listChiropractors ?? chiropractors;
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -209,18 +223,19 @@ export function MapView({
     });
   }, [handleMarkerClick]);
 
-  const addClusteredMarkers = useCallback((map: mapboxgl.Map, items: MapChiropractor[]) => {
-    const sourceId = 'chiro-cluster-source';
-    const clusterId = 'chiro-clusters';
-    const clusterCountId = 'chiro-cluster-count';
-    const unclusteredId = 'chiro-unclustered';
+  const removeClusterLayersIfAny = useCallback((map: mapboxgl.Map) => {
+    if (map.getLayer(CLUSTER_COUNT_LAYER_ID)) map.removeLayer(CLUSTER_COUNT_LAYER_ID);
+    if (map.getLayer(CLUSTER_LAYER_ID)) map.removeLayer(CLUSTER_LAYER_ID);
+    if (map.getLayer(UNCLUSTERED_LAYER_ID)) map.removeLayer(UNCLUSTERED_LAYER_ID);
+    if (map.getSource(CLUSTER_SOURCE_ID)) map.removeSource(CLUSTER_SOURCE_ID);
+    (map as MapWithClusterHookFlag).__movynChiroClusterHooks = false;
+  }, []);
 
-    if (map.getSource(sourceId)) {
-      map.removeLayer(clusterCountId);
-      map.removeLayer(clusterId);
-      map.removeLayer(unclusteredId);
-      map.removeSource(sourceId);
-    }
+  const addClusteredMarkers = useCallback((map: mapboxgl.Map, items: MapChiropractor[]) => {
+    const sourceId = CLUSTER_SOURCE_ID;
+    const clusterId = CLUSTER_LAYER_ID;
+    const clusterCountId = CLUSTER_COUNT_LAYER_ID;
+    const unclusteredId = UNCLUSTERED_LAYER_ID;
 
     const geojson: GeoJSON.FeatureCollection<GeoJSON.Point> = {
       type: 'FeatureCollection',
@@ -235,6 +250,12 @@ export function MapView({
         },
       })),
     };
+
+    const existing = map.getSource(sourceId) as mapboxgl.GeoJSONSource | undefined;
+    if (existing && typeof existing.setData === 'function') {
+      existing.setData(geojson);
+      return;
+    }
 
     map.addSource(sourceId, { type: 'geojson', data: geojson, cluster: true, clusterMaxZoom: 14, clusterRadius: 50 });
     map.addLayer({
@@ -253,6 +274,12 @@ export function MapView({
         'circle-radius': 8, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff',
       },
     });
+
+    const m = map as MapWithClusterHookFlag;
+    if (m.__movynChiroClusterHooks) {
+      return;
+    }
+    m.__movynChiroClusterHooks = true;
 
     map.on('click', clusterId, (e) => {
       const features = map.queryRenderedFeatures(e.point, { layers: [clusterId] });
@@ -289,10 +316,19 @@ export function MapView({
     if (mappable.length > 20) {
       addClusteredMarkers(map, mappable);
     } else {
+      removeClusterLayersIfAny(map);
       addSimpleMarkers(map, mappable);
     }
     fitBounds(map, mappable);
-  }, [mapReady, chiropractors, mappable.length, fitBounds, addSimpleMarkers, addClusteredMarkers]);
+  }, [
+    mapReady,
+    chiropractors,
+    mappable.length,
+    fitBounds,
+    addSimpleMarkers,
+    addClusteredMarkers,
+    removeClusterLayersIfAny,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -326,7 +362,7 @@ export function MapView({
     let rafInner = 0;
     const rafOuter = requestAnimationFrame(() => { rafInner = requestAnimationFrame(connect); });
     return () => { cancelled = true; cancelAnimationFrame(rafOuter); cancelAnimationFrame(rafInner); observer?.disconnect(); };
-  }, [mapReady, chiropractors]);
+  }, [mapReady, chiropractors, listForRail]);
 
   useEffect(() => {
     if (!mapReady || !mapContainerRef.current || !mapRef.current) return;
@@ -422,10 +458,10 @@ export function MapView({
         <div ref={mapContainerRef} className="mapview-map" />
 
       {/* Desktop: card list on the left */}
-      {!isMobile && chiropractors.length > 0 && (
+      {!isMobile && listForRail.length > 0 && (
         <div className="mapview-overlay-left">
           <div ref={listScrollRef} className="mapview-overlay-cards">
-            {chiropractors.map((chiro) => (
+            {listForRail.map((chiro) => (
               <div
                 key={chiro.id}
                 data-chiro-id={chiro.id}
@@ -494,10 +530,10 @@ export function MapView({
       </div>
 
       {/* Mobile: horizontal card carousel at the bottom */}
-      {isMobile && chiropractors.length > 0 && (
+      {isMobile && listForRail.length > 0 && (
         <div className="mapview-overlay-bottom">
           <div ref={!isMobile ? undefined : listScrollRef} className="mapview-overlay-cards-mobile">
-            {chiropractors.map((chiro) => (
+            {listForRail.map((chiro) => (
               <div
                 key={chiro.id}
                 data-chiro-id={chiro.id}
@@ -524,7 +560,7 @@ export function MapView({
       )}
 
       {/* Empty state */}
-      {chiropractors.length === 0 && !loading && (
+      {mappable.length === 0 && !loading && (
         <div className="mapview-empty-state">
           <p className="text-center text-base text-muted-foreground">
             No chiropractors found. Try adjusting your search.

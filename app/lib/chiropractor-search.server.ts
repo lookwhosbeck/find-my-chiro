@@ -43,8 +43,9 @@ export async function searchChiropractorsWithClient(
     query = query.eq('accepting_new_patients', true);
   }
 
-  // With a search ZIP we over-fetch for radius filtering. Without a ZIP, browse mode loads up to BROWSE_FETCH_CAP.
-  const fetchCap = baseZip ? GEO_CANDIDATE_CAP : Math.min(BROWSE_FETCH_CAP, Math.max(limit, GEO_CANDIDATE_CAP));
+  // ZIP: over-fetch for radius filtering. Browse: always load up to BROWSE_FETCH_CAP so scoring/sorting uses the
+  // full directory pool; `limit` only trims the returned slice (list vs map can use same response).
+  const fetchCap = baseZip ? GEO_CANDIDATE_CAP : BROWSE_FETCH_CAP;
   const { data, error } = await query.limit(fetchCap);
 
   if (error) {

@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   AccountFormCard,
   AccountFormField,
@@ -53,7 +55,12 @@ import { isPremiumProfile } from '@/app/lib/subscription';
 import { canUseTrustSensitiveFeatures } from '@/app/lib/capabilities';
 import { evaluateChiropractorSearchReadiness } from '@/app/lib/profile-completeness';
 import styles from '../page.module.css';
-import { ReferralsWorkspace } from '../ReferralsWorkspace';
+import type { AccountShellProfileSummary } from './account-shell-types';
+
+const ReferralsWorkspace = dynamic(
+  () => import('../ReferralsWorkspace').then((m) => m.ReferralsWorkspace),
+  { ssr: false },
+);
 
 function supabaseErrorMessage(err: unknown): string {
   if (err && typeof err === 'object') {
@@ -67,6 +74,42 @@ function supabaseErrorMessage(err: unknown): string {
 }
 
 const COMING_SOON_NAV_KEYS: AccountNavKey[] = ['messages', 'favorites', 'groups'];
+
+/** Sidebar “Coming soon” rows — reused for loading chrome. */
+const NAV_COMING_SOON_SIDEBAR: { key: AccountNavKey; label: string }[] = [
+  { key: 'messages', label: 'Messages' },
+  { key: 'favorites', label: 'Favorites' },
+  { key: 'groups', label: 'Groups' },
+];
+
+/** Minimal nav while dashboard data is still loading. */
+const LOADING_SIDEBAR_PRIMARY: { key: AccountNavKey; label: string }[] = [
+  { key: 'profile', label: 'Your profile' },
+];
+
+const CHIRO_NAV_AVAILABLE: { key: AccountNavKey; label: string }[] = [
+  { key: 'welcome', label: 'Getting started' },
+  { key: 'practice', label: 'Your practice' },
+  { key: 'profile', label: 'Your profile' },
+  { key: 'specialties', label: 'Specialties' },
+  { key: 'membership', label: 'Membership' },
+  { key: 'referrals', label: 'Referrals' },
+];
+
+const PATIENT_NAV_AVAILABLE: { key: AccountNavKey; label: string }[] = [
+  { key: 'profile', label: 'Your profile' },
+  { key: 'preferences', label: 'Your preferences' },
+];
+
+const PATIENT_ONLY_NAV: { key: AccountNavKey; label: string }[] = [
+  { key: 'preferences', label: 'Your preferences' },
+];
+
+function navAvailableForRole(role: AccountShellProfileSummary['role']): { key: AccountNavKey; label: string }[] {
+  if (role === 'admin') return [...CHIRO_NAV_AVAILABLE, ...PATIENT_ONLY_NAV];
+  if (role === 'chiropractor') return CHIRO_NAV_AVAILABLE;
+  return PATIENT_NAV_AVAILABLE;
+}
 
 function isComingSoonNavKey(k: AccountNavKey): boolean {
   return COMING_SOON_NAV_KEYS.includes(k);
@@ -130,9 +173,12 @@ interface PatientProfile {
 
 export function MovynAccountDashboardShell({
   defaultOpen,
+  initialProfileSummary,
   children,
 }: {
   defaultOpen: boolean;
+  /** RSC-fetched profile row for role-aware sidebar while client data loads. */
+  initialProfileSummary?: AccountShellProfileSummary | null;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -147,6 +193,8 @@ export function MovynAccountDashboardShell({
   const [chiropractorProfile, setChiropractorProfile] = useState<ChiropractorProfile | null>(null);
   const [patientProfile, setPatientProfile] = useState<PatientProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  /** Email/id from cookie session for instant sidebar chrome before `checkUser` finishes. */
+  const [sessionPreview, setSessionPreview] = useState<{ id: string; email: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
   const [practiceEditing, setPracticeEditing] = useState(false);
@@ -214,21 +262,22 @@ export function MovynAccountDashboardShell({
   const initialChiroWelcomeRef = useRef(false);
 
   /**
-   * Middleware (`middleware.ts`) already validated the JWT and would have
-   * redirected to `/signin` if the cookie was missing. The browser session is
-   * stored synchronously in cookies/localStorage, so a single `getSession()` is
-   * enough — no need for a `getUser()` network round trip or retry loop here.
-   * One short retry covers the race where signIn just finished and the cookie
-   * hasn't propagated to localStorage yet.
+   * Middleware already validated the session cookie. `getSession()` reads it
+   * locally — no `getUser()` network round trip needed here.
    */
   const resolveSessionFast = async () => {
-    const first = (await supabase.auth.getSession()).data.session;
-    if (first?.user) return first;
-
-    await new Promise((r) => setTimeout(r, 150));
-    const retry = (await supabase.auth.getSession()).data.session;
-    return retry?.user ? retry : null;
+    return (await supabase.auth.getSession()).data.session;
   };
+
+  /** Hydrate sidebar/footer labels immediately from the session cookie. */
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user;
+      if (u?.id) {
+        setSessionPreview({ id: u.id, email: typeof u.email === 'string' ? u.email : '' });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     setProfileEditing(false);
@@ -539,15 +588,7 @@ export function MovynAccountDashboardShell({
   }, []);
 
   /**
-   * Loads everything the dashboard needs in one parallel fan-out.
-   *
-   * Auth was already validated by `middleware.ts`, so we trust the cookie
-   * `getSession()` returns and skip the (slow) `getUser()` network round trip.
-   * All role-relevant queries fire concurrently keyed on the user id; RLS
-   * cleanly returns empty rows for the wrong role. The `flushPending*` signup
-   * helpers run in the background — they short-circuit when nothing is pending,
-   * and when they DO have work it's safe to apply asynchronously after the
-   * dashboard has rendered.
+   * Loads profile first, then role-scoped parallel reads (patients skip chiropractor junction queries).
    */
   const checkUser = async () => {
     try {
@@ -565,9 +606,42 @@ export function MovynAccountDashboardShell({
       ]);
 
       const userId = authUser.id;
-      const [profileRes, chiroRes, patientRes, modsRes, focusRes, philRes, payRes, insRes] =
-        await Promise.all([
-          supabase.from('profiles').select('*').eq('id', userId).single(),
+
+      const { data: profileData, error: profileErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileErr || !profileData) {
+        console.error('Error fetching profile:', profileErr);
+        return;
+      }
+
+      const typedProfile = profileData as UserProfile;
+      setProfile(typedProfile);
+      setProfileForm({
+        first_name: typedProfile.first_name || '',
+        last_name: typedProfile.last_name || '',
+        email: typedProfile.email || '',
+      });
+
+      if (
+        typedProfile.role === 'chiropractor' &&
+        authUser.email_confirmed_at &&
+        !typedProfile.chiropractor_welcome_email_sent_at
+      ) {
+        void fetch('/api/email/chiropractor-welcome', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      }
+
+      const isChiroRole = typedProfile.role === 'chiropractor' || typedProfile.role === 'admin';
+      const isPatientRole = typedProfile.role === 'patient' || typedProfile.role === 'admin';
+
+      if (isChiroRole && isPatientRole) {
+        const [chiroRes, patientRes, modsRes, focusRes, philRes, payRes, insRes] = await Promise.all([
           supabase
             .from('chiropractors')
             .select(
@@ -582,35 +656,6 @@ export function MovynAccountDashboardShell({
           supabase.from('chiropractor_payment_models').select('payment_models(name)').eq('chiropractor_id', userId),
           supabase.from('chiropractor_insurances').select('insurances(name)').eq('chiropractor_id', userId),
         ]);
-
-      if (profileRes.error || !profileRes.data) {
-        console.error('Error fetching profile:', profileRes.error);
-        return;
-      }
-
-      const profileData = profileRes.data as UserProfile;
-      setProfile(profileData);
-      setProfileForm({
-        first_name: profileData.first_name || '',
-        last_name: profileData.last_name || '',
-        email: profileData.email || '',
-      });
-
-      if (
-        profileData.role === 'chiropractor' &&
-        authUser.email_confirmed_at &&
-        !profileData.chiropractor_welcome_email_sent_at
-      ) {
-        void fetch('/api/email/chiropractor-welcome', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-      }
-
-      const isChiroRole = profileData.role === 'chiropractor' || profileData.role === 'admin';
-      const isPatientRole = profileData.role === 'patient' || profileData.role === 'admin';
-
-      if (isChiroRole) {
         applyChiroRow((chiroRes.data as ChiroRowWithOrg | null) ?? null);
         setChiroModalityNames(
           (modsRes.data?.map((r) => pickRelName((r as { modalities?: unknown }).modalities)).filter(Boolean) as string[]) || [],
@@ -627,10 +672,42 @@ export function MovynAccountDashboardShell({
         setChiroInsuranceNames(
           (insRes.data?.map((r) => pickRelName((r as { insurances?: unknown }).insurances)).filter(Boolean) as string[]) || [],
         );
-      }
-
-      if (isPatientRole) {
         applyPatientRow((patientRes.data as PatientProfile | null) ?? null);
+      } else if (isChiroRole) {
+        const [chiroRes, modsRes, focusRes, philRes, payRes, insRes] = await Promise.all([
+          supabase
+            .from('chiropractors')
+            .select(
+              `*, organizations ( id, name, address_line_1, city, state, zip_code, phone )`,
+            )
+            .eq('id', userId)
+            .maybeSingle(),
+          supabase.from('chiropractor_modalities').select('modalities(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_focus_areas').select('focus_areas(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_philosophies').select('philosophies(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_payment_models').select('payment_models(name)').eq('chiropractor_id', userId),
+          supabase.from('chiropractor_insurances').select('insurances(name)').eq('chiropractor_id', userId),
+        ]);
+        applyChiroRow((chiroRes.data as ChiroRowWithOrg | null) ?? null);
+        setChiroModalityNames(
+          (modsRes.data?.map((r) => pickRelName((r as { modalities?: unknown }).modalities)).filter(Boolean) as string[]) || [],
+        );
+        setChiroFocusNames(
+          (focusRes.data?.map((r) => pickRelName((r as { focus_areas?: unknown }).focus_areas)).filter(Boolean) as string[]) || [],
+        );
+        setChiroPhilosophyNames(
+          (philRes.data?.map((r) => pickRelName((r as { philosophies?: unknown }).philosophies)).filter(Boolean) as string[]) || [],
+        );
+        setChiroPaymentNames(
+          (payRes.data?.map((r) => pickRelName((r as { payment_models?: unknown }).payment_models)).filter(Boolean) as string[]) || [],
+        );
+        setChiroInsuranceNames(
+          (insRes.data?.map((r) => pickRelName((r as { insurances?: unknown }).insurances)).filter(Boolean) as string[]) || [],
+        );
+      } else if (isPatientRole) {
+        applyChiroRow(null);
+        const { data: patientRow } = await supabase.from('patients').select('*').eq('id', userId).maybeSingle();
+        applyPatientRow((patientRow as PatientProfile | null) ?? null);
       }
     } catch (e) {
       console.error('Error checking user:', e);
@@ -961,13 +1038,68 @@ export function MovynAccountDashboardShell({
   };
 
   if (loading) {
+    const previewEmail = initialProfileSummary?.email ?? sessionPreview?.email ?? '';
+    const loadingDisplayName =
+      [initialProfileSummary?.first_name, initialProfileSummary?.last_name].filter(Boolean).join(' ') ||
+      previewEmail.split('@')[0]?.trim() ||
+      'Account';
+    const loadingNavGroups = buildAccountSettingsNavGroups(
+      initialProfileSummary ? navAvailableForRole(initialProfileSummary.role) : LOADING_SIDEBAR_PRIMARY,
+      NAV_COMING_SOON_SIDEBAR,
+    );
     return (
-      <>
-        <div className="flex min-h-svh items-center justify-center bg-muted/40">
-          <p className="text-muted-foreground text-sm">Loading…</p>
-        </div>
-        <div className="hidden">{children}</div>
-      </>
+      <SidebarProvider defaultOpen={defaultOpen} className="min-h-svh" style={getMovynDashboardProviderStyle()}>
+        <MovynAppSidebar
+          variant="inset"
+          navGroups={loadingNavGroups}
+          footer={
+            <MovynNavUser
+              displayName={loadingDisplayName}
+              email={previewEmail}
+              avatarUrl={undefined}
+              firstName={initialProfileSummary?.first_name ?? null}
+              lastName={initialProfileSummary?.last_name ?? null}
+              showAdminLink={initialProfileSummary?.role === 'admin'}
+              onSignOut={() => void handleSignOut()}
+            />
+          }
+        />
+        <SidebarInset>
+          <MovynSiteHeader
+            title={accountPageTitle(activeNav)}
+            breadcrumbParent={{ label: 'Account', href: accountSettingsHref('profile') }}
+            actions={accountToolbarActions({
+              onEdit: () => {},
+              onSave: () => {},
+              editDisabled: true,
+              saveDisabled: true,
+              saving: false,
+            })}
+          />
+          <div className="bg-card text-card-foreground border-b px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-14 shrink-0 rounded-lg" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-40 max-w-full" />
+                <Skeleton className="h-3 w-56 max-w-full" />
+              </div>
+            </div>
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col bg-muted/40">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-[--content-padding]">
+              <div className={styles.pageSectionBody}>
+                <div className="space-y-4" aria-busy="true" aria-label="Loading account">
+                  <Skeleton className="h-8 w-48 max-w-full" />
+                  <Skeleton className="h-40 w-full rounded-xl" />
+                  <Skeleton className="h-40 w-full rounded-xl" />
+                  <p className="text-muted-foreground text-sm">Loading your account…</p>
+                </div>
+              </div>
+              <div className="hidden">{children}</div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
@@ -989,19 +1121,9 @@ export function MovynAccountDashboardShell({
   const showChiroAccountUI = isChiro || isAdmin;
   const showPatientAccountUI = isPatient || isAdmin;
 
-  const chiroNavAvailable: { key: AccountNavKey; label: string }[] = [
-    { key: 'welcome', label: 'Getting started' },
-    { key: 'practice', label: 'Your practice' },
-    { key: 'profile', label: 'Your profile' },
-    { key: 'specialties', label: 'Specialties' },
-    { key: 'membership', label: 'Membership' },
-    { key: 'referrals', label: 'Referrals' },
-  ];
+  const chiroNavAvailable = CHIRO_NAV_AVAILABLE;
 
-  const patientNavAvailable: { key: AccountNavKey; label: string }[] = [
-    { key: 'profile', label: 'Your profile' },
-    { key: 'preferences', label: 'Your preferences' },
-  ];
+  const patientNavAvailable = PATIENT_NAV_AVAILABLE;
 
   const navComingSoon: { key: AccountNavKey; label: string }[] = [
     { key: 'messages', label: 'Messages' },
@@ -1009,12 +1131,8 @@ export function MovynAccountDashboardShell({
     { key: 'groups', label: 'Groups' },
   ];
 
-  const patientOnlyNav: { key: AccountNavKey; label: string }[] = [
-    { key: 'preferences', label: 'Your preferences' },
-  ];
-
   const navAvailable = isAdmin
-    ? [...chiroNavAvailable, ...patientOnlyNav]
+    ? [...chiroNavAvailable, ...PATIENT_ONLY_NAV]
     : isChiro
       ? chiroNavAvailable
       : patientNavAvailable;

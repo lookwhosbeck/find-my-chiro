@@ -57,6 +57,8 @@ async function requireAdmin(req: NextRequest): Promise<AdminAuthResult> {
   return { ok: true };
 }
 
+const VERIFICATION_STATUSES = ['draft', 'pending_review', 'approved', 'rejected'] as const;
+
 export async function GET(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -68,11 +70,22 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth.ok === false) return auth.response;
 
+  const sp = req.nextUrl.searchParams;
+  const limitRaw = Number.parseInt(sp.get('limit') ?? '50', 10);
+  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
+  const offsetRaw = Number.parseInt(sp.get('offset') ?? '0', 10);
+  const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
+  const statusParam = sp.get('status');
+  const statusFilter =
+    statusParam && VERIFICATION_STATUSES.includes(statusParam as (typeof VERIFICATION_STATUSES)[number])
+      ? statusParam
+      : null;
+
   const admin = createClient(url, service, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: rows, error } = await admin
+  let query = admin
     .from('chiropractors')
     .select(
       `
@@ -90,6 +103,12 @@ export async function GET(req: NextRequest) {
     `,
     )
     .order('created_at', { ascending: false, referencedTable: 'profiles' });
+
+  if (statusFilter) {
+    query = query.eq('license_verification_status', statusFilter);
+  }
+
+  const { data: rows, error } = await query.range(offset, offset + limit - 1);
 
   if (error) {
     console.error('admin chiropractors GET:', error);
@@ -120,7 +139,11 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json(list);
+  return NextResponse.json(list, {
+    headers: {
+      'Cache-Control': 'private, max-age=10, stale-while-revalidate=60',
+    },
+  });
 }
 
 export async function PATCH(req: NextRequest) {

@@ -243,14 +243,16 @@ export function HomeFeatures() {
           return (
             <div
               key={card.title}
-              className="relative flex items-start gap-6 overflow-hidden rounded-lg border p-6"
+              className="relative flex items-start gap-4 overflow-hidden rounded-lg border p-5 sm:gap-6 sm:p-6"
             >
-              <div className="min-w-0 flex-1 space-y-4">
-                <CardTitle className="text-lg">{card.title}</CardTitle>
-                <p className="text-muted-foreground font-normal">{card.description}</p>
+              <div className="min-w-0 flex-1 space-y-3 sm:space-y-4">
+                <CardTitle className="text-base sm:text-lg">{card.title}</CardTitle>
+                <p className="text-muted-foreground text-sm font-normal sm:text-base">
+                  {card.description}
+                </p>
               </div>
               <div className="bg-primary/20 ring-primary/10 shrink-0 rounded-full p-2 ring-8">
-                <Icon className="text-primary size-6" />
+                <Icon className="text-primary size-5 sm:size-6" />
               </div>
             </div>
           );
@@ -342,7 +344,7 @@ export function HomeTeam() {
               Meet the founders
             </Badge>
 
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl lg:mb-6">
+            <h2 className="mb-4 text-2xl font-bold text-balance sm:text-3xl md:text-4xl lg:mb-6">
               Built by chiropractors and patients who wanted better.
             </h2>
 
@@ -375,8 +377,8 @@ export function HomeCommunity() {
         <Card>
           <CardHeader>
             <div className="flex flex-col items-center gap-3 text-center">
-              <Heart className="text-primary size-10" aria-hidden />
-              <CardTitle className="text-center text-3xl font-bold md:text-4xl">
+              <Heart className="text-primary size-8 sm:size-10" aria-hidden />
+              <CardTitle className="text-center text-2xl font-bold text-balance sm:text-3xl md:text-4xl">
                 Better-fit chiropractic care starts with the{" "}
                 <span className="bg-gradient-to-b from-primary/60 to-primary bg-clip-text text-transparent">
                   right network.
@@ -384,13 +386,13 @@ export function HomeCommunity() {
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="text-muted-foreground mx-auto max-w-screen-sm space-y-4 text-center text-xl">
+          <CardContent className="text-muted-foreground mx-auto max-w-screen-sm space-y-4 text-center text-base text-pretty sm:text-lg md:text-xl">
             <p>
               Movyn is built with—and for—the chiropractors and patients who use it. Join the
               network and help shape what better-fit care looks like.
             </p>
           </CardContent>
-          <CardFooter className="flex-col items-center justify-center gap-3 sm:flex-row">
+          <CardFooter className="flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Button size="lg" asChild>
               <Link href="/signup-patient">I&apos;m looking for care</Link>
             </Button>
