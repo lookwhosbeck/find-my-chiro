@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, Circle, ShieldCheck, Clock3, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Circle, CircleHelp, Clock3, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AccountFormCard,
   AccountFormField,
@@ -26,6 +27,7 @@ import {
   flushPendingPatientSignupIfAny,
 } from '@/app/lib/auth';
 import { uploadAvatar, deleteAvatar, updateProfileAvatarUrl } from '@/app/lib/avatar-upload';
+import { parseWelcomeVideoUrlInput } from '@/app/lib/welcome-video-url';
 import { dispatchProfileUpdated } from '@/app/lib/profile-events';
 import { UserAvatar } from '@/app/components/UserAvatar';
 import { accountToolbarActions } from '@/components/layout/account-toolbar-actions';
@@ -142,6 +144,7 @@ interface ChiropractorProfile {
   accepting_new_patients?: boolean;
   organization_id?: string | null;
   budget_range?: string | null;
+  welcome_video_url?: string | null;
   updated_at: string;
   license_verification_status?: string | null;
   onboarding_completed_at?: string | null;
@@ -236,6 +239,7 @@ export function MovynAccountDashboardShell({
     graduation_year: '',
     license_number: '',
     accepting_new_patients: true,
+    welcome_video_url: '',
   });
 
   const [patientForm, setPatientForm] = useState({
@@ -487,6 +491,7 @@ export function MovynAccountDashboardShell({
         graduation_year: '',
         license_number: '',
         accepting_new_patients: true,
+        welcome_video_url: '',
       });
       setChiroBudgetRange('');
       setOrgForm({
@@ -507,6 +512,7 @@ export function MovynAccountDashboardShell({
       graduation_year: row.graduation_year?.toString() || '',
       license_number: row.license_number || '',
       accepting_new_patients: row.accepting_new_patients ?? true,
+      welcome_video_url: row.welcome_video_url || '',
     });
     setChiroBudgetRange(row.budget_range || '');
 
@@ -878,6 +884,13 @@ export function MovynAccountDashboardShell({
     if (!user || profile?.role === 'admin') return;
     setSaving(true);
     try {
+      const welcomeParsed = parseWelcomeVideoUrlInput(chiropractorForm.welcome_video_url);
+      if (welcomeParsed.ok === false) {
+        alert(welcomeParsed.message);
+        return;
+      }
+      const welcomeVideoUrl = welcomeParsed.url;
+
       const orgBase = {
         name: orgForm.name.trim() || 'My practice',
         address_line_1: orgForm.address_line_1.trim() || null,
@@ -918,6 +931,7 @@ export function MovynAccountDashboardShell({
         graduation_year,
         license_number: chiropractorForm.license_number.trim() || null,
         accepting_new_patients: chiropractorForm.accepting_new_patients,
+        welcome_video_url: welcomeVideoUrl,
         updated_at: new Date().toISOString(),
       };
 
@@ -1694,6 +1708,59 @@ export function MovynAccountDashboardShell({
               disabled={practiceLocked}
               placeholder="Tell patients about your experience and approach…"
               rows={4}
+            />
+          </AccountFormField>
+
+          <AccountFormField
+            id="ch-welcome-video"
+            label={
+              <span className="inline-flex items-center gap-2">
+                Welcome video link
+                <span className="text-muted-foreground font-normal">(optional)</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="-m-0.5 inline-flex shrink-0 rounded-sm p-0.5 text-muted-foreground outline-offset-2 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                      aria-label="How to add a welcome video"
+                    >
+                      <CircleHelp className="size-4" aria-hidden />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    align="start"
+                    className="max-w-[min(22rem,calc(100vw-2rem))] space-y-2 px-3 py-2.5 text-left text-xs font-normal leading-snug text-balance"
+                  >
+                    <p className="font-medium text-background">Host a short clip yourself</p>
+                    <p>
+                      Upload to{' '}
+                      <span className="whitespace-nowrap font-medium">YouTube</span> (Unlisted),{' '}
+                      <span className="whitespace-nowrap font-medium">Vimeo</span>,{' '}
+                      <span className="whitespace-nowrap font-medium">Loom</span>, or similar—set privacy so only people
+                      with the link can watch if you prefer.
+                    </p>
+                    <p>
+                      Then copy the regular watch or share URL from that site and paste it here. Movyn only stores the
+                      link; playback stays on the platform you chose.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </span>
+            }
+            description="Optional intro patients can open before booking. Use a full https:// link from your host."
+          >
+            <Input
+              id="ch-welcome-video"
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              value={chiropractorForm.welcome_video_url}
+              onChange={(e) =>
+                setChiropractorForm((p) => ({ ...p, welcome_video_url: e.target.value }))
+              }
+              disabled={practiceLocked}
+              placeholder="https://www.youtube.com/watch?v=… or https://vimeo.com/…"
             />
           </AccountFormField>
 

@@ -27,6 +27,8 @@ export interface Chiropractor {
   licenseNumber?: string;
   budgetRange?: string | null;
   acceptingPatients?: boolean;
+  /** Link to intro video on YouTube, Vimeo, Loom, etc. */
+  welcomeVideoUrl?: string | null;
   avatarUrl?: string;
   matchScore?: number;
   /** Miles from search ZIP when radius search ran (server-computed). */
@@ -173,6 +175,7 @@ export function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropract
       licenseNumber: item.license_number || undefined,
       budgetRange: item.budget_range ?? undefined,
       acceptingPatients: item.accepting_new_patients ?? true,
+      welcomeVideoUrl: item.welcome_video_url ?? null,
       avatarUrl: item.profiles?.avatar_url || null,
       focusAreas: focusAreas,
       businessModel: paymentModelsLower[0],
