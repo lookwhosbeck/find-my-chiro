@@ -7,6 +7,17 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
+  async rewrites() {
+    return [
+      // Stripe Dashboard was configured with https://movynalong.com (root) instead of
+      // /api/webhooks/stripe — forward signed webhook POSTs so checkout.session.completed syncs.
+      {
+        source: '/',
+        has: [{ type: 'header', key: 'stripe-signature' }],
+        destination: '/api/webhooks/stripe',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

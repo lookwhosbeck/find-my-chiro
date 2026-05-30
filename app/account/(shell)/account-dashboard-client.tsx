@@ -390,10 +390,10 @@ export function MovynAccountDashboardShell({
       return normalized === 'active' || normalized === 'trialing';
     };
 
-    const confirmCheckoutSession = async () => {
-      if (!checkoutSessionId) return;
+    const confirmCheckoutSession = async (): Promise<string | null> => {
+      if (!checkoutSessionId) return null;
       const session = await resolveBrowserSession(supabase);
-      if (!session?.access_token) return;
+      if (!session?.access_token) return 'You must be signed in to sync membership.';
       const res = await fetch('/api/checkout/confirm-session', {
         method: 'POST',
         headers: {
@@ -406,6 +406,7 @@ export function MovynAccountDashboardShell({
         const json = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(json.error || 'Could not confirm checkout session');
       }
+      return null;
     };
 
     if (c === 'success') {
@@ -416,11 +417,14 @@ export function MovynAccountDashboardShell({
       window.history.replaceState({}, '', accountSettingsHref('membership'));
       void (async () => {
         let confirmFailed = false;
+        let confirmError: string | null = null;
         try {
-          await confirmCheckoutSession();
+          confirmError = await confirmCheckoutSession();
+          if (confirmError) confirmFailed = true;
         } catch (e) {
           console.error('confirm checkout session:', e);
           confirmFailed = true;
+          confirmError = e instanceof Error ? e.message : 'Could not confirm checkout session';
         }
 
         try {
@@ -449,6 +453,10 @@ export function MovynAccountDashboardShell({
 
           if (synced) {
             setCheckoutBanner('Membership updated successfully. Your premium plan is active.');
+          } else if (confirmFailed && confirmError) {
+            setCheckoutBanner(
+              `Payment completed, but membership sync failed: ${confirmError}`,
+            );
           } else if (confirmFailed) {
             setCheckoutBanner(
               'Payment completed, but membership sync is still processing. Please refresh in a moment.',
