@@ -4,6 +4,7 @@ import { checkoutSessionIncludesVerificationPrice, getStripe } from '@/app/lib/s
 import {
   syncProfileAfterVerificationPayment,
   syncProfileFromStripeSubscription,
+  BillingSyncVerificationError,
 } from '@/app/lib/subscription-sync.server';
 
 export const dynamic = 'force-dynamic';
@@ -125,6 +126,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, subscriptionStatus: sub.status });
   } catch (e) {
     console.error('confirm-session sync:', e);
-    return NextResponse.json({ error: 'Could not sync subscription to profile' }, { status: 500 });
+    const msg =
+      e instanceof BillingSyncVerificationError
+        ? e.message
+        : 'Could not sync subscription to profile';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
