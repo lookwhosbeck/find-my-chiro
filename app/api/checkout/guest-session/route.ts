@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
     sessionParams.mode = 'payment';
   } else {
     sessionParams.mode = 'subscription';
+    sessionParams.payment_method_collection = 'if_required';
     sessionParams.subscription_data = {
       metadata: {
         app_signup_flow: GUEST_FLOW,

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
+import { accountSettingsHref } from '@/lib/movyn-account-routes';
 import {
   appOriginFromRequest,
   getStripe,
@@ -102,18 +103,21 @@ export async function POST(req: NextRequest) {
     sessionParams.mode = 'payment';
   } else {
     sessionParams.mode = 'subscription';
+    sessionParams.payment_method_collection = 'if_required';
     sessionParams.subscription_data = {
       metadata: { supabase_user_id: user.id, signup_plan: plan },
     };
   }
+
+  const membershipReturnBase = `${origin}${accountSettingsHref('membership')}`;
 
   if (embedded) {
     sessionParams.ui_mode = 'embedded';
     sessionParams.return_url = `${origin}/signup?session_id={CHECKOUT_SESSION_ID}`;
     sessionParams.redirect_on_completion = 'if_required';
   } else {
-    sessionParams.success_url = `${origin}/account?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-    sessionParams.cancel_url = `${origin}/account?checkout=canceled`;
+    sessionParams.success_url = `${membershipReturnBase}?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+    sessionParams.cancel_url = `${membershipReturnBase}?checkout=canceled`;
   }
 
   const existingCustomer =

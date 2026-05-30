@@ -87,6 +87,11 @@ export async function checkoutSessionIncludesVerificationPrice(
   });
 }
 
+/** Stripe marks $0 checkouts (e.g. 100% coupons) as no_payment_required instead of paid. */
+export function isCheckoutSessionPaymentComplete(paymentStatus: string | null | undefined): boolean {
+  return paymentStatus === 'paid' || paymentStatus === 'no_payment_required';
+}
+
 export function appOriginFromRequest(req: Request): string {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (envUrl) return envUrl.replace(/\/$/, '');

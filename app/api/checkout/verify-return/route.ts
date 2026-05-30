@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe, getStripePriceIdAnnual, getStripePriceIdMonthly } from '@/app/lib/stripe.server';
+import {
+  getStripe,
+  getStripePriceIdAnnual,
+  getStripePriceIdMonthly,
+  isCheckoutSessionPaymentComplete,
+} from '@/app/lib/stripe.server';
 import {
   CHECKOUT_CLAIM_COOKIE,
   signCheckoutClaim,
@@ -51,7 +56,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not a guest signup checkout' }, { status: 400 });
   }
 
-  if (session.status !== 'complete' || session.payment_status !== 'paid') {
+  if (session.status !== 'complete' || !isCheckoutSessionPaymentComplete(session.payment_status)) {
     return NextResponse.json(
       { error: 'Payment not complete', status: session.status, payment_status: session.payment_status },
       { status: 400 },
