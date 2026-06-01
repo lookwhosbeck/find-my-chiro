@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
-import { checkoutSessionIncludesVerificationPrice, getStripe } from '@/app/lib/stripe.server';
+import { checkoutSessionIncludesVerificationPrice, getStripe, checkoutSessionEmail, resolveCheckoutSessionCustomerId } from '@/app/lib/stripe.server';
 import {
   clearSubscriptionToFree,
   syncProfileFromStripeSubscription,
@@ -54,7 +54,7 @@ async function handleCheckoutSessionCompleted(
   admin: SupabaseClient,
   session: Stripe.Checkout.Session,
 ): Promise<void> {
-  const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+  const customerId = await resolveCheckoutSessionCustomerId(stripe, session);
   if (!customerId) {
     console.warn('checkout.session.completed: missing customer', session.id);
     return;
@@ -64,10 +64,7 @@ async function handleCheckoutSessionCompleted(
     (session.client_reference_id?.trim() || session.metadata?.supabase_user_id?.trim()) ?? null;
 
   if (session.mode === 'payment' && session.metadata?.app_signup_flow === GUEST_SIGNUP_FLOW) {
-    const emailRaw =
-      session.customer_details?.email?.trim() ||
-      session.customer_email?.trim() ||
-      '';
+    const emailRaw = checkoutSessionEmail(session);
     if (!emailRaw) {
       console.warn('checkout.session.completed: guest payment missing email', session.id);
       return;

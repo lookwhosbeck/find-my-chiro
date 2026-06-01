@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
 
   if (plan === 'free') {
     sessionParams.mode = 'payment';
+    sessionParams.customer_creation = 'always';
   } else {
     sessionParams.mode = 'subscription';
     sessionParams.payment_method_collection = 'if_required';

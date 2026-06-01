@@ -2,10 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  checkoutSessionEmail,
   getStripe,
   getStripePriceIdAnnual,
   getStripePriceIdMonthly,
   isCheckoutSessionPaymentComplete,
+  resolveCheckoutSessionCustomerId,
 } from '@/app/lib/stripe.server';
 import {
   CHECKOUT_CLAIM_COOKIE,
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
   let session: Awaited<ReturnType<typeof stripe.checkout.sessions.retrieve>>;
   try {
     session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['subscription', 'customer'],
+      expand: ['subscription', 'customer', 'payment_intent'],
     });
   } catch {
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -63,18 +65,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+  const customerId = await resolveCheckoutSessionCustomerId(stripe, session);
   if (!customerId) {
     return NextResponse.json({ error: 'Missing customer' }, { status: 400 });
   }
 
-  const emailRaw =
-    session.customer_details?.email?.trim() ||
-    session.customer_email?.trim() ||
-    (typeof session.customer === 'object' && session.customer && !('deleted' in session.customer)
-      ? (session.customer as { email?: string | null }).email?.trim()
-      : '') ||
-    '';
+  const emailRaw = checkoutSessionEmail(session);
   if (!emailRaw) {
     return NextResponse.json({ error: 'No email on checkout session' }, { status: 400 });
   }

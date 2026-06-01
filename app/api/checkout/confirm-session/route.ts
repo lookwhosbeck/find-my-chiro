@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import { checkoutSessionIncludesVerificationPrice, getStripe } from '@/app/lib/stripe.server';
+import { checkoutSessionIncludesVerificationPrice, getStripe, resolveCheckoutSessionCustomerId } from '@/app/lib/stripe.server';
 import {
   syncProfileAfterVerificationPayment,
   syncProfileFromStripeSubscription,
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   let session: Awaited<ReturnType<typeof stripe.checkout.sessions.retrieve>>;
   try {
     session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['subscription', 'customer'],
+      expand: ['subscription', 'customer', 'payment_intent'],
     });
   } catch {
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Session does not belong to this user' }, { status: 403 });
   }
 
-  const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+  const customerId = await resolveCheckoutSessionCustomerId(stripe, session);
   if (!customerId) {
     return NextResponse.json({ error: 'Missing customer' }, { status: 400 });
   }

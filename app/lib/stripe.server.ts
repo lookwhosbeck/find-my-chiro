@@ -92,6 +92,53 @@ export function isCheckoutSessionPaymentComplete(paymentStatus: string | null | 
   return paymentStatus === 'paid' || paymentStatus === 'no_payment_required';
 }
 
+export function checkoutSessionEmail(session: Stripe.Checkout.Session): string {
+  return (
+    session.customer_details?.email?.trim() ||
+    session.customer_email?.trim() ||
+    (typeof session.customer === 'object' &&
+    session.customer &&
+    !('deleted' in session.customer)
+      ? (session.customer as { email?: string | null }).email?.trim()
+      : '') ||
+    ''
+  );
+}
+
+/**
+ * Payment-mode Checkout often omits session.customer unless customer_creation is always.
+ * Resolve from session, PaymentIntent, or create/reuse a Customer by checkout email.
+ */
+export async function resolveCheckoutSessionCustomerId(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session,
+): Promise<string | null> {
+  const fromSession =
+    typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null;
+  if (fromSession) return fromSession;
+
+  const piRef = session.payment_intent;
+  const piId = typeof piRef === 'string' ? piRef : piRef?.id;
+  if (piId) {
+    const pi = await stripe.paymentIntents.retrieve(piId);
+    const fromPi = typeof pi.customer === 'string' ? pi.customer : pi.customer?.id ?? null;
+    if (fromPi) return fromPi;
+  }
+
+  const email = checkoutSessionEmail(session);
+  if (!email) return null;
+
+  const existing = await stripe.customers.list({ email, limit: 1 });
+  const match = existing.data[0];
+  if (match?.id) return match.id;
+
+  const created = await stripe.customers.create({
+    email,
+    metadata: { checkout_session_id: session.id },
+  });
+  return created.id;
+}
+
 export function appOriginFromRequest(req: Request): string {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (envUrl) return envUrl.replace(/\/$/, '');

@@ -92,6 +92,9 @@ export async function POST(req: NextRequest) {
     (typeof profile.email === 'string' ? profile.email : null) ||
     undefined;
 
+  const existingCustomer =
+    typeof profile.stripe_customer_id === 'string' ? profile.stripe_customer_id.trim() : '';
+
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     client_reference_id: user.id,
     line_items: lineItems,
@@ -101,6 +104,9 @@ export async function POST(req: NextRequest) {
 
   if (plan === 'free') {
     sessionParams.mode = 'payment';
+    if (!existingCustomer) {
+      sessionParams.customer_creation = 'always';
+    }
   } else {
     sessionParams.mode = 'subscription';
     sessionParams.payment_method_collection = 'if_required';
@@ -120,8 +126,6 @@ export async function POST(req: NextRequest) {
     sessionParams.cancel_url = `${membershipReturnBase}?checkout=canceled`;
   }
 
-  const existingCustomer =
-    typeof profile.stripe_customer_id === 'string' ? profile.stripe_customer_id.trim() : '';
   if (existingCustomer) {
     sessionParams.customer = existingCustomer;
   } else if (email) {
