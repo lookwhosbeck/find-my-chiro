@@ -7,6 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Header } from '@/app/components/Header';
 import { Footer } from '@/app/components/Footer';
+import {
+  Building2,
+  MapPin,
+  Phone,
+  Globe,
+  Wallet,
+  DollarSign,
+  GraduationCap,
+  ShieldCheck,
+  Activity,
+  Target,
+  Lightbulb,
+  Compass,
+  FileText,
+  Award,
+  BarChart3,
+} from 'lucide-react';
 import { Container } from '@/app/components/Container';
 import { MatchRadarChart } from '@/app/components/MatchRadarChart';
 import { ReferPatientModal } from '@/app/components/ReferPatientModal';
@@ -268,89 +285,84 @@ function ChiropractorProfileContent() {
         <Container>
           <div className={styles.profileGrid}>
             <div className="flex flex-col gap-5">
-              <Card className="search-refine-card">
-                <h2 className={styles.profileSectionTitle}>Practice &amp; contact</h2>
+              <Card className={`search-refine-card ${styles.profileCard}`}>
+                <h2 className={styles.profileSectionTitle}>
+                  <span className={styles.profileSectionIcon}><Building2 size={16} /></span>
+                  Practice &amp; contact
+                </h2>
                 <ul className={styles.profileDetailList}>
                   {chiro.clinicName ? (
-                    <li>
-                      <span
-                        className="mb-1 block text-sm font-bold text-foreground"
-                      >
-                        Clinic
-                      </span>
-                      <span className="text-sm leading-snug text-muted-foreground">
-                        {chiro.clinicName}
-                      </span>
+                    <li className={styles.detailItem}>
+                      <span className={styles.detailIcon}><Building2 size={18} /></span>
+                      <div className={styles.detailContent}>
+                        <span className={styles.detailLabel}>Clinic</span>
+                        <span className={styles.detailValue}>{chiro.clinicName}</span>
+                      </div>
                     </li>
                   ) : null}
                   {addressLines.length > 0 ? (
-                    <li>
-                      <span
-                        className="mb-1 block text-sm font-bold text-foreground"
-                      >
-                        Address
-                      </span>
-                      <span className="text-sm leading-snug text-muted-foreground">
-                        {addressLines.map((line, i) => (
-                          <span key={i}>
-                            {i > 0 ? <br /> : null}
-                            {line}
-                          </span>
-                        ))}
-                      </span>
-                      {mapsHref ? (
-                        <p className="mt-2 text-sm">
-                          <a href={mapsHref} target="_blank" rel="noopener noreferrer">
-                            Open in Maps
-                          </a>
-                        </p>
-                      ) : null}
+                    <li className={styles.detailItem}>
+                      <span className={styles.detailIcon}><MapPin size={18} /></span>
+                      <div className={styles.detailContent}>
+                        <span className={styles.detailLabel}>Address</span>
+                        <span className={styles.detailValue}>
+                          {addressLines.map((line, i) => (
+                            <span key={i}>
+                              {i > 0 ? <br /> : null}
+                              {line}
+                            </span>
+                          ))}
+                        </span>
+                        {mapsHref ? (
+                          <p className="mt-1.5 text-sm">
+                            <a href={mapsHref} target="_blank" rel="noopener noreferrer">
+                              Open in Maps
+                            </a>
+                          </p>
+                        ) : null}
+                      </div>
                     </li>
                   ) : null}
                   {chiro.practicePhone ? (
-                    <li>
-                      <span
-                        className="mb-1 block text-sm font-bold text-foreground"
-                      >
-                        Phone
-                      </span>
-                      <a href={`tel:${chiro.practicePhone.replace(/\s/g, '')}`}>{chiro.practicePhone}</a>
+                    <li className={styles.detailItem}>
+                      <span className={styles.detailIcon}><Phone size={18} /></span>
+                      <div className={styles.detailContent}>
+                        <span className={styles.detailLabel}>Phone</span>
+                        <span className={styles.detailValue}>
+                          <a href={`tel:${chiro.practicePhone.replace(/\s/g, '')}`}>{chiro.practicePhone}</a>
+                        </span>
+                      </div>
                     </li>
                   ) : null}
                   {chiro.practiceWebsite ? (
-                    <li>
-                      <span
-                        className="mb-1 block text-sm font-bold text-foreground"
-                      >
-                        Website
-                      </span>
-                      <a href={chiro.practiceWebsite} target="_blank" rel="noopener noreferrer">
-                        {chiro.practiceWebsite.replace(/^https?:\/\//i, '')}
-                      </a>
+                    <li className={styles.detailItem}>
+                      <span className={styles.detailIcon}><Globe size={18} /></span>
+                      <div className={styles.detailContent}>
+                        <span className={styles.detailLabel}>Website</span>
+                        <span className={styles.detailValue}>
+                          <a href={chiro.practiceWebsite} target="_blank" rel="noopener noreferrer">
+                            {chiro.practiceWebsite.replace(/^https?:\/\//i, '')}
+                          </a>
+                        </span>
+                      </div>
                     </li>
                   ) : null}
                   {payments.length > 0 ? (
-                    <li>
-                      <span
-                        className="mb-1 block text-sm font-bold text-foreground"
-                      >
-                        Payment
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {payments.join(' · ')}
-                      </span>
+                    <li className={styles.detailItem}>
+                      <span className={styles.detailIcon}><Wallet size={18} /></span>
+                      <div className={styles.detailContent}>
+                        <span className={styles.detailLabel}>Payment</span>
+                        <span className={styles.detailValue}>{payments.join(' · ')}</span>
+                      </div>
                     </li>
                   ) : null}
                   {budgetLabel ? (
-                    <li>
-                      <span
-                        className="mb-1 block text-sm font-bold text-foreground"
-                      >
-                        Typical budget (self-reported)
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {budgetLabel}
-                      </span>
+                    <li className={styles.detailItem}>
+                      <span className={styles.detailIcon}><DollarSign size={18} /></span>
+                      <div className={styles.detailContent}>
+                        <span className={styles.detailLabel}>Typical budget</span>
+                        <span className={styles.detailValue}>{budgetLabel}</span>
+                      </div>
                     </li>
                   ) : null}
                 </ul>
@@ -360,53 +372,53 @@ function ChiropractorProfileContent() {
                 chiro.focusAreas?.length ||
                 chiro.philosophies?.length ||
                 chiro.philosophy) ? (
-                <Card className="search-refine-card">
-                  <h2 className={styles.profileSectionTitle}>Focus &amp; approach</h2>
+                <Card className={`search-refine-card ${styles.profileCard}`}>
+                  <h2 className={styles.profileSectionTitle}>
+                    <span className={styles.profileSectionIcon}><Compass size={16} /></span>
+                    Focus &amp; approach
+                  </h2>
                   {chiro.modalities?.length ? (
-                    <div className="mb-4">
-                      <span
-                        className="mb-2 block text-sm font-bold text-foreground"
-                      >
-                        Techniques
-                      </span>
-                      <div className={styles.profileTagRow}>
-                        {chiro.modalities.map((m) => (
-                          <span key={m} className={styles.profileTag}>
-                            {m}
-                          </span>
-                        ))}
+                    <div className={styles.focusSubSection}>
+                      <span className={styles.focusSubIcon}><Activity size={18} /></span>
+                      <div className={styles.focusSubContent}>
+                        <span className={styles.focusSubLabel}>Techniques</span>
+                        <div className={styles.profileTagRow}>
+                          {chiro.modalities.map((m) => (
+                            <span key={m} className={styles.profileTag}>
+                              {m}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : null}
                   {chiro.focusAreas?.length ? (
-                    <div className="mb-4">
-                      <span
-                        className="mb-2 block text-sm font-bold text-foreground"
-                      >
-                        Specialties
-                      </span>
-                      <div className={styles.profileTagRow}>
-                        {chiro.focusAreas.map((m) => (
-                          <span key={m} className={styles.profileTag}>
-                            {m}
-                          </span>
-                        ))}
+                    <div className={styles.focusSubSection}>
+                      <span className={styles.focusSubIcon}><Target size={18} /></span>
+                      <div className={styles.focusSubContent}>
+                        <span className={styles.focusSubLabel}>Specialties</span>
+                        <div className={styles.profileTagRow}>
+                          {chiro.focusAreas.map((m) => (
+                            <span key={m} className={styles.profileTag}>
+                              {m}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : null}
                   {chiro.philosophies?.length || chiro.philosophy ? (
-                    <div>
-                      <span
-                        className="mb-2 block text-sm font-bold text-foreground"
-                      >
-                        Philosophy
-                      </span>
-                      <div className={styles.profileTagRow}>
-                        {(chiro.philosophies?.length ? chiro.philosophies : [chiro.philosophy!]).map((m) => (
-                          <span key={m} className={styles.profileTag}>
-                            {m}
-                          </span>
-                        ))}
+                    <div className={styles.focusSubSection}>
+                      <span className={styles.focusSubIcon}><Lightbulb size={18} /></span>
+                      <div className={styles.focusSubContent}>
+                        <span className={styles.focusSubLabel}>Philosophy</span>
+                        <div className={styles.profileTagRow}>
+                          {(chiro.philosophies?.length ? chiro.philosophies : [chiro.philosophy!]).map((m) => (
+                            <span key={m} className={styles.profileTag}>
+                              {m}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : null}
@@ -416,53 +428,61 @@ function ChiropractorProfileContent() {
 
             <div className="flex flex-col gap-5">
               {chiro.bio ? (
-                <Card className="search-refine-card">
-                  <h2 className={styles.profileSectionTitle}>About</h2>
+                <Card className={`search-refine-card ${styles.profileCard}`}>
+                  <h2 className={styles.profileSectionTitle}>
+                    <span className={styles.profileSectionIcon}><FileText size={16} /></span>
+                    About
+                  </h2>
                   <p className={styles.profileBio}>{chiro.bio}</p>
                 </Card>
               ) : null}
 
               {(chiro.chiropracticCollege || chiro.graduationYear || chiro.licenseNumber) ? (
-                <Card className="search-refine-card">
-                  <h2 className={styles.profileSectionTitle}>Credentials</h2>
+                <Card className={`search-refine-card ${styles.profileCard}`}>
+                  <h2 className={styles.profileSectionTitle}>
+                    <span className={styles.profileSectionIcon}><Award size={16} /></span>
+                    Credentials
+                  </h2>
                   <ul className={styles.profileDetailList}>
                     {chiro.chiropracticCollege ? (
-                      <li>
-                        <span
-                          className="mb-1 block text-sm font-bold text-foreground"
-                        >
-                          College
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {chiro.chiropracticCollege}
-                          {chiro.graduationYear ? ` · Class of ${chiro.graduationYear}` : ''}
-                        </span>
+                      <li className={styles.detailItem}>
+                        <span className={styles.detailIcon}><GraduationCap size={18} /></span>
+                        <div className={styles.detailContent}>
+                          <span className={styles.detailLabel}>College</span>
+                          <span className={styles.detailValue}>
+                            {chiro.chiropracticCollege}
+                            {chiro.graduationYear ? ` · Class of ${chiro.graduationYear}` : ''}
+                          </span>
+                        </div>
                       </li>
                     ) : chiro.graduationYear ? (
-                      <li>
-                        <span className="text-sm text-muted-foreground">
-                          Class of {chiro.graduationYear}
-                        </span>
+                      <li className={styles.detailItem}>
+                        <span className={styles.detailIcon}><GraduationCap size={18} /></span>
+                        <div className={styles.detailContent}>
+                          <span className={styles.detailValue}>
+                            Class of {chiro.graduationYear}
+                          </span>
+                        </div>
                       </li>
                     ) : null}
                     {chiro.licenseNumber ? (
-                      <li>
-                        <span
-                          className="mb-1 block text-sm font-bold text-foreground"
-                        >
-                          License
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {chiro.licenseNumber}
-                        </span>
+                      <li className={styles.detailItem}>
+                        <span className={styles.detailIcon}><ShieldCheck size={18} /></span>
+                        <div className={styles.detailContent}>
+                          <span className={styles.detailLabel}>License</span>
+                          <span className={styles.detailValue}>{chiro.licenseNumber}</span>
+                        </div>
                       </li>
                     ) : null}
                   </ul>
                 </Card>
               ) : null}
 
-              <Card className="search-refine-card">
-                <h2 className={styles.profileSectionTitle}>Match to your search</h2>
+              <Card className={`search-refine-card ${styles.profileCard}`}>
+                <h2 className={styles.profileSectionTitle}>
+                  <span className={styles.profileSectionIcon}><BarChart3 size={16} /></span>
+                  Match to your search
+                </h2>
                 {overlayRows.length === 0 ? (
                   <p className={styles.matchEmpty}>
                     No search filters were passed in the link. Go back to{' '}

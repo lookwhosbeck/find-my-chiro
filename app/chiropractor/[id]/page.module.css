@@ -64,30 +64,51 @@
   width: 100%;
 }
 
-.profileSectionTitle {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: #202020;
-  line-height: 20px;
-  margin: 0 0 var(--space-3);
+/* ── Card inner padding ───────────────────────────── */
+.profileCard {
+  padding: var(--space-5);
 }
 
+/* ── Section title with icon ─────────────────────── */
+.profileSectionTitle {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.45);
+  line-height: 20px;
+  margin: 0 0 var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profileSectionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+/* ── Bio ─────────────────────────────────────────── */
 .profileBio {
   font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.65;
   color: var(--color-text-primary);
   white-space: pre-wrap;
 }
 
+/* ── Detail list (clinic, address, phone …) ──────── */
 .profileDetailList {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .profileDetailList a {
@@ -95,6 +116,54 @@
   word-break: break-word;
 }
 
+/* Icon row for each detail item */
+.detailItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.detailIcon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.4);
+  margin-top: 1px;
+}
+
+.detailContent {
+  min-width: 0;
+  flex: 1;
+}
+
+.detailLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: rgba(0, 0, 0, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.detailValue {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+}
+
+.detailValue a {
+  color: var(--color-accent);
+  word-break: break-word;
+}
+
+/* ── Tags (techniques, specialties, philosophy) ──── */
 .profileTagRow {
   display: flex;
   flex-wrap: wrap;
@@ -104,23 +173,65 @@
 .profileTag {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: var(--radius-xs);
+  padding: 5px 12px;
+  border-radius: 999px;
   background: var(--refine-tab-active-bg);
   font-size: 13px;
   font-family: var(--font-body);
   color: #202020;
   line-height: 1.3;
+  font-weight: 500;
 }
 
+/* Sub-section within Focus & approach */
+.focusSubSection {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.focusSubSection:not(:last-child) {
+  margin-bottom: var(--space-4);
+}
+
+.focusSubIcon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.4);
+  margin-top: 2px;
+}
+
+.focusSubContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.focusSubLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: rgba(0, 0, 0, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+/* ── Match empty ─────────────────────────────────── */
 .matchEmpty {
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: rgba(0, 0, 0, 0.55);
   font-family: var(--font-body);
   margin: 0;
 }
 
+/* ── Radar overlay ───────────────────────────────── */
 .radarOverlayDetails {
   width: 100%;
   max-width: 520px;
