@@ -126,7 +126,10 @@ async function handleSubscriptionUpdated(
     console.warn('customer.subscription.updated: could not resolve user', { customerId, subId: sub.id });
     return;
   }
-  if (sub.status === 'canceled' || sub.status === 'unpaid' || sub.status === 'incomplete_expired') {
+
+  const terminalStatuses = ['canceled', 'unpaid', 'incomplete_expired', 'paused'];
+  if (terminalStatuses.includes(sub.status)) {
+    console.info('subscription downgrade to free', { userId, subId: sub.id, status: sub.status });
     await clearSubscriptionToFree(admin, userId);
     return;
   }
@@ -179,16 +182,30 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.info('[stripe-webhook] checkout.session.completed', {
+          sessionId: session.id,
+          mode: session.mode,
+          payment_status: session.payment_status,
+          signup_plan: session.metadata?.signup_plan ?? null,
+        });
         await handleCheckoutSessionCompleted(stripe, admin, session);
         break;
       }
-      case 'customer.subscription.updated': {
+      case 'customer.subscription.updated':
+      case 'customer.subscription.paused':
+      case 'customer.subscription.resumed': {
         const sub = event.data.object as Stripe.Subscription;
+        console.info(`[stripe-webhook] ${event.type}`, {
+          subId: sub.id,
+          status: sub.status,
+          discounts: sub.discounts?.length ?? 0,
+        });
         await handleSubscriptionUpdated(stripe, admin, sub);
         break;
       }
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
+        console.info('[stripe-webhook] customer.subscription.deleted', { subId: sub.id });
         await handleSubscriptionDeleted(admin, sub);
         break;
       }
@@ -197,6 +214,12 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice;
         const subRef = invoice.subscription;
         const subId = typeof subRef === 'string' ? subRef : subRef?.id;
+        console.info(`[stripe-webhook] ${event.type}`, {
+          invoiceId: invoice.id,
+          subId: subId ?? null,
+          amount_due: invoice.amount_due,
+          amount_paid: invoice.amount_paid,
+        });
         if (!subId) break;
         const sub = await stripe.subscriptions.retrieve(subId);
         await handleSubscriptionUpdated(stripe, admin, sub);
@@ -206,7 +229,7 @@ export async function POST(req: NextRequest) {
         break;
     }
   } catch (e) {
-    console.error('Stripe webhook handler error:', event.type, e);
+    console.error('[stripe-webhook] handler error:', event.type, e);
     return NextResponse.json({ error: 'Handler failed' }, { status: 500 });
   }
 

@@ -11,5 +11,9 @@ export function isPremiumProfile(row: {
 }): boolean {
   const s = row.subscription_status?.toLowerCase() ?? '';
   if (s === 'active' || s === 'trialing') return true;
+  if (s === 'past_due') {
+    if (!row.current_period_end) return true;
+    return new Date(row.current_period_end).getTime() > Date.now();
+  }
   return false;
 }

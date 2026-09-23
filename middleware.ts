@@ -2,9 +2,22 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const { pathname } = request.nextUrl;
+
+  // Stripe webhook fall-through: if the webhook endpoint is configured to POST to
+  // the site root instead of /api/webhooks/stripe, transparently rewrite to the
+  // correct handler so webhooks are never silently dropped.
+  if (
+    request.method === 'POST' &&
+    pathname === '/' &&
+    request.headers.get('stripe-signature')
+  ) {
+    return NextResponse.rewrite(new URL('/api/webhooks/stripe', request.url));
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error(
@@ -58,9 +71,14 @@ export async function middleware(request: NextRequest) {
     }
 
     if (user && (pathname === '/signin' || pathname === '/signup')) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/account';
-      return NextResponse.redirect(url);
+      const returningFromCheckout =
+        request.nextUrl.searchParams.has('checkout_session_id') ||
+        request.nextUrl.searchParams.has('session_id');
+      if (!returningFromCheckout) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/account';
+        return NextResponse.redirect(url);
+      }
     }
   } catch (err) {
     console.error('[middleware]', err);
@@ -74,5 +92,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/admin/:path*', '/signin', '/signup'],
+  matcher: ['/', '/account/:path*', '/admin/:path*', '/signin', '/signup'],
 };
