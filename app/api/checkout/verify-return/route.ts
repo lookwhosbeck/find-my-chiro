@@ -3,11 +3,13 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   checkoutSessionEmail,
+  checkoutSessionEmailResolved,
   getStripe,
   getStripePriceIdAnnual,
   getStripePriceIdMonthly,
-  isCheckoutSessionPaymentComplete,
+  isCheckoutSessionReadyForFulfillment,
   resolveCheckoutSessionCustomerId,
+  retrieveCheckoutSessionForFulfillment,
 } from '@/app/lib/stripe.server';
 import {
   CHECKOUT_CLAIM_COOKIE,
@@ -27,6 +29,17 @@ function planFromSubscriptionPriceId(priceId: string | null): 'monthly' | 'annua
   return 'monthly';
 }
 
+function rejectVerifyReturn(
+  sessionId: string,
+  code: string,
+  error: string,
+  details: Record<string, unknown>,
+  status = 400,
+) {
+  console.error('verify-return rejected', { sessionId, code, error, ...details });
+  return NextResponse.json({ error, code, ...details }, { status });
+}
+
 export async function POST(req: NextRequest) {
   const stripe = getStripe();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -42,44 +55,62 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as { sessionId?: string } | null;
   const sessionId = body?.sessionId?.trim();
   if (!sessionId || !sessionId.startsWith('cs_')) {
-    return NextResponse.json({ error: 'Invalid sessionId' }, { status: 400 });
+    return rejectVerifyReturn(sessionId ?? '', 'invalid_session_id', 'Invalid sessionId', {});
   }
 
-  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.retrieve>>;
+  let session: Awaited<ReturnType<typeof retrieveCheckoutSessionForFulfillment>>;
   try {
-    session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['subscription', 'customer', 'payment_intent'],
-    });
-  } catch {
+    session = await retrieveCheckoutSessionForFulfillment(stripe, sessionId);
+  } catch (e) {
+    console.error('verify-return retrieve:', sessionId, e);
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
   }
 
   if (session.metadata?.app_signup_flow !== GUEST_FLOW) {
-    return NextResponse.json({ error: 'Not a guest signup checkout' }, { status: 400 });
+    return rejectVerifyReturn(sessionId, 'not_guest_checkout', 'Not a guest signup checkout', {
+      app_signup_flow: session.metadata?.app_signup_flow ?? null,
+      mode: session.mode,
+    });
   }
 
-  if (session.status !== 'complete' || !isCheckoutSessionPaymentComplete(session.payment_status)) {
-    return NextResponse.json(
-      { error: 'Payment not complete', status: session.status, payment_status: session.payment_status },
-      { status: 400 },
-    );
+  if (!isCheckoutSessionReadyForFulfillment(session)) {
+    return rejectVerifyReturn(sessionId, 'payment_not_complete', 'Payment not complete', {
+      status: session.status,
+      payment_status: session.payment_status,
+      retryable: true,
+    });
   }
 
-  const customerId = await resolveCheckoutSessionCustomerId(stripe, session);
-  if (!customerId) {
-    return NextResponse.json({ error: 'Missing customer' }, { status: 400 });
-  }
-
-  const emailRaw = checkoutSessionEmail(session);
+  const emailRaw = await checkoutSessionEmailResolved(stripe, session);
   if (!emailRaw) {
-    return NextResponse.json({ error: 'No email on checkout session' }, { status: 400 });
+    return rejectVerifyReturn(sessionId, 'missing_email', 'No email on checkout session', {
+      payment_status: session.payment_status,
+      mode: session.mode,
+    });
+  }
+
+  let customerId: string | null;
+  try {
+    customerId = await resolveCheckoutSessionCustomerId(stripe, session, { email: emailRaw });
+  } catch (e) {
+    console.error('verify-return resolve customer:', sessionId, e);
+    return NextResponse.json({ error: 'Could not resolve Stripe customer' }, { status: 500 });
+  }
+
+  if (!customerId) {
+    return rejectVerifyReturn(sessionId, 'missing_customer', 'Missing customer', {
+      email: emailRaw,
+      payment_status: session.payment_status,
+    });
   }
 
   const admin = createClient(url, service);
 
   if (session.mode === 'payment') {
     if (session.metadata?.signup_plan?.trim() !== 'free') {
-      return NextResponse.json({ error: 'Unexpected payment checkout' }, { status: 400 });
+      return rejectVerifyReturn(sessionId, 'unexpected_payment_checkout', 'Unexpected payment checkout', {
+        signup_plan: session.metadata?.signup_plan ?? null,
+      });
     }
     const signupPlan: CheckoutClaimPayload['plan'] = 'free';
 
@@ -127,13 +158,15 @@ export async function POST(req: NextRequest) {
   }
 
   if (session.mode !== 'subscription') {
-    return NextResponse.json({ error: 'Invalid checkout mode' }, { status: 400 });
+    return rejectVerifyReturn(sessionId, 'invalid_mode', 'Invalid checkout mode', { mode: session.mode });
   }
 
   const subRef = session.subscription;
   const subId = typeof subRef === 'string' ? subRef : subRef?.id;
   if (!subId) {
-    return NextResponse.json({ error: 'Missing subscription' }, { status: 400 });
+    return rejectVerifyReturn(sessionId, 'missing_subscription', 'Missing subscription', {
+      mode: session.mode,
+    });
   }
 
   const sub =

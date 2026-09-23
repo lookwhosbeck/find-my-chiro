@@ -141,7 +141,7 @@ export default function SignUpPage() {
     setVerifyCheckoutLoading(true);
 
     (async () => {
-      try {
+      const verifyOnce = async () => {
         const res = await fetch("/api/checkout/verify-return", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -152,9 +152,31 @@ export default function SignUpPage() {
           plan?: string;
           subscriptionStatus?: string;
           error?: string;
+          code?: string;
+          retryable?: boolean;
         };
+        return { res, json };
+      };
+
+      try {
+        let res: Response | null = null;
+        let json: Awaited<ReturnType<typeof verifyOnce>>["json"] = {};
+        const maxAttempts = 5;
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          ({ res, json } = await verifyOnce());
+          if (cancelled) return;
+          if (res.ok) break;
+          const shouldRetry =
+            json.retryable === true ||
+            json.code === "payment_not_complete" ||
+            json.code === "missing_customer" ||
+            json.code === "missing_email";
+          if (!shouldRetry || attempt >= maxAttempts - 1) break;
+          await new Promise((resolve) => window.setTimeout(resolve, 800 * (attempt + 1)));
+        }
+
         if (cancelled) return;
-        if (!res.ok) {
+        if (!res?.ok) {
           setSubmitError(
             json.error ||
               "Could not verify payment. Start checkout again or contact support.",
