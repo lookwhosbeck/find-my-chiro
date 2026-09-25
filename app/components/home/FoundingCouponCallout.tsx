@@ -31,8 +31,8 @@ export function FoundingCouponCallout({ className }: FoundingCouponCalloutProps)
         Limited to the first founding {FOUNDING_MEMBERS_CAP} chiropractors. After the first{" "}
         {FOUNDING_MEMBERS_CAP} spots are gone,
         <br aria-hidden="true" />
-        a one-time ${LICENSE_VERIFICATION_FEE_USD}{" "}
-        verification fee applies to any plan.
+        an annual ${LICENSE_VERIFICATION_FEE_USD}{" "}
+        license verification fee applies to any plan.
       </p>
     </div>
   );

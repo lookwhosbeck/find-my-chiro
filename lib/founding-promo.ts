@@ -1,7 +1,7 @@
 /**
  * Founding-member license verification promo (hero, pricing, signup marketing).
  *
- * FNDR250 waives the one-time $50 verification fee for the first 250 chiropractors.
+ * FNDR250 waives the annual $50 verification fee for the first 250 chiropractors.
  * It is a Stripe promotion code backed by a $50-off-once coupon (FNDR250_LAUNCH).
  * The code is entered by the user at Stripe Checkout; `allow_promotion_codes: true`
  * on the checkout session enables this. No server-side enforcement is needed beyond

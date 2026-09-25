@@ -186,7 +186,7 @@ const faqItems = [
   },
   {
     q: "How much does it cost to be on Movyn?",
-    a: "A verified profile is free—there's no monthly cost. Premium is $30/month (or 20% off when billed annually) and unlocks unlimited modalities, priority placement, direct messages, and provider referrals. Every plan includes a one-time $50 license verification fee, which is waived for our first 250 founding members.",
+    a: "A verified profile is free—there's no monthly cost. Premium is $30/month (or 20% off when billed annually) and unlocks unlimited modalities, priority placement, direct messages, and provider referrals. Every plan includes an annual $50 license verification fee to confirm your license remains in good standing, which is waived for our first 250 founding members.",
   },
 ] as const;
 

@@ -72,7 +72,7 @@ export function lineItemsForSignupCheckout(
   return items;
 }
 
-/** Whether the completed Checkout Session included the one-time verification price. */
+/** Whether the completed Checkout Session included the annual verification price. */
 export async function checkoutSessionIncludesVerificationPrice(
   stripe: Stripe,
   sessionId: string,

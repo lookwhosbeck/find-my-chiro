@@ -5,12 +5,12 @@ ALTER TABLE public.checkout_signup_claims
 COMMENT ON COLUMN public.checkout_signup_claims.stripe_subscription_id IS
   'Stripe subscription id (sub_...); NULL when checkout was verification fee only (free plan).';
 
--- Track one-time license verification fee collection (service_role / webhooks only).
+-- Track annual license verification fee collection (service_role / webhooks only).
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS license_verification_fee_paid_at timestamptz;
 
 COMMENT ON COLUMN public.profiles.license_verification_fee_paid_at IS
-  'Set when the one-time Stripe license verification fee is collected.';
+  'Set when the annual Stripe license verification fee is collected.';
 
 -- Lock new billing-related column from client JWT updates (same pattern as subscription fields).
 CREATE OR REPLACE FUNCTION public.profiles_lock_subscription_on_insert()
