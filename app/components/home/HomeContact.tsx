@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionContainer, SectionHeader } from "@/app/components/home/section-layout";
 
+/** Real inbox. movynalong.com is authenticated in Brevo for sending only and has no mailbox. */
+const CONTACT_EMAIL = "movynalong@gmail.com";
+
 /** Cosmic `ContactSection` layout — Movyn copy; form opens mailto with field contents. */
 export function HomeContact() {
   return (
@@ -29,8 +32,8 @@ export function HomeContact() {
                 <Mail className="size-4" />
                 <div className="font-bold">Email</div>
               </div>
-              <a className="text-muted-foreground hover:text-foreground" href="mailto:hello@movyn.com">
-                hello@movyn.com
+              <a className="text-muted-foreground hover:text-foreground" href={`mailto:${CONTACT_EMAIL}`}>
+                {CONTACT_EMAIL}
               </a>
             </div>
             <div className="bg-muted">
@@ -40,8 +43,11 @@ export function HomeContact() {
               </div>
               <div className="text-muted-foreground">
                 Questions about listing, verification, or the Premium plan? Email{" "}
-                <a className="underline-offset-2 hover:underline" href="mailto:practices@movyn.com">
-                  practices@movyn.com
+                <a
+                  className="underline-offset-2 hover:underline"
+                  href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Movyn practice question")}`}
+                >
+                  {CONTACT_EMAIL}
                 </a>
                 .
               </div>
@@ -84,7 +90,7 @@ export function HomeContact() {
                 const body = encodeURIComponent(
                   `From: ${first} ${last}\nEmail: ${email}\n\n${message}`,
                 );
-                window.location.href = `mailto:hello@movyn.com?subject=${encodeURIComponent("Movyn website inquiry")}&body=${body}`;
+                window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Movyn website inquiry")}&body=${body}`;
               }}
             >
               <div className="flex flex-col gap-6 md:flex-row">
