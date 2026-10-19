@@ -56,36 +56,39 @@ export function ProximitySearchBar({
   className,
 }: ProximitySearchBarProps) {
   const router = useRouter();
-  const navigate = navigateProp ?? variant === 'onDark';
+  /** Parent-owned fields stay controlled. The homepage bar has no callbacks, so it keeps its own value and routes to /search. */
+  const zipControlled = onZipChange != null;
+  const radiusControlled = onRadiusChange != null;
+  const navigate = navigateProp ?? !zipControlled;
   const [localZip, setLocalZip] = useState('');
   const [localRadius, setLocalRadius] = useState(25);
   const zipInputId = useId();
   const radiusId = useId();
 
-  const zip = navigate ? localZip : (controlledZip ?? '');
-  const rawRadius = navigate ? localRadius : (controlledRadius ?? 25);
+  const zip = zipControlled ? (controlledZip ?? '') : localZip;
+  const rawRadius = radiusControlled ? (controlledRadius ?? 25) : localRadius;
   const radius = clampSearchRadiusMiles(rawRadius);
 
   useEffect(() => {
-    if (navigate || controlledRadius == null) return;
+    if (!radiusControlled || controlledRadius == null) return;
     const c = clampSearchRadiusMiles(controlledRadius);
     if (c !== controlledRadius) onRadiusChange?.(c);
-  }, [navigate, controlledRadius, onRadiusChange]);
+  }, [radiusControlled, controlledRadius, onRadiusChange]);
 
   const setZip = useCallback(
     (z: string) => {
-      if (navigate) setLocalZip(z);
-      else onZipChange?.(z);
+      if (zipControlled) onZipChange?.(z);
+      else setLocalZip(z);
     },
-    [navigate, onZipChange]
+    [zipControlled, onZipChange]
   );
 
   const setRadius = useCallback(
     (r: number) => {
-      if (navigate) setLocalRadius(r);
-      else onRadiusChange?.(r);
+      if (radiusControlled) onRadiusChange?.(r);
+      else setLocalRadius(r);
     },
-    [navigate, onRadiusChange]
+    [radiusControlled, onRadiusChange]
   );
 
   const handleSubmit = useCallback(() => {
