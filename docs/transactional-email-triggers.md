@@ -32,7 +32,7 @@ Numeric IDs below match the current Brevo transactional templates (names as in B
 | 19 | E8 60-Day Outcome Check | *(not wired in app)* | Longitudinal product; separate spec — do not use as accept/decline |
 | 20 | E9 First Referral Received Milestone | *(not wired in app)* | Engagement; separate from referral respond flow |
 
-Template HTML merge fields must match what the app sends (or add aliases in code). The intro trio in Brevo often expects names like `params.referringDocName`; the referral sender currently passes different keys — align templates or [`buildParams` in referral-emails.server.ts](../app/lib/referral-emails.server.ts) before go-live.
+Template HTML reads `params.*` (`params.FIRSTNAME`, `params.LASTNAME`, and the referral keys). Do not use `{{ contact.* }}` — the app does not create Brevo contacts, so those tags render blank. Referral merge keys are built in [`referral-emails.server.ts`](../app/lib/referral-emails.server.ts).
 
 ## Longitudinal / patient follow-up (future)
 

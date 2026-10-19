@@ -316,8 +316,6 @@ export async function sendInitialReferralEmailsIfNeeded(
         philosophy,
         referringDocPractice,
         referringDocCity,
-        durationOfCare: 'See dashboard for patient details',
-        movingTimeline: 'See dashboard for patient timeline',
         sentTimestamp,
         referralId: r.id,
       };
@@ -511,8 +509,6 @@ export async function sendReferralOutcomeEmailToReferringIfNeeded(
       referringDocPractice: referringCtx?.practiceName || '',
       referringDocCity: referringCtx?.practiceCity || '',
       referringDocNote: row.notes?.trim() || '',
-      durationOfCare: 'See dashboard for patient details',
-      movingTimeline: 'See dashboard for patient timeline',
       sentTimestamp: new Date(row.created_at || Date.now()).toLocaleString(),
       FIRSTNAME: referring.first_name?.trim() || 'Doctor',
       LASTNAME: referring.last_name?.trim() || '',

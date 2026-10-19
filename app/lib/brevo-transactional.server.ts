@@ -15,6 +15,17 @@ function getApiKey(): string {
 
 export type BrevoRecipient = { email: string; name?: string };
 
+/** Names for Brevo `params.*`. Templates must not use `contact.*` — this app does not sync Brevo contacts. */
+function recipientNameParams(display: string): { FIRSTNAME: string; LASTNAME: string } {
+  const nameParts = display.split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] ?? display;
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  return {
+    FIRSTNAME: firstName,
+    LASTNAME: lastName,
+  };
+}
+
 async function postBrevo(body: Record<string, unknown>): Promise<void> {
   const timeoutRaw = Number(process.env.BREVO_REQUEST_TIMEOUT_MS);
   const configured =
@@ -51,8 +62,8 @@ async function postBrevo(body: Record<string, unknown>): Promise<void> {
 }
 
 /**
- * E1 — Email Verification (Chiropractor); template uses params.verificationUrl
- * and contact merge tags (filled via params for New Template Language).
+ * E1 — Email Verification (Chiropractor). Template reads params.verificationUrl
+ * and params.FIRSTNAME / params.LASTNAME (not Brevo contact attributes).
  */
 export async function sendBrevoSignupVerificationEmail(args: {
   to: BrevoRecipient;
@@ -61,17 +72,13 @@ export async function sendBrevoSignupVerificationEmail(args: {
 }): Promise<void> {
   const { to, verificationUrl, templateId } = args;
   const display = to.name?.trim() || to.email;
-  const nameParts = display.split(/\s+/).filter(Boolean);
-  const firstName = nameParts[0] ?? display;
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
   await postBrevo({
     to: [{ email: to.email, name: display }],
     templateId,
     params: {
       verificationUrl,
-      FIRSTNAME: firstName,
-      LASTNAME: lastName,
+      ...recipientNameParams(display),
     },
   });
 }
@@ -87,9 +94,6 @@ export async function sendBrevoChiropractorWelcomeEmail(args: {
 }): Promise<void> {
   const { to, profileUrl, loomUrl, templateId } = args;
   const display = to.name?.trim() || to.email;
-  const nameParts = display.split(/\s+/).filter(Boolean);
-  const firstName = nameParts[0] ?? display;
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
   await postBrevo({
     to: [{ email: to.email, name: display }],
@@ -97,8 +101,7 @@ export async function sendBrevoChiropractorWelcomeEmail(args: {
     params: {
       profileUrl,
       loomUrl,
-      FIRSTNAME: firstName,
-      LASTNAME: lastName,
+      ...recipientNameParams(display),
     },
   });
 }
@@ -111,17 +114,13 @@ export async function sendBrevoChiropractorProfileNudgeEmail(args: {
 }): Promise<void> {
   const { to, profileUrl, templateId } = args;
   const display = to.name?.trim() || to.email;
-  const nameParts = display.split(/\s+/).filter(Boolean);
-  const firstName = nameParts[0] ?? display;
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
   await postBrevo({
     to: [{ email: to.email, name: display }],
     templateId,
     params: {
       profileUrl,
-      FIRSTNAME: firstName,
-      LASTNAME: lastName,
+      ...recipientNameParams(display),
     },
   });
 }
@@ -134,17 +133,13 @@ export async function sendBrevoChiropractorProfileLiveEmail(args: {
 }): Promise<void> {
   const { to, profileUrl, templateId } = args;
   const display = to.name?.trim() || to.email;
-  const nameParts = display.split(/\s+/).filter(Boolean);
-  const firstName = nameParts[0] ?? display;
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
   await postBrevo({
     to: [{ email: to.email, name: display }],
     templateId,
     params: {
       profileUrl,
-      FIRSTNAME: firstName,
-      LASTNAME: lastName,
+      ...recipientNameParams(display),
     },
   });
 }
@@ -157,17 +152,13 @@ export async function sendBrevoPasswordResetEmail(args: {
 }): Promise<void> {
   const { to, resetUrl, templateId } = args;
   const display = to.name?.trim() || to.email;
-  const nameParts = display.split(/\s+/).filter(Boolean);
-  const firstName = nameParts[0] ?? display;
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
   await postBrevo({
     to: [{ email: to.email, name: display }],
     templateId,
     params: {
       reset_url: resetUrl,
-      FIRSTNAME: firstName,
-      LASTNAME: lastName,
+      ...recipientNameParams(display),
     },
   });
 }

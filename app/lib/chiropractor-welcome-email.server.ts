@@ -43,7 +43,7 @@ export async function sendChiropractorWelcomeEmailIfNeeded(args: {
   const admin = createClient(url, service);
   const { data: row, error } = await admin
     .from('profiles')
-    .select('id, role, chiropractor_welcome_email_sent_at')
+    .select('id, role, first_name, last_name, chiropractor_welcome_email_sent_at')
     .eq('id', args.userId)
     .maybeSingle();
 
@@ -62,7 +62,11 @@ export async function sendChiropractorWelcomeEmailIfNeeded(args: {
   }
 
   const profileUrl = `${canonicalAppOrigin()}/chiropractor/${args.userId}`;
-  const displayName = [args.firstName, args.lastName].filter(Boolean).join(' ').trim() || args.email;
+  const profileFirst = typeof row.first_name === 'string' ? row.first_name : null;
+  const profileLast = typeof row.last_name === 'string' ? row.last_name : null;
+  const displayName =
+    [profileFirst || args.firstName, profileLast || args.lastName].filter(Boolean).join(' ').trim() ||
+    args.email;
 
   try {
     await sendBrevoChiropractorWelcomeEmail({

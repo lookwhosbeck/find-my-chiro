@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { Webhook } from 'standardwebhooks';
 
 import {
@@ -79,8 +80,9 @@ export async function POST(req: NextRequest) {
   const meta = (user.user_metadata && typeof user.user_metadata === 'object'
     ? user.user_metadata
     : {}) as Record<string, unknown>;
-  const firstName = str(meta.first_name);
-  const lastName = str(meta.last_name);
+  const profileNames = await profileNamesForEmail(userEmail);
+  const firstName = str(meta.first_name).trim() || profileNames.firstName;
+  const lastName = str(meta.last_name).trim() || profileNames.lastName;
   const displayName = [firstName, lastName].filter(Boolean).join(' ') || userEmail;
 
   const redirectToRaw = str(email_data.redirect_to) || defaultRedirectTo();
@@ -174,6 +176,29 @@ export async function POST(req: NextRequest) {
     console.error('supabase-auth-email Brevo send failed:', e);
     return NextResponse.json({ error: 'Send failed' }, { status: 502 });
   }
+}
+
+/** Profile row is the name the user saved in the app. Auth metadata can be empty for some signups. */
+async function profileNamesForEmail(email: string): Promise<{ firstName: string; lastName: string }> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !service || url === 'https://placeholder.supabase.co') {
+    return { firstName: '', lastName: '' };
+  }
+  const admin = createClient(url, service);
+  const { data, error } = await admin
+    .from('profiles')
+    .select('first_name, last_name')
+    .ilike('email', email)
+    .limit(1);
+  if (error || !data?.length) {
+    return { firstName: '', lastName: '' };
+  }
+  const row = data[0] as { first_name?: string | null; last_name?: string | null };
+  return {
+    firstName: typeof row.first_name === 'string' ? row.first_name.trim() : '',
+    lastName: typeof row.last_name === 'string' ? row.last_name.trim() : '',
+  };
 }
 
 function brevoFallbackSender(): { email: string; name?: string } {
