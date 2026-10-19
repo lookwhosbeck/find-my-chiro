@@ -13,6 +13,11 @@
   margin-block: -28px;
 }
 
+.edgeFade {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
 /* Two copies flush; translateX(-50%) == exactly one cycle */
 .track {
   display: flex;

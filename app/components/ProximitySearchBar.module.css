@@ -33,6 +33,39 @@
   border: 1px solid #e5e7eb;
 }
 
+.lg {
+  --bar-h: 56px;
+  --bar-r: 28px;
+}
+
+.onLight.lg {
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.lg .white {
+  padding: 0 8px 0 20px;
+}
+
+.lg .radius {
+  margin-left: 0;
+  gap: 10px;
+  padding: 0 14px;
+  border-radius: 0;
+  background: transparent;
+  border-left: 1px solid #eee;
+}
+
+.lg .submit {
+  padding: 0 28px;
+}
+
+.lg .searchIcon {
+  width: 13px;
+  height: 13px;
+}
+
 .white {
   flex: 1 1 auto;
   min-width: 0;

@@ -8,17 +8,14 @@ import { HomeMapPreviewLoader } from "./components/home/home-map-preview-loader"
 import { HomeMapPreviewSkeleton } from "./components/home/HomeMapPreviewSkeleton";
 import { HomeMarquee } from "./components/home/HomeMarquee";
 import {
-  HomeBenefits,
-  HomeCommunity,
-  HomeFAQ,
-  HomeFeatures,
-  HomeServices,
+  HomeBothSides,
+  HomeClosingCta,
   HomeTeam,
   HomeTestimonials,
+  HomeWhy,
 } from "./components/home/home-marketing-sections";
-import { HomeContact } from "./components/home/HomeContact";
+import { HomeFAQ } from "./components/home/HomeFAQ";
 import { HomePricing } from "./components/home/HomePricing";
-import { HomeNewsletter } from "./components/home/HomeNewsletter";
 import { getCachedHomeMarqueeChiropractors } from "./lib/home-chiropractors.server";
 
 export const metadata: Metadata = {
@@ -34,7 +31,6 @@ export default async function Home() {
     <MarketingShell>
       <Header />
       <main className="flex min-h-0 flex-1 flex-col">
-        {/* Cosmic order: Hero → Sponsors → Benefits → Features → Services → Testimonials → Team → Pricing → Community → Contact → FAQ → Newsletter */}
         <HomeHero
           mapPreview={
             <Suspense fallback={<HomeMapPreviewSkeleton />}>
@@ -43,16 +39,13 @@ export default async function Home() {
           }
         />
         <HomeMarquee chiropractors={marqueeChiropractors} />
-        <HomeBenefits />
-        <HomeFeatures />
-        <HomeServices />
+        <HomeWhy />
+        <HomeBothSides />
         <HomeTestimonials />
         <HomeTeam />
         <HomePricing />
-        <HomeCommunity />
-        <HomeContact />
         <HomeFAQ />
-        <HomeNewsletter />
+        <HomeClosingCta />
       </main>
       <Footer />
     </MarketingShell>

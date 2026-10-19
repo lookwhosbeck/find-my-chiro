@@ -1,22 +1,20 @@
 import type { Chiropractor } from "@/app/lib/queries";
 import { DualMarqueeCarousels } from "@/app/components/DualMarqueeCarousels";
+import styles from "./home-marketing.module.css";
 
-/** Cosmic `SponsorsSection` — `section` + centered `app-container` + marquee track (no extra headings). */
 export function HomeMarquee({ chiropractors }: { chiropractors: Chiropractor[] }) {
   return (
-    <section className="pb-12 lg:pb-24">
-      <div className="app-container">
-        <p className="text-muted-foreground mb-8 text-center text-sm tracking-wide uppercase">
-          Independent chiropractors already on Movyn
+    <section className={styles.marquee}>
+      <p className={`${styles.marqueeLabel} app-container`}>
+        Independent chiropractors already on Movyn
+      </p>
+      {chiropractors.length > 0 ? (
+        <DualMarqueeCarousels chiropractors={chiropractors} edgeFade />
+      ) : (
+        <p className="text-muted-foreground app-container text-center text-sm">
+          Practices will appear here as they join the network.
         </p>
-        {chiropractors.length > 0 ? (
-          <DualMarqueeCarousels chiropractors={chiropractors} />
-        ) : (
-          <p className="text-muted-foreground text-center text-sm">
-            Practices will appear here as they join the network.
-          </p>
-        )}
-      </div>
+      )}
     </section>
   );
 }

@@ -372,6 +372,13 @@ button,
   border-radius: var(--radius-xs) !important;
 }
 
+/* Marketing pills must beat the 6px button/input radius above */
+button.fmc-pill,
+a.fmc-pill,
+input.fmc-pill {
+  border-radius: 999px !important;
+}
+
 /* Force all text inputs to use 6px corners */
 input[type="text"],
 input[type="email"],
@@ -389,6 +396,12 @@ textarea,
 .rt-TextArea,
 .rt-TextAreaRoot {
   border-radius: var(--radius-xs) !important;
+}
+
+input.fmc-pill,
+input.fmc-pill[type="email"],
+input.fmc-pill[type="text"] {
+  border-radius: 999px !important;
 }
 
 /* Target Radix Select components */
@@ -483,7 +496,7 @@ button.search-button-right,
 
 /* ProximitySearchBar native <button> — global `button { border-radius: … !important }` otherwise wins */
 button.fmc-proximity-submit {
-  border-radius: 0 24px 24px 0 !important;
+  border-radius: 0 var(--bar-r, 24px) var(--bar-r, 24px) 0 !important;
 }
 
 /* Black pill CTAs (Join Network, My Account): blue fill on hover, white text — no link-blue */
@@ -491,7 +504,7 @@ button.fmc-proximity-submit {
 .fmc-black-pill-cta:hover:link,
 .fmc-black-pill-cta:hover:visited,
 .fmc-black-pill-cta:focus-visible {
-  background: var(--color-accent) !important;
+  background: #2563eb !important;
   color: #ffffff !important;
 }
 
@@ -505,7 +518,7 @@ button.fmc-proximity-submit {
 .radix-themes a.fmc-black-pill-cta:hover,
 .radix-themes .fmc-black-pill-cta.rt-Button:focus-visible,
 .radix-themes a.fmc-black-pill-cta:focus-visible {
-  background: var(--color-accent) !important;
+  background: #2563eb !important;
   color: #ffffff !important;
 }
 

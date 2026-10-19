@@ -3,14 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SectionContainer, SectionHeader } from "@/app/components/home/section-layout";
-import { HomePricingCta } from "@/app/components/home/HomePricingCta";
-import { LICENSE_VERIFICATION_FEE_USD } from "@/lib/founding-promo";
 import { FoundingCouponCallout } from "@/app/components/home/FoundingCouponCallout";
-import { cn } from "@/lib/utils";
+import styles from "./home-marketing.module.css";
 
 type Period = "monthly" | "annually";
 
@@ -18,146 +12,121 @@ const discountRatio = 0.2;
 const premiumMonthly = 30;
 const premiumAnnualTotal = Math.round(premiumMonthly * 12 * (1 - discountRatio));
 const premiumAnnualMonthly = Math.round(premiumMonthly * (1 - discountRatio));
-const verificationFee = LICENSE_VERIFICATION_FEE_USD;
 
-type PlanRow = {
-  name: string;
-  price: { monthly: number; annually: number };
-  /** What unit appears next to the price ("month" or "year"). */
-  period: { monthly: string; annually: string };
-  /** Optional helper line shown under the price (e.g. equivalent monthly cost). */
-  priceCaption?: { monthly?: string; annually?: string };
-  description: string;
-  features: string[];
-  cta: string;
-  href: string;
-  popular: boolean;
-};
+const freeFeatures = [
+  "Verified license badge on your profile",
+  "Searchable basic profile (location, contact, credentials)",
+  "Up to 3 modalities and 3 focus areas",
+] as const;
 
-const plans: PlanRow[] = [
-  {
-    name: "Free",
-    price: { monthly: 0, annually: 0 },
-    period: { monthly: "month", annually: "year" },
-    description:
-      "Get a verified profile on Movyn at no monthly cost. Patients can find you, see your credentials, and reach out directly.",
-    features: [
-      "Verified license badge on your profile",
-      "Searchable basic profile (location, contact, credentials)",
-      "Up to 3 modalities and 3 focus areas",
-      `Annual $${verificationFee} license verification fee`,
-    ],
-    cta: "Sign up — Free",
-    href: "/signup",
-    popular: false,
-  },
-  {
-    name: "Premium",
-    price: { monthly: premiumMonthly, annually: premiumAnnualTotal },
-    period: { monthly: "month", annually: "year" },
-    priceCaption: {
-      annually: `Just $${premiumAnnualMonthly}/month, billed annually`,
-    },
-    description:
-      "Unlock everything Movyn offers—built for chiropractors who want to be matched on what they actually do and stand out in their area.",
-    features: [
-      "Everything in Free",
-      "Unlimited modalities, philosophies, and focus areas",
-      "Priority placement in fit-matched search results",
-      "Full bio, photos, room and team highlights",
-      "Direct messaging from interested patients",
-      "Provider-to-provider referrals",
-      `Annual $${verificationFee} license verification fee`,
-    ],
-    cta: "Sign up — Premium",
-    href: "/signup",
-    popular: true,
-  },
-];
+const premiumFeatures = [
+  "Everything in Free",
+  "Unlimited modalities, philosophies, and focus areas",
+  "Priority placement in fit-matched search results",
+  "Full bio, photos, room and team highlights",
+  "Direct messaging from interested patients",
+  "Provider-to-provider referrals",
+] as const;
 
 export function HomePricing() {
   const [period, setPeriod] = useState<Period>("monthly");
+  const annual = period === "annually";
+  const per = annual ? "/year" : "/month";
 
   return (
-    <SectionContainer id="pricing">
-      <SectionHeader
-        subTitle="Pricing for chiropractors"
-        title="Free to be listed. Affordable to be found."
-        description="Patients always search Movyn for free. Chiropractors choose between a free verified profile or a Premium membership that unlocks every match-making feature—no contracts, cancel anytime."
-      />
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-10">
-          <FoundingCouponCallout />
-        </div>
-        <div className="flex justify-center">
-          <div className="mb-8 flex justify-center rounded-lg border p-1">
-            <Button
+    <section id="pricing" className={styles.section}>
+      <div className="app-container">
+        <header className={`${styles.centerHeader} ${styles.centerHeaderTight}`}>
+          <div className={styles.eyebrow}>Pricing for chiropractors</div>
+          <h2 className={styles.h2}>Free to be listed. Affordable to be found.</h2>
+          <p className={styles.lead}>
+            Patients always search Movyn for free. Chiropractors choose between a free verified
+            profile or a Premium membership that unlocks every match-making feature—no contracts,
+            cancel anytime.
+          </p>
+        </header>
+
+        <div className={styles.toggleWrap}>
+          <div className={styles.toggle} role="group" aria-label="Billing period">
+            <button
               type="button"
-              variant={period === "monthly" ? "secondary" : "ghost"}
+              className={`fmc-pill ${styles.toggleBtn} ${!annual ? styles.toggleBtnActive : ""}`}
               onClick={() => setPeriod("monthly")}
+              aria-pressed={!annual}
             >
               Monthly
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant={period === "annually" ? "secondary" : "ghost"}
+              className={`fmc-pill ${styles.toggleBtn} ${annual ? styles.toggleBtnActive : ""}`}
               onClick={() => setPeriod("annually")}
+              aria-pressed={annual}
             >
               Annually
-              <Badge className="ms-1 border-0 bg-transparent text-green-600 dark:text-green-400">
-                Save {discountRatio * 100}%
-              </Badge>
-            </Button>
+              <span className={annual ? styles.saveActive : styles.saveIdle}>Save 20%</span>
+            </button>
           </div>
         </div>
-        <div className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2 md:gap-8">
-          {plans.map((plan) => {
-            const amount = period === "monthly" ? plan.price.monthly : plan.price.annually;
-            const periodLabel = period === "monthly" ? plan.period.monthly : plan.period.annually;
-            const caption =
-              period === "monthly" ? plan.priceCaption?.monthly : plan.priceCaption?.annually;
-            return (
-              <Card
-                key={plan.name}
-                className={cn("relative h-full overflow-hidden", plan.popular && "border-primary")}
-              >
-                {plan.popular ? (
-                  <div className="bg-primary text-primary-foreground absolute top-0 right-0 rounded-bl-lg px-3 py-1 text-xs font-medium">
-                    Most popular
-                  </div>
-                ) : null}
-                <CardHeader>
-                  <CardTitle>{plan.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex h-full flex-col">
-                  <div className="flex items-baseline gap-1">
-                    <span className="flex text-4xl font-bold">${amount}</span>
-                    <span className="text-muted-foreground text-sm lowercase">
-                      /{periodLabel}
-                    </span>
-                  </div>
-                  {caption ? (
-                    <p className="text-muted-foreground mt-1 text-sm">{caption}</p>
-                  ) : null}
-                  <p className="text-muted-foreground mt-2">{plan.description}</p>
-                  <ul className="my-6 flex-grow space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2">
-                        <Check className="text-primary size-4 shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant={plan.popular ? "default" : "outline"} asChild>
-                    <Link href={plan.href}>{plan.cta}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+
+        <div className={styles.planGrid}>
+          <article className={styles.plan}>
+            <div className={styles.planHead}>
+              <h3 className={styles.planName}>Free</h3>
+              <div className={styles.priceRow}>
+                <span className={styles.price}>$0</span>
+                <span className={styles.priceUnit}>{per}</span>
+              </div>
+              <p className={styles.caption}>&nbsp;</p>
+              <p className={styles.planDesc}>
+                Get a verified profile on Movyn at no monthly cost. Patients can find you, see your
+                credentials, and reach out directly.
+              </p>
+            </div>
+            <ul className={styles.planFeatures}>
+              {freeFeatures.map((feature) => (
+                <li key={feature} className={styles.planFeature}>
+                  <Check className={styles.planCheck} size={14} aria-hidden />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup" className={`fmc-pill ${styles.pill} ${styles.pillBlock} ${styles.pillOutline}`}>
+              Sign up — Free
+            </Link>
+          </article>
+
+          <article className={`${styles.plan} ${styles.planPopular}`}>
+            <span className={styles.popularBadge}>Most popular</span>
+            <div className={styles.planHead}>
+              <h3 className={styles.planName}>Premium</h3>
+              <div className={styles.priceRow}>
+                <span className={styles.price}>${annual ? premiumAnnualTotal : premiumMonthly}</span>
+                <span className={styles.priceUnit}>{per}</span>
+              </div>
+              <p className={styles.caption}>
+                {annual ? `Just $${premiumAnnualMonthly}/month, billed annually` : "\u00a0"}
+              </p>
+              <p className={styles.planDesc}>
+                Unlock everything Movyn offers—built for chiropractors who want to be matched on
+                what they actually do and stand out in their area.
+              </p>
+            </div>
+            <ul className={styles.planFeatures}>
+              {premiumFeatures.map((feature) => (
+                <li key={feature} className={styles.planFeature}>
+                  <Check className={styles.planCheck} size={14} aria-hidden />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup" className={`fmc-pill ${styles.pill} ${styles.pillBlock} ${styles.pillPrimary}`}>
+              Sign up — Premium
+            </Link>
+          </article>
         </div>
-        <HomePricingCta />
+
+        <FoundingCouponCallout />
       </div>
-    </SectionContainer>
+    </section>
   );
 }

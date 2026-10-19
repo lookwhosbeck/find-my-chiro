@@ -31,6 +31,7 @@ function expandRowForViewport<T>(
 
 type DualMarqueeCarouselsProps = {
   chiropractors: Chiropractor[];
+  edgeFade?: boolean;
 };
 
 /**
@@ -38,6 +39,7 @@ type DualMarqueeCarouselsProps = {
  */
 export function DualMarqueeCarousels({
   chiropractors,
+  edgeFade = false,
 }: DualMarqueeCarouselsProps) {
   const [viewportWidth, setViewportWidth] = useState(1600);
 
@@ -70,7 +72,7 @@ export function DualMarqueeCarousels({
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.viewport}>
+      <div className={edgeFade ? `${styles.viewport} ${styles.edgeFade}` : styles.viewport}>
         <div className={styles.track}>
           <div className={styles.trackSet}>{renderCards(rowWide, 0)}</div>
           <div className={styles.trackSet} aria-hidden>

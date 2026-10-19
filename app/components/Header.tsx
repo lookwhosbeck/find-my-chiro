@@ -182,7 +182,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   };
 
   const primaryCtaClass = cn(
-    "rounded-full px-5 font-medium shadow-sm",
+    "fmc-black-pill-cta rounded-full px-5 font-medium shadow-sm",
     embedded && surface === "onDark"
       ? "border-0 bg-white text-[hsl(var(--marketing-hero-surface))] hover:bg-white/90"
       : "bg-[hsl(var(--marketing-hero-surface))] text-primary-foreground hover:bg-[hsl(var(--marketing-hero-surface))]/90",

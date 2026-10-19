@@ -7,6 +7,8 @@ import styles from './ProximitySearchBar.module.css';
 
 type ProximitySearchBarProps = {
   variant: 'onDark' | 'onLight';
+  /** Homepage hero: 56px bar, shadow, and a hairline before the radius. Leave unset on /search. */
+  size?: 'md' | 'lg';
   navigate?: boolean;
   zipCode?: string;
   searchRadius?: number;
@@ -47,6 +49,7 @@ function SearchGlyph({ className }: { className?: string }) {
 
 export function ProximitySearchBar({
   variant,
+  size = 'md',
   navigate: navigateProp,
   zipCode: controlledZip,
   searchRadius: controlledRadius,
@@ -102,7 +105,12 @@ export function ProximitySearchBar({
     onSubmit?.();
   }, [navigate, zip, radius, router, onSubmit]);
 
-  const rootClass = [styles.bar, variant === 'onDark' ? styles.onDark : styles.onLight, className]
+  const rootClass = [
+    styles.bar,
+    variant === 'onDark' ? styles.onDark : styles.onLight,
+    size === 'lg' ? styles.lg : '',
+    className,
+  ]
     .filter(Boolean)
     .join(' ');
 

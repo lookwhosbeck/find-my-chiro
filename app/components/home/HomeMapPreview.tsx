@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
-import { Button } from '@/components/ui/button';
 import type { Chiropractor } from '@/app/lib/queries';
+import styles from './home-marketing.module.css';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
@@ -34,7 +34,7 @@ function easeOutCubic(t: number) {
 /**
  * Non-interactive browse map for the marketing homepage. Starts as a globe,
  * then rotates and zooms toward the US as the section scrolls through the
- * viewport. A click-blocking overlay with a "Find care" CTA sits on top.
+ * viewport. A click-blocking overlay with a "Browse the map" CTA sits on top.
  */
 export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -220,28 +220,15 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
   }, [ready]);
 
   return (
-    <div
-      ref={wrapperRef}
-      className="relative w-full overflow-hidden rounded-[32px] border bg-muted"
-    >
-      <div
-        ref={containerRef}
-        className="h-[420px] w-full md:h-[560px] lg:h-[680px]"
-        aria-hidden
-      />
+    <div ref={wrapperRef} className={styles.mapWrap}>
+      <div ref={containerRef} className={styles.mapCanvas} aria-hidden />
 
       {/* Click-blocker: swallows pointer input so the map can't be interacted with, and elevates the CTA. */}
       <div className="pointer-events-auto absolute inset-0 flex items-center justify-center">
-        <Button
-          asChild
-          size="lg"
-          className="h-14 rounded-full px-8 text-base font-semibold shadow-2xl ring-1 ring-black/10"
-        >
-          <Link href="/search" aria-label="Browse chiropractors on the map">
-            <Search className="mr-2 size-5" />
-            Find care
-          </Link>
-        </Button>
+        <Link href="/search" className={styles.mapCta} aria-label="Browse chiropractors on the map">
+          <Search size={20} strokeWidth={2} aria-hidden />
+          Browse the map
+        </Link>
       </div>
 
       {!MAPBOX_TOKEN && (
