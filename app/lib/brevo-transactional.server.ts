@@ -1,6 +1,6 @@
 import 'server-only';
 
-const BREVO_API = 'https://api.brevo.com/v3/smtp/email';
+const BREVO_ROOT = 'https://api.brevo.com/v3';
 const DEFAULT_BREVO_TIMEOUT_MS = 8000;
 /** Avoid hanging the whole referral request if BREVO_REQUEST_TIMEOUT_MS is mis-set very high. */
 const MAX_BREVO_TIMEOUT_MS = 30_000;
@@ -15,7 +15,7 @@ function getApiKey(): string {
 
 export type BrevoRecipient = { email: string; name?: string };
 
-/** Names for Brevo `params.*`. Templates must not use `contact.*` — this app does not sync Brevo contacts. */
+/** Names for Brevo `params.*`. Auth and referral templates must not use `contact.*`. */
 function recipientNameParams(display: string): { FIRSTNAME: string; LASTNAME: string } {
   const nameParts = display.split(/\s+/).filter(Boolean);
   const firstName = nameParts[0] ?? display;
@@ -26,7 +26,11 @@ function recipientNameParams(display: string): { FIRSTNAME: string; LASTNAME: st
   };
 }
 
-async function postBrevo(body: Record<string, unknown>): Promise<void> {
+/** Authenticated Brevo request. Caller checks `response.ok`. */
+export async function brevoApi(
+  path: string,
+  init: { method?: string; body?: Record<string, unknown> } = {},
+): Promise<Response> {
   const timeoutRaw = Number(process.env.BREVO_REQUEST_TIMEOUT_MS);
   const configured =
     Number.isFinite(timeoutRaw) && timeoutRaw >= 1000 ? Math.round(timeoutRaw) : DEFAULT_BREVO_TIMEOUT_MS;
@@ -34,16 +38,15 @@ async function postBrevo(body: Record<string, unknown>): Promise<void> {
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  let res: Response;
   try {
-    res = await fetch(BREVO_API, {
-      method: 'POST',
+    return await fetch(`${BREVO_ROOT}${path}`, {
+      method: init.method ?? 'GET',
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
         'api-key': getApiKey(),
       },
-      body: JSON.stringify(body),
+      body: init.body ? JSON.stringify(init.body) : undefined,
       signal: controller.signal,
     });
   } catch (e) {
@@ -54,7 +57,10 @@ async function postBrevo(body: Record<string, unknown>): Promise<void> {
   } finally {
     clearTimeout(timer);
   }
+}
 
+async function postBrevo(body: Record<string, unknown>): Promise<void> {
+  const res = await brevoApi('/smtp/email', { method: 'POST', body });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`Brevo API error ${res.status}: ${text.slice(0, 500)}`);
