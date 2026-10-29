@@ -54,6 +54,7 @@ import {
   CHIRO_BUDGET_RANGE_OPTIONS,
 } from '../constants';
 import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
+import { isReviewCompPriceId } from '@/app/lib/review-signup';
 import { isPremiumProfile } from '@/app/lib/subscription';
 import { canUseTrustSensitiveFeatures } from '@/app/lib/capabilities';
 import { evaluateChiropractorSearchReadiness } from '@/app/lib/profile-completeness';
@@ -631,6 +632,29 @@ export function MovynAccountDashboardShell({
 
       const typedProfile = profileData as UserProfile;
       setProfile(typedProfile);
+
+      if (typedProfile.role === 'chiropractor' && session.access_token) {
+        void fetch('/api/review-signup/grant', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+          .then(async (res) => {
+            if (!res.ok || res.status === 204) return null;
+            return (await res.json().catch(() => null)) as { applied?: boolean } | null;
+          })
+          .then(async (json) => {
+            if (!json?.applied) return;
+            const { data: refreshed } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+            if (refreshed) setProfile(refreshed as UserProfile);
+          })
+          .catch(() => {
+            /* review grant is optional and only applies with the private signup cookie */
+          });
+      }
       setProfileForm({
         first_name: typedProfile.first_name || '',
         last_name: typedProfile.last_name || '',
@@ -2090,6 +2114,7 @@ export function MovynAccountDashboardShell({
         })
       : null;
     const statusLabel = profile.subscription_status || 'free';
+    const reviewComp = isReviewCompPriceId(profile.subscription_price_id);
 
     return (
       <AccountFormPage
@@ -2109,14 +2134,18 @@ export function MovynAccountDashboardShell({
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium text-foreground">Current plan</p>
             <p className="text-sm text-muted-foreground">
-              {premium
-                ? `Premium — status: ${statusLabel}${renews ? ` · Renews or ends next on ${renews}` : ''}`
-                : `Free — status: ${statusLabel}. Upgrade for premium features as they launch.`}
+              {reviewComp
+                ? premium
+                  ? `Review access — premium is comped through ${renews ?? 'next year'}. Stripe is not billed.`
+                  : 'Review access — free profile. The license verification fee is waived.'
+                : premium
+                  ? `Premium — status: ${statusLabel}${renews ? ` · Renews or ends next on ${renews}` : ''}`
+                  : `Free — status: ${statusLabel}. Upgrade for premium features as they launch.`}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {!premium ? (
+            {reviewComp ? null : !premium ? (
               <>
                 <Button
                   type="button"

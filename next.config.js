@@ -7,6 +7,17 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
+  async headers() {
+    return [
+      {
+        source: "/review-signup/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       // Stripe Dashboard was configured with https://movynalong.com (root) instead of
