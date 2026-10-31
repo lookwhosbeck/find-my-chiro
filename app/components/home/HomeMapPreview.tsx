@@ -1,46 +1,48 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { Search } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
 import type { Chiropractor } from '@/app/lib/queries';
 import styles from './home-marketing.module.css';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
-/** Globe start (wide view on the Atlantic) rotates over to the continental US as the user scrolls. */
-const START_CENTER: [number, number] = [-30, 25];
-const END_CENTER: [number, number] = [-98.5795, 39.8283];
-const START_ZOOM = 0.6;
-const END_ZOOM = 3.6;
-const START_BEARING = -25;
-const END_BEARING = 0;
+/** Settled hero framing: continental US on a light globe, sitting behind the headline. */
+const HERO_CENTER: [number, number] = [-97.5, 38.2];
+const HERO_ZOOM = 3.05;
 
 interface HomeMapPreviewProps {
   chiropractors: Chiropractor[];
 }
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
-/** Ease-out cubic → progress feels organic and settles at the US view. */
-function easeOutCubic(t: number) {
-  const clamped = Math.max(0, Math.min(1, t));
-  return 1 - Math.pow(1 - clamped, 3);
+function styleHeroBasemap(map: mapboxgl.Map) {
+  const layers = map.getStyle()?.layers ?? [];
+  for (const layer of layers) {
+    if (layer.type === 'symbol') {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+      continue;
+    }
+    const id = layer.id.toLowerCase();
+    if (!id.includes('water')) continue;
+    try {
+      if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#8ec4ee');
+      if (layer.type === 'line') map.setPaintProperty(layer.id, 'line-color', '#7eb6e4');
+    } catch {
+      /* Some water layers don't expose a flat color. */
+    }
+  }
+  if (map.getLayer('background')) {
+    map.setPaintProperty('background', 'background-color', '#e7f3fb');
+  }
 }
 
 /**
- * Non-interactive browse map for the marketing homepage. Starts as a globe,
- * then rotates and zooms toward the US as the section scrolls through the
- * viewport. A click-blocking overlay with a "Browse the map" CTA sits on top.
+ * Non-interactive globe behind the homepage hero. Opens on North America so the
+ * headline and search sit on the map, instead of a separate card below the copy.
  */
 export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const rafRef = useRef<number | null>(null);
   const [ready, setReady] = useState(false);
 
   const mappable = useMemo(
@@ -60,24 +62,26 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: 'mapbox://styles/mapbox/light-v11',
       projection: 'globe',
-      center: START_CENTER,
-      zoom: START_ZOOM,
-      bearing: START_BEARING,
+      center: HERO_CENTER,
+      zoom: HERO_ZOOM,
+      bearing: 0,
+      pitch: 0,
+      /* Drop the continent slightly so the headline stays in the fade, and the US sits under the search. */
+      padding: { top: 72, bottom: 0, left: 0, right: 0 },
       interactive: false,
       attributionControl: false,
-      cooperativeGestures: false,
-      pitchWithRotate: false,
-      dragRotate: false,
+      fadeDuration: 0,
     });
     map.on('style.load', () => {
+      styleHeroBasemap(map);
       map.setFog({
-        color: 'rgb(220, 230, 240)',
-        'high-color': 'rgb(160, 190, 230)',
-        'horizon-blend': 0.03,
-        'space-color': 'rgb(8, 14, 30)',
-        'star-intensity': 0.25,
+        color: 'rgb(210, 230, 245)',
+        'high-color': 'rgb(126, 176, 216)',
+        'horizon-blend': 0.16,
+        'space-color': 'rgb(244, 248, 252)',
+        'star-intensity': 0,
       });
     });
     map.on('load', () => {
@@ -97,11 +101,9 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
 
     const sourceId = 'home-map-preview-source';
     const clusterLayerId = 'home-map-preview-clusters';
-    const clusterCountLayerId = 'home-map-preview-cluster-count';
     const unclusteredLayerId = 'home-map-preview-unclustered';
 
     if (map.getSource(sourceId)) {
-      if (map.getLayer(clusterCountLayerId)) map.removeLayer(clusterCountLayerId);
       if (map.getLayer(clusterLayerId)) map.removeLayer(clusterLayerId);
       if (map.getLayer(unclusteredLayerId)) map.removeLayer(unclusteredLayerId);
       map.removeSource(sourceId);
@@ -124,7 +126,7 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
       data: geojson,
       cluster: true,
       clusterMaxZoom: 14,
-      clusterRadius: 50,
+      clusterRadius: 28,
     });
 
     map.addLayer({
@@ -133,24 +135,12 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
       source: sourceId,
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': '#0071e3',
-        'circle-radius': ['step', ['get', 'point_count'], 18, 10, 24, 30, 30],
-        'circle-opacity': 0.85,
-        'circle-stroke-width': 2,
+        'circle-color': '#2563eb',
+        'circle-radius': ['step', ['get', 'point_count'], 12, 8, 16, 24, 20],
+        'circle-opacity': 0.92,
+        'circle-stroke-width': 1.5,
         'circle-stroke-color': '#ffffff',
       },
-    });
-
-    map.addLayer({
-      id: clusterCountLayerId,
-      type: 'symbol',
-      source: sourceId,
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-size': 13,
-      },
-      paint: { 'text-color': '#ffffff' },
     });
 
     map.addLayer({
@@ -159,9 +149,9 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
       source: sourceId,
       filter: ['!', ['has', 'point_count']],
       paint: {
-        'circle-color': '#30a84e',
-        'circle-radius': 7,
-        'circle-stroke-width': 2,
+        'circle-color': '#2563eb',
+        'circle-radius': 5,
+        'circle-stroke-width': 1.5,
         'circle-stroke-color': '#ffffff',
       },
     });
@@ -174,67 +164,11 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
     return () => ro.disconnect();
   }, [ready]);
 
-  /** Drive the camera from scroll position: globe → continental US as the section scrolls through the viewport. */
-  useEffect(() => {
-    if (!ready) return;
-    const map = mapRef.current;
-    const wrapper = wrapperRef.current;
-    if (!map || !wrapper) return;
-
-    const computeProgress = () => {
-      const rect = wrapper.getBoundingClientRect();
-      const vh = window.innerHeight || 1;
-      // 0 when the top of the map sits at the bottom of the viewport (just entering),
-      // 1 when the top of the map has reached the top of the viewport (fully in view).
-      const raw = 1 - rect.top / vh;
-      return easeOutCubic(raw);
-    };
-
-    const applyProgress = () => {
-      const t = computeProgress();
-      const lng = lerp(START_CENTER[0], END_CENTER[0], t);
-      const lat = lerp(START_CENTER[1], END_CENTER[1], t);
-      const zoom = lerp(START_ZOOM, END_ZOOM, t);
-      const bearing = lerp(START_BEARING, END_BEARING, t);
-      map.jumpTo({ center: [lng, lat], zoom, bearing });
-      rafRef.current = null;
-    };
-
-    const onScroll = () => {
-      if (rafRef.current != null) return;
-      rafRef.current = window.requestAnimationFrame(applyProgress);
-    };
-
-    applyProgress();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (rafRef.current != null) {
-        window.cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
-  }, [ready]);
-
   return (
-    <div ref={wrapperRef} className={styles.mapWrap}>
+    <div className={styles.mapWrap}>
       <div ref={containerRef} className={styles.mapCanvas} aria-hidden />
-
-      {/* Click-blocker: swallows pointer input so the map can't be interacted with, and elevates the CTA. */}
-      <div className="pointer-events-auto absolute inset-0 flex items-center justify-center">
-        <Link href="/search" className={styles.mapCta} aria-label="Browse chiropractors on the map">
-          <Search size={20} strokeWidth={2} aria-hidden />
-          Browse the map
-        </Link>
-      </div>
-
       {!MAPBOX_TOKEN && (
-        <div className="text-muted-foreground absolute inset-0 flex items-center justify-center text-sm">
-          Map preview requires NEXT_PUBLIC_MAPBOX_TOKEN.
-        </div>
+        <p className={styles.mapFallback}>Map preview requires NEXT_PUBLIC_MAPBOX_TOKEN.</p>
       )}
     </div>
   );

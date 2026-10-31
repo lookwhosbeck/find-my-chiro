@@ -17,8 +17,9 @@ const trustItems = [
 
 export function HomeHero({ mapPreview }: HomeHeroProps) {
   return (
-    <section className={`app-container w-full ${styles.hero}`}>
-      <div className={styles.heroCol}>
+    <section className={styles.hero}>
+      <div className={styles.heroStage}>{mapPreview}</div>
+      <div className={`app-container w-full ${styles.heroCol}`}>
         <Link href="#pricing" className={styles.foundingPill}>
           <span className={styles.foundingChip}>Founding</span>
           <span>First 1,000 chiropractors: Premium free for life. No card.</span>
@@ -42,7 +43,6 @@ export function HomeHero({ mapPreview }: HomeHeroProps) {
           </div>
         </div>
       </div>
-      <div className="relative mx-auto w-full min-w-0">{mapPreview}</div>
     </section>
   );
 }
