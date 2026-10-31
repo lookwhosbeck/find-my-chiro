@@ -131,6 +131,9 @@ html {
 }
 
 :root {
+  /* Set to 2.5rem on <html> while the founding-spots banner is showing. */
+  --founding-banner-offset: 0px;
+
   /* Typography - SF Pro system stack for body, Host Grotesk for display */
   --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
   --font-display: "Host Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
@@ -944,8 +947,8 @@ button.fmc-proximity-submit {
    ======================================== */
 
 .search-page-root {
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: calc(100vh - var(--founding-banner-offset));
+  min-height: calc(100dvh - var(--founding-banner-offset));
   background: #ffffff;
   padding: 16px 32px;
 }
@@ -954,10 +957,10 @@ button.fmc-proximity-submit {
   .search-page-root {
     padding: 8px 16px;
     /* Pin page to the visible viewport so map + bottom cards stay above mobile browser chrome */
-    height: 100vh;
-    height: 100dvh;
-    max-height: 100vh;
-    max-height: 100dvh;
+    height: calc(100vh - var(--founding-banner-offset));
+    height: calc(100dvh - var(--founding-banner-offset));
+    max-height: calc(100vh - var(--founding-banner-offset));
+    max-height: calc(100dvh - var(--founding-banner-offset));
     overflow: hidden;
   }
 
@@ -1027,8 +1030,8 @@ button.fmc-proximity-submit {
 .mapview-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 130px);
-  height: calc(100dvh - 130px);
+  height: calc(100vh - 130px - var(--founding-banner-offset));
+  height: calc(100dvh - 130px - var(--founding-banner-offset));
   min-height: 500px;
   border-radius: 24px;
   border: 1px solid var(--fmc-filter-border); /* Neutral/Gray 200 — Figma 84:4298 */

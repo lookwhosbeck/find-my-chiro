@@ -1,5 +1,8 @@
 import './globals.css';
+import type { CSSProperties, ReactNode } from 'react';
 import type { Metadata } from 'next';
+import { FoundingSpotsBanner } from './components/FoundingSpotsBanner';
+import { getCachedFoundingAvailability } from './lib/founding-availability.server';
 
 /**
  * Host Grotesk isn't in Next.js 14's `next/font/google` manifest (it was added
@@ -14,19 +17,34 @@ export const metadata: Metadata = {
   description: 'Find a chiropractor near you',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const founding = await getCachedFoundingAvailability();
+  const showFoundingBanner = founding.available && founding.remaining > 0;
+
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      style={
+        showFoundingBanner
+          ? ({ '--founding-banner-offset': '2.5rem' } as CSSProperties)
+          : undefined
+      }
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="stylesheet" href={HOST_GROTESK_HREF} />
       </head>
-      <body>{children}</body>
+      <body>
+        {showFoundingBanner ? (
+          <FoundingSpotsBanner remaining={founding.remaining} cap={founding.cap} />
+        ) : null}
+        {children}
+      </body>
     </html>
   );
 }

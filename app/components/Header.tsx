@@ -399,7 +399,7 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-2 z-40 lg:top-5">
+    <header className="sticky top-[calc(var(--founding-banner-offset)+0.5rem)] z-40 lg:top-[calc(var(--founding-banner-offset)+1.25rem)]">
       <div className="app-container">
         <div className={frostedBarClass}>
           <Link href="/" className="shrink-0 leading-none">
