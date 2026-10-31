@@ -1,24 +1,24 @@
-import {
-  FOUNDING_MEMBERS_CAP,
-  LICENSE_VERIFICATION_FEE_USD,
-} from "@/lib/founding-promo";
+import Link from "next/link";
+import { FOUNDING_MEMBERS_CAP } from "@/lib/founding-promo";
 import styles from "./home-marketing.module.css";
 
-/** Founding-member note under homepage pricing. */
+/** Founding-member offer above homepage pricing. There is no code to type. */
 export function FoundingCouponCallout() {
   return (
-    <div className={styles.coupon}>
-      <span className={styles.couponChip}>First {FOUNDING_MEMBERS_CAP.toLocaleString()}</span>
-      <div className={styles.couponCopy}>
-        <p className={styles.couponTitle}>
-          Founding chiropractors get Premium free for life.
+    <div className={styles.offer}>
+      <div className={styles.offerCopy}>
+        <p className={styles.offerEyebrow}>Founding member offer</p>
+        <p className={styles.offerTitle}>
+          The first {FOUNDING_MEMBERS_CAP.toLocaleString()} chiropractors get Premium free for life.
         </p>
-        <p className={styles.couponBody}>
-          The first {FOUNDING_MEMBERS_CAP.toLocaleString()} practices skip the $
-          {LICENSE_VERIFICATION_FEE_USD} license verification fee and the monthly
-          membership. No coupon to type, and no credit card at sign-up.
+        <p className={styles.offerBody}>
+          Referrals, priority placement, and license verification are included. Nothing to type
+          at sign-up, and no credit card. After these spots are claimed, Premium is a paid membership.
         </p>
       </div>
+      <Link href="/signup" className={`fmc-pill ${styles.pill} ${styles.pillWhite}`}>
+        Claim a founding spot
+      </Link>
     </div>
   );
 }

@@ -722,49 +722,53 @@
   flex-shrink: 0;
 }
 
-.coupon {
+.offer {
   max-width: 880px;
-  margin: 20px auto 0;
+  margin: 0 auto 28px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 20px;
   flex-wrap: wrap;
-  padding: 16px 20px;
-  border: 1px solid #dbe5ff;
-  background: #f3f6ff;
-  border-radius: 16px;
+  padding: 24px 28px;
+  border: 1px solid #0a0a0a;
+  background: #0a0a0a;
+  border-radius: 20px;
   box-sizing: border-box;
 }
 
-.couponChip {
-  background: #2563eb;
-  color: #fafafa;
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.couponCopy {
+.offerCopy {
   flex: 1;
-  min-width: 240px;
+  min-width: min(100%, 280px);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
-.couponTitle {
+.offerEyebrow {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  color: #0a0a0a;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a3a3a3;
 }
 
-.couponBody {
+.offerTitle {
   margin: 0;
-  font-size: 13px;
-  color: #525252;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fafafa;
+}
+
+.offerBody {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #d4d4d4;
 }
 
 .faqGrid {

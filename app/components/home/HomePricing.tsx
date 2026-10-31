@@ -32,22 +32,28 @@ export function HomePricing() {
   const [period, setPeriod] = useState<Period>("monthly");
   const annual = period === "annually";
   const per = annual ? "/year" : "/month";
+  const laterPrice = annual
+    ? `$${premiumAnnualTotal}/year ($${premiumAnnualMonthly}/month)`
+    : `$${premiumMonthly}/month`;
 
   return (
     <section id="pricing" className={styles.section}>
       <div className="app-container">
         <header className={`${styles.centerHeader} ${styles.centerHeaderTight}`}>
-          <div className={styles.eyebrow}>Pricing for chiropractors</div>
-          <h2 className={styles.h2}>Free to be listed. Affordable to be found.</h2>
+          <div className={styles.eyebrow}>Founding member offer</div>
+          <h2 className={styles.h2}>Premium is free for life for the first 1,000 chiropractors.</h2>
           <p className={styles.lead}>
-            Patients always search Movyn for free. The first 1,000 founding chiropractors get
-            Premium free for life, with no coupon and no credit card. After those spots are claimed,
-            a verified profile stays free and Premium is a monthly or annual membership.
+            Patients always search Movyn for free. Founding chiropractors claim the full Premium
+            membership with referrals included, the license verification fee waived, and no credit
+            card. After those spots are claimed, a basic listing stays free and Premium is a paid
+            membership.
           </p>
         </header>
 
+        <FoundingCouponCallout />
+
         <div className={styles.toggleWrap}>
-          <div className={styles.toggle} role="group" aria-label="Billing period">
+          <div className={styles.toggle} role="group" aria-label="Price after founding spots are claimed">
             <button
               type="button"
               className={`fmc-pill ${styles.toggleBtn} ${!annual ? styles.toggleBtnActive : ""}`}
@@ -76,10 +82,10 @@ export function HomePricing() {
                 <span className={styles.price}>$0</span>
                 <span className={styles.priceUnit}>{per}</span>
               </div>
-              <p className={styles.caption}>&nbsp;</p>
+              <p className={styles.caption}>Basic listing, after founding spots are claimed</p>
               <p className={styles.planDesc}>
-                Get a verified profile on Movyn at no monthly cost. Patients can find you, see your
-                credentials, and reach out directly.
+                A verified profile patients can find. Credentials and contact details, with a short
+                list of modalities and focus areas.
               </p>
             </div>
             <ul className={styles.planFeatures}>
@@ -91,24 +97,22 @@ export function HomePricing() {
               ))}
             </ul>
             <Link href="/signup" className={`fmc-pill ${styles.pill} ${styles.pillBlock} ${styles.pillOutline}`}>
-              Sign up — Free
+              Claim a founding spot
             </Link>
           </article>
 
           <article className={`${styles.plan} ${styles.planPopular}`}>
-            <span className={styles.popularBadge}>Most popular</span>
+            <span className={styles.popularBadge}>First 1,000</span>
             <div className={styles.planHead}>
               <h3 className={styles.planName}>Premium</h3>
               <div className={styles.priceRow}>
-                <span className={styles.price}>${annual ? premiumAnnualTotal : premiumMonthly}</span>
-                <span className={styles.priceUnit}>{per}</span>
+                <span className={styles.price}>$0</span>
+                <span className={styles.priceUnit}>for life</span>
               </div>
-              <p className={styles.caption}>
-                {annual ? `Just $${premiumAnnualMonthly}/month, billed annually` : "\u00a0"}
-              </p>
+              <p className={styles.caption}>Then {laterPrice} after founding spots are claimed</p>
               <p className={styles.planDesc}>
-                Unlock everything Movyn offers—built for chiropractors who want to be matched on
-                what they actually do and stand out in their area.
+                Founding members keep referrals, placement, and the rest of Premium at no charge.
+                Nothing to type at sign-up, and no credit card.
               </p>
             </div>
             <ul className={styles.planFeatures}>
@@ -120,12 +124,10 @@ export function HomePricing() {
               ))}
             </ul>
             <Link href="/signup" className={`fmc-pill ${styles.pill} ${styles.pillBlock} ${styles.pillPrimary}`}>
-              Sign up — Premium
+              Claim a founding spot
             </Link>
           </article>
         </div>
-
-        <FoundingCouponCallout />
       </div>
     </section>
   );

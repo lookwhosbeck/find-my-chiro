@@ -31,7 +31,7 @@ const faqItems = [
   },
   {
     q: "How much does it cost to be on Movyn?",
-    a: "The first 1,000 founding chiropractors get Premium free for life, including referrals, with the $50 license verification fee waived. No coupon and no credit card. After those spots are claimed, a verified profile stays free aside from the annual $50 verification fee, and Premium is $30/month (or 20% off when billed annually) for unlimited modalities, priority placement, direct messages, and provider referrals.",
+    a: "The first 1,000 founding chiropractors get Premium free for life. That includes referrals, priority placement, and license verification, with no credit card. There is no code to enter. After those spots are claimed, a verified profile stays free aside from a $50 annual license verification fee, and Premium is $30/month (or 20% off when billed annually).",
   },
 ] as const;
 

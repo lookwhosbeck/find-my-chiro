@@ -219,11 +219,11 @@ export function HomeBothSides() {
             </div>
             <div className={styles.ctaRow}>
               <Link href="/join" className={`fmc-pill ${styles.pill} ${styles.pillWhite}`}>
-                List your practice
+                Claim a founding spot
                 <ArrowRight size={16} aria-hidden />
               </Link>
               <Link href="#pricing" className={`fmc-pill ${styles.pill} ${styles.pillOutlineDark}`}>
-                See pricing
+                Founding offer
               </Link>
             </div>
           </div>
@@ -312,15 +312,15 @@ export function HomeClosingCta() {
               Better-fit chiropractic care starts with the right network.
             </h2>
             <p className={styles.closingLead}>
-              Movyn is built with—and for—the chiropractors and patients who use it. Join the
-              network and help shape what better-fit care looks like.
+              Movyn is built with—and for—the chiropractors and patients who use it. The first
+              1,000 chiropractors get Premium free for life.
             </p>
             <div className={styles.closingActions}>
               <Link href="/signup-patient" className={`fmc-pill ${styles.pill} ${styles.pillLg} ${styles.pillWhite}`}>
                 I&apos;m looking for care
               </Link>
               <Link href="/join" className={`fmc-pill ${styles.pill} ${styles.pillLg} ${styles.pillOutlineDark}`}>
-                I&apos;m a chiropractor
+                Claim a founding spot
               </Link>
             </div>
           </div>

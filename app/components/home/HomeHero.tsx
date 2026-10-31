@@ -20,8 +20,8 @@ export function HomeHero({ mapPreview }: HomeHeroProps) {
     <section className={`app-container w-full ${styles.hero}`}>
       <div className={styles.heroCol}>
         <Link href="#pricing" className={styles.foundingPill}>
-          <span className={styles.foundingChip}>1,000 spots</span>
-          <span>Founding chiropractors get Premium free for life</span>
+          <span className={styles.foundingChip}>Founding</span>
+          <span>First 1,000 chiropractors: Premium free for life. No card.</span>
           <ArrowRight size={14} aria-hidden />
         </Link>
         <h1 className={styles.h1}>Find a chiropractor that fits.</h1>
