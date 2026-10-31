@@ -40,9 +40,9 @@ export function HomePricing() {
           <div className={styles.eyebrow}>Pricing for chiropractors</div>
           <h2 className={styles.h2}>Free to be listed. Affordable to be found.</h2>
           <p className={styles.lead}>
-            Patients always search Movyn for free. Chiropractors choose between a free verified
-            profile or a Premium membership that unlocks every match-making feature—no contracts,
-            cancel anytime.
+            Patients always search Movyn for free. The first 1,000 founding chiropractors get
+            Premium free for life, with no coupon and no credit card. After those spots are claimed,
+            a verified profile stays free and Premium is a monthly or annual membership.
           </p>
         </header>
 
