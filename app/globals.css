@@ -1580,6 +1580,29 @@ button.fmc-proximity-submit {
   white-space: nowrap;
 }
 
+.trusted-referrer-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #030302;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.trusted-referrer-badge--on-dark {
+  background: transparent;
+  color: hsl(var(--hero-title-on-dark));
+  border: 1px solid hsl(var(--hero-title-on-dark) / 0.45);
+}
+
 .chiropractor-map-card__specialty {
   margin: 0;
   font-family: var(--font-body);

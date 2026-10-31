@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-line';
 import type { Chiropractor } from '../lib/queries';
+import { TrustedReferrerBadge } from './TrustedReferrerBadge';
 
 function MapLocationPin({ className }: { className?: string }) {
   return (
@@ -135,6 +136,7 @@ export function ChiropractorMapCard({
             ) : null}
             <div className="chiropractor-map-card__identity">
               <p className="chiropractor-map-card__name">{displayName}</p>
+              {chiropractor.foundingMember ? <TrustedReferrerBadge /> : null}
               {specialtyLine ? <p className="chiropractor-map-card__specialty">{specialtyLine}</p> : null}
             </div>
           </div>

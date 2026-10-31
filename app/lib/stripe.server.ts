@@ -44,7 +44,32 @@ export function isAllowedVerificationPriceId(priceId: string): boolean {
   return !!v && priceId === v;
 }
 
-export type SignupCheckoutPlan = 'free' | 'monthly' | 'annual';
+export type SignupCheckoutPlan = 'free' | 'monthly' | 'annual' | 'founding';
+
+export type FoundingAvailability = {
+  available: boolean;
+  remaining: number;
+  promotionCodeId: string | null;
+};
+
+/** Live promotion code for the first 1,000 founding checkouts. Absent or exhausted means paid signup. */
+export async function getFoundingAvailability(stripe: Stripe): Promise<FoundingAvailability> {
+  const promotionCodeId = process.env.STRIPE_FOUNDING_PROMOTION_CODE_ID?.trim() || null;
+  if (!promotionCodeId) {
+    return { available: false, remaining: 0, promotionCodeId: null };
+  }
+  try {
+    const promo = await stripe.promotionCodes.retrieve(promotionCodeId);
+    const max = promo.max_redemptions ?? 0;
+    const used = promo.times_redeemed ?? 0;
+    const remaining = Math.max(0, max - used);
+    const available = promo.active === true && remaining > 0;
+    return { available, remaining, promotionCodeId };
+  } catch (error) {
+    console.error('founding promotion lookup:', error);
+    return { available: false, remaining: 0, promotionCodeId: null };
+  }
+}
 
 /** Line items for chiropractor signup: optional verification + optional Premium recurring. */
 export function lineItemsForSignupCheckout(

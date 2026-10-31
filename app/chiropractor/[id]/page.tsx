@@ -33,6 +33,7 @@ import type { Chiropractor } from '@/app/lib/queries';
 import { parseSearchFiltersFromParams, appendSearchFiltersToQuery } from '@/app/lib/search-filters-url';
 import { buildMatchRadarOverlay, computeMatchAxes, matchPercentFromAxes } from '@/app/lib/patient-match';
 import { matchScorePillColors } from '@/app/lib/match-score-pill-colors';
+import { TrustedReferrerBadge } from '@/app/components/TrustedReferrerBadge';
 import styles from './page.module.css';
 
 const BUDGET_LABELS: Record<string, string> = {
@@ -256,6 +257,7 @@ function ChiropractorProfileContent() {
               >
                 {displayName}
               </h1>
+              {chiro.foundingMember ? <TrustedReferrerBadge onDark /> : null}
               {chiro.clinicName ? (
                 <p className="text-base text-primary-foreground/90" style={{ fontFamily: 'var(--font-body)' }}>
                   {chiro.clinicName}

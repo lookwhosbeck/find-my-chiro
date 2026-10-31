@@ -20,6 +20,7 @@ async function verifyProfileBillingRow(
     subscription_status: string;
     subscription_price_id?: string | null;
     license_verification_fee_paid?: boolean;
+    founding_member?: boolean;
   },
 ): Promise<void> {
   const { data, error } = await admin
@@ -64,6 +65,27 @@ async function verifyProfileBillingRow(
       `license_verification_fee_paid_at was not saved. ${BILLING_TRIGGER_FIX_HINT}`,
     );
   }
+  if (expected.founding_member === true) {
+    const { data: foundingRow, error: foundingErr } = await admin
+      .from('profiles')
+      .select('founding_member')
+      .eq('id', userId)
+      .maybeSingle();
+    if (foundingErr) {
+      console.error('verifyProfileBillingRow founding_member:', foundingErr);
+      throw foundingErr;
+    }
+    if (foundingRow?.founding_member !== true) {
+      throw new BillingSyncVerificationError(
+        `founding_member was not saved. ${BILLING_TRIGGER_FIX_HINT}`,
+      );
+    }
+  }
+}
+
+function isMissingFoundingMemberColumn(error: { message?: string; code?: string }): boolean {
+  const message = `${error.message ?? ''} ${error.code ?? ''}`.toLowerCase();
+  return message.includes('founding_member');
 }
 
 export async function syncProfileFromStripeSubscription(
@@ -71,7 +93,7 @@ export async function syncProfileFromStripeSubscription(
   userId: string,
   customerId: string,
   subscription: Stripe.Subscription,
-  opts?: { licenseVerificationFeePaid?: boolean },
+  opts?: { licenseVerificationFeePaid?: boolean; foundingMember?: boolean },
 ): Promise<void> {
   const priceId = subscription.items.data[0]?.price?.id ?? null;
   const row: Record<string, unknown> = {
@@ -86,7 +108,20 @@ export async function syncProfileFromStripeSubscription(
   if (opts?.licenseVerificationFeePaid) {
     row.license_verification_fee_paid_at = new Date().toISOString();
   }
-  const { error } = await admin.from('profiles').update(row).eq('id', userId);
+  if (opts?.foundingMember) {
+    row.founding_member = true;
+  }
+  let savedFoundingMember = Boolean(opts?.foundingMember);
+  let { error } = await admin.from('profiles').update(row).eq('id', userId);
+  if (error && savedFoundingMember && isMissingFoundingMemberColumn(error)) {
+    console.error(
+      'founding_member column is missing. Billing was linked without the flag. Apply migration 20261031195158_profiles_founding_member.',
+    );
+    delete row.founding_member;
+    savedFoundingMember = false;
+    const retry = await admin.from('profiles').update(row).eq('id', userId);
+    error = retry.error;
+  }
   if (error) {
     console.error('syncProfileFromStripeSubscription:', error);
     throw error;
@@ -97,6 +132,7 @@ export async function syncProfileFromStripeSubscription(
     subscription_status: subscription.status,
     subscription_price_id: priceId,
     license_verification_fee_paid: opts?.licenseVerificationFeePaid ? true : undefined,
+    founding_member: savedFoundingMember ? true : undefined,
   });
 }
 

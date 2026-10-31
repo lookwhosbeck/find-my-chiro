@@ -4,6 +4,7 @@ import { buildChiropractorSpecialtyLine } from '../lib/chiropractor-specialty-li
 import { matchScorePillColors } from '../lib/match-score-pill-colors';
 import { Chiropractor } from '../lib/queries';
 import { ChiropractorMapCard } from './ChiropractorMapCard';
+import { TrustedReferrerBadge } from './TrustedReferrerBadge';
 
 function LocationPinIcon({ style, className }: { style?: CSSProperties; className?: string }) {
   return (
@@ -174,6 +175,7 @@ export function ChiropractorCard({
       >
         {displayName}
       </p>
+      {chiropractor.foundingMember ? <TrustedReferrerBadge /> : null}
       {specialtyLine ? (
         <p
           style={{

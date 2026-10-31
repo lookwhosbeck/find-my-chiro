@@ -115,10 +115,13 @@ export async function POST(req: NextRequest) {
     }
 
     const sub = await stripe.subscriptions.retrieve(subId);
-    const feePaid = await checkoutSessionIncludesVerificationPrice(stripe, claim.sessionId);
+    const founding = claim.plan === 'founding';
+    const feePaid =
+      founding || (await checkoutSessionIncludesVerificationPrice(stripe, claim.sessionId));
     try {
       await syncProfileFromStripeSubscription(admin, user.id, customerId, sub, {
         licenseVerificationFeePaid: feePaid,
+        foundingMember: founding,
       });
     } catch (e) {
       console.error('link-stripe-checkout sync:', e);

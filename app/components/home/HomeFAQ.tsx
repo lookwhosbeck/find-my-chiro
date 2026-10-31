@@ -31,7 +31,7 @@ const faqItems = [
   },
   {
     q: "How much does it cost to be on Movyn?",
-    a: "A verified profile is free—there's no monthly cost. Premium is $30/month (or 20% off when billed annually) and unlocks unlimited modalities, priority placement, direct messages, and provider referrals. Every plan includes an annual $50 license verification fee to confirm your license remains in good standing, which is waived for our first 250 founding members.",
+    a: "The first 1,000 founding chiropractors get Premium free for life, including referrals, with the $50 license verification fee waived. No coupon and no credit card. After those spots are claimed, a verified profile stays free aside from the annual $50 verification fee, and Premium is $30/month (or 20% off when billed annually) for unlimited modalities, priority placement, direct messages, and provider referrals.",
   },
 ] as const;
 

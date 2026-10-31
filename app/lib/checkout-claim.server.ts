@@ -10,7 +10,7 @@ export type CheckoutClaimPayload = {
   /** Null when checkout was verification fee only (free plan). */
   subscriptionId: string | null;
   priceId: string | null;
-  plan: 'free' | 'monthly' | 'annual';
+  plan: 'free' | 'monthly' | 'annual' | 'founding';
   exp: number;
 };
 

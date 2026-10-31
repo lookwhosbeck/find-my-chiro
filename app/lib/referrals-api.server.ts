@@ -3,8 +3,7 @@ import 'server-only';
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-import { canUseTrustSensitiveFeatures } from './capabilities';
-import { isPremiumProfile } from './subscription';
+import { canUseTrustSensitiveFeatures, hasPremiumAccess } from './capabilities';
 
 export async function requireBearerUser(req: Request): Promise<
   | { ok: true; user: User; supabaseService: SupabaseClient<any> }
@@ -53,7 +52,7 @@ export async function getReferrerEligibility(
 ): Promise<ReferrerEligibility> {
   const { data: profile, error: pErr } = await supabaseService
     .from('profiles')
-    .select('role, subscription_status, current_period_end')
+    .select('role, subscription_status, current_period_end, founding_member')
     .eq('id', userId)
     .maybeSingle();
 
@@ -77,7 +76,7 @@ export async function getReferrerEligibility(
     return { eligible: false, reason: 'chiropractor_row_missing' };
   }
 
-  const premium = isPremiumProfile(profile);
+  const premium = hasPremiumAccess(profile);
   const trust = canUseTrustSensitiveFeatures(profile, chiro);
   if (!premium) return { eligible: false, reason: 'premium_required' };
   if (!trust) return { eligible: false, reason: 'license_not_approved' };

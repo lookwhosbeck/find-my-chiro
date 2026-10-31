@@ -37,6 +37,8 @@ export interface Chiropractor {
   latitude?: number;
   /** Longitude: geocoded org coords when set, else ZIP centroid for map/distance. */
   longitude?: number;
+  /** First 1,000 founding chiropractors. */
+  foundingMember?: boolean;
 }
 
 export interface PatientSearchFilters {
@@ -94,7 +96,7 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
       .from('chiropractors')
       .select(`
         *,
-        profiles!inner(id, first_name, last_name, avatar_url),
+        profiles!inner(id, first_name, last_name, avatar_url, founding_member),
         organizations(name, city, state, zip_code, phone, website, address_line_1, latitude, longitude),
         chiropractor_modalities(modalities(name)),
         chiropractor_focus_areas(focus_areas(name)),
@@ -183,6 +185,7 @@ export function mapChiropractorDataFromNormalizedSchema(data: any[]): Chiropract
       zipCode: item.organizations?.zip_code || undefined,
       latitude: toFiniteNumber(item.organizations?.latitude),
       longitude: toFiniteNumber(item.organizations?.longitude),
+      foundingMember: item.profiles?.founding_member === true,
     };
   });
 }

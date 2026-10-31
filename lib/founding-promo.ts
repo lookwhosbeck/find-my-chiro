@@ -1,15 +1,14 @@
 /**
- * Founding-member license verification promo (hero, pricing, signup marketing).
+ * Founding-member launch offer.
  *
- * FNDR250 waives the annual $50 verification fee for the first 250 chiropractors.
- * It is a Stripe promotion code backed by a $50-off-once coupon (FNDR250_LAUNCH).
- * The code is entered by the user at Stripe Checkout; `allow_promotion_codes: true`
- * on the checkout session enables this. No server-side enforcement is needed beyond
- * Stripe's own max_redemptions cap.
+ * The first 1,000 chiropractors claim Premium for life through a Stripe
+ * promotion code (FOUNDING1000) that is 100% off forever. Signup pre-applies
+ * that code, so nobody types it and Checkout does not collect a card.
+ * The promotion code id lives in STRIPE_FOUNDING_PROMOTION_CODE_ID.
  *
- * For founder/test accounts that should be entirely free (subscription + verification),
- * use the MVNTST26 promotion code (100% off forever).
+ * After 1,000 redemptions, signup returns to paid Premium or the $50
+ * license verification fee.
  */
-export const FOUNDING_COUPON_CODE = "FNDR250" as const;
-export const FOUNDING_MEMBERS_CAP = 250;
+export const FOUNDING_PROMOTION_CODE = "FOUNDING1000" as const;
+export const FOUNDING_MEMBERS_CAP = 1000;
 export const LICENSE_VERIFICATION_FEE_USD = 50;

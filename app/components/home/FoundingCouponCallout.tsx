@@ -1,22 +1,22 @@
 import {
-  FOUNDING_COUPON_CODE,
   FOUNDING_MEMBERS_CAP,
   LICENSE_VERIFICATION_FEE_USD,
 } from "@/lib/founding-promo";
 import styles from "./home-marketing.module.css";
 
-/** Single founding-coupon note under homepage pricing. */
+/** Founding-member note under homepage pricing. */
 export function FoundingCouponCallout() {
   return (
     <div className={styles.coupon}>
-      <span className={styles.couponChip}>{FOUNDING_COUPON_CODE}</span>
+      <span className={styles.couponChip}>First {FOUNDING_MEMBERS_CAP.toLocaleString()}</span>
       <div className={styles.couponCopy}>
         <p className={styles.couponTitle}>
-          Use coupon code {FOUNDING_COUPON_CODE} at sign-up for free license verification.
+          Founding chiropractors get Premium free for life.
         </p>
         <p className={styles.couponBody}>
-          Every plan includes an annual ${LICENSE_VERIFICATION_FEE_USD} license verification fee.
-          It&apos;s waived for the first {FOUNDING_MEMBERS_CAP} founding chiropractors.
+          The first {FOUNDING_MEMBERS_CAP.toLocaleString()} practices skip the $
+          {LICENSE_VERIFICATION_FEE_USD} license verification fee and the monthly
+          membership. No coupon to type, and no credit card at sign-up.
         </p>
       </div>
     </div>

@@ -56,7 +56,7 @@ import {
 import { SEARCH_RADIUS_MILES_OPTIONS, clampSearchRadiusMiles } from '@/app/lib/search-radius';
 import { isReviewCompPriceId } from '@/app/lib/review-signup';
 import { isPremiumProfile } from '@/app/lib/subscription';
-import { canUseTrustSensitiveFeatures } from '@/app/lib/capabilities';
+import { canUseTrustSensitiveFeatures, hasPremiumAccess } from '@/app/lib/capabilities';
 import { evaluateChiropractorSearchReadiness } from '@/app/lib/profile-completeness';
 import styles from '../page.module.css';
 import type { AccountShellProfileSummary } from './account-shell-types';
@@ -132,6 +132,7 @@ interface UserProfile {
   subscription_status?: string | null;
   subscription_price_id?: string | null;
   current_period_end?: string | null;
+  founding_member?: boolean | null;
   /** Set when Brevo E2 welcome email was sent */
   chiropractor_welcome_email_sent_at?: string | null;
 }
@@ -2105,7 +2106,9 @@ export function MovynAccountDashboardShell({
   );
 
   const renderMembershipPanel = () => {
-    const premium = isPremiumProfile(profile);
+    const founding = profile.founding_member === true;
+    const premium = hasPremiumAccess(profile);
+    const paidPremium = isPremiumProfile(profile);
     const renews = profile.current_period_end
       ? new Date(profile.current_period_end).toLocaleDateString(undefined, {
           month: 'short',
@@ -2134,18 +2137,31 @@ export function MovynAccountDashboardShell({
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium text-foreground">Current plan</p>
             <p className="text-sm text-muted-foreground">
-              {reviewComp
-                ? premium
-                  ? `Review access — premium is comped through ${renews ?? 'next year'}. Stripe is not billed.`
-                  : 'Review access — free profile. The license verification fee is waived.'
-                : premium
-                  ? `Premium — status: ${statusLabel}${renews ? ` · Renews or ends next on ${renews}` : ''}`
-                  : `Free — status: ${statusLabel}. Upgrade for premium features as they launch.`}
+              {founding
+                ? 'Founding member — Premium is free for life, and the license verification fee is waived.'
+                : reviewComp
+                  ? premium
+                    ? `Review access — premium is comped through ${renews ?? 'next year'}. Stripe is not billed.`
+                    : 'Review access — free profile. The license verification fee is waived.'
+                  : premium
+                    ? `Premium — status: ${statusLabel}${renews ? ` · Renews or ends next on ${renews}` : ''}`
+                    : `Free — status: ${statusLabel}. Upgrade for premium features as they launch.`}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {reviewComp ? null : !premium ? (
+            {reviewComp ? null : founding ? (
+              paidPremium ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void openBillingPortal()}
+                  disabled={billingBusy}
+                >
+                  {billingBusy ? 'Please wait…' : 'Manage subscription'}
+                </Button>
+              ) : null
+            ) : !paidPremium ? (
               <>
                 <Button
                   type="button"
@@ -2203,7 +2219,7 @@ export function MovynAccountDashboardShell({
     mainContent = renderMembershipPanel();
   } else if (activeNav === 'referrals' && showChiroAccountUI) {
     mainContent =
-      !isAdmin && !isPremiumProfile(profile)
+      !isAdmin && !hasPremiumAccess(profile)
         ? renderReferralsGate(
             <div className="space-y-3">
               <p className="text-sm text-foreground">Referrals are a premium capability.</p>

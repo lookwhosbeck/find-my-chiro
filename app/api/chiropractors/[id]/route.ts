@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       .select(
         `
         *,
-        profiles!inner(first_name, last_name, avatar_url),
+        profiles!inner(first_name, last_name, avatar_url, founding_member),
         organizations!inner(name, city, state, zip_code, phone, website, address_line_1, latitude, longitude),
         chiropractor_modalities(modality_id, modalities!inner(name)),
         chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),

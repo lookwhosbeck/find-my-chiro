@@ -174,7 +174,10 @@ export async function POST(req: NextRequest) {
       ? subRef
       : await stripe.subscriptions.retrieve(subId);
   const priceId = sub.items.data[0]?.price?.id ?? null;
-  const plan = planFromSubscriptionPriceId(priceId);
+  const plan =
+    session.metadata?.signup_plan?.trim() === 'founding'
+      ? 'founding'
+      : planFromSubscriptionPriceId(priceId);
 
   const { error: upsertErr } = await admin.from('checkout_signup_claims').upsert(
     {

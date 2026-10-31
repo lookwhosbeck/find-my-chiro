@@ -44,7 +44,7 @@ const CHIRO_PLAN_DISPLAY = {
   annual: { priceLine: "$24/month", billingNote: "(Billed annually)" },
 } as const;
 
-type SignupPlan = "free" | "monthly" | "annual";
+type SignupPlan = "free" | "monthly" | "annual" | "founding";
 
 type ChiropractorSignupFlowProps = {
   /** Public checkout, or the unlisted review signup that skips Stripe. */
@@ -75,6 +75,10 @@ export function ChiropractorSignupFlow({
   const [step1Billing, setStep1Billing] = useState<"monthly" | "annual">(
     "monthly",
   );
+  const [foundingOffer, setFoundingOffer] = useState<{
+    available: boolean;
+    remaining: number;
+  } | null>(isReview ? { available: false, remaining: 0 } : null);
   const [matchTab, setMatchTab] = useState<
     "modalities" | "focus" | "insurance"
   >("modalities");
@@ -133,12 +137,34 @@ export function ChiropractorSignupFlow({
 
   useEffect(() => {
     if (isReview) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/checkout/founding-availability");
+        const json = (await res.json().catch(() => ({}))) as {
+          available?: boolean;
+          remaining?: number;
+        };
+        if (cancelled) return;
+        setFoundingOffer({
+          available: json.available === true,
+          remaining: typeof json.remaining === "number" ? json.remaining : 0,
+        });
+      } catch {
+        if (!cancelled) setFoundingOffer({ available: false, remaining: 0 });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isReview]);
+
+  useEffect(() => {
+    if (isReview) return;
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout_canceled") === "1") {
-      setSubmitError(
-        "Checkout was canceled. You can try again to complete license verification.",
-      );
+      setSubmitError("Checkout was canceled. You can try again.");
       window.history.replaceState({}, "", "/signup");
       return;
     }
@@ -196,11 +222,13 @@ export function ChiropractorSignupFlow({
         }
         verifiedSessionRef.current = sessionId;
         const plan: SignupPlan =
-          json.plan === "free"
-            ? "free"
-            : json.plan === "annual"
-              ? "annual"
-              : "monthly";
+          json.plan === "founding"
+            ? "founding"
+            : json.plan === "free"
+              ? "free"
+              : json.plan === "annual"
+                ? "annual"
+                : "monthly";
         setPaidCheckoutInfo({
           email: json.email || "",
           plan,
@@ -296,8 +324,12 @@ export function ChiropractorSignupFlow({
       const json = (await res.json().catch(() => ({}))) as {
         url?: string;
         error?: string;
+        code?: string;
       };
       if (!res.ok || !json.url) {
+        if (json.code === "founding_full") {
+          setFoundingOffer({ available: false, remaining: 0 });
+        }
         setSubmitError(json.error || "Could not start checkout.");
         return;
       }
@@ -488,10 +520,16 @@ export function ChiropractorSignupFlow({
   const membershipAsideFooter = (
     <div className={layoutStyles.signupAsideMembership}>
       <p className={layoutStyles.signupAsideMembershipLead}>
-        <strong>Can&apos;t decide on a plan?</strong>
+        <strong>
+          {foundingOffer?.available
+            ? "Founding access is free for life."
+            : "Can't decide on a plan?"}
+        </strong>
       </p>
       <p className={layoutStyles.signupAsideMembershipBody}>
-        Premium members receive up to 80% more leads than free members.
+        {foundingOffer?.available
+          ? "No credit card. Premium, including referrals, is included for the first 1,000 chiropractors."
+          : "Premium members receive up to 80% more leads than free members."}
       </p>
     </div>
   );
@@ -590,9 +628,11 @@ export function ChiropractorSignupFlow({
                   >
                     <CheckCircledIcon className={layoutStyles.signupAlertIcon} />
                     <span>
-                      {paidCheckoutInfo.plan === "free"
-                        ? `Verification fee paid (${paidCheckoutInfo.subscriptionStatus}). `
-                        : `Payment received (${paidCheckoutInfo.plan} · ${paidCheckoutInfo.subscriptionStatus}). `}
+                      {paidCheckoutInfo.plan === "founding"
+                        ? "Founding access confirmed. No card was charged. "
+                        : paidCheckoutInfo.plan === "free"
+                          ? `Verification fee paid (${paidCheckoutInfo.subscriptionStatus}). `
+                          : `Payment received (${paidCheckoutInfo.plan} · ${paidCheckoutInfo.subscriptionStatus}). `}
                       Continue with your profile below.
                     </span>
                   </div>
@@ -620,7 +660,60 @@ export function ChiropractorSignupFlow({
                   </div>
                 )}
 
-                {!paidCheckoutInfo && (
+                {!paidCheckoutInfo && foundingOffer === null && (
+                  <p className={layoutStyles.signupFormSubtext} style={{ margin: 0 }}>
+                    Checking founding spots…
+                  </p>
+                )}
+
+                {!paidCheckoutInfo && foundingOffer?.available && (
+                  <>
+                    <div className={layoutStyles.signupMembershipPlanBody}>
+                      <div className={layoutStyles.signupMembershipPriceWrap}>
+                        <span className={layoutStyles.signupMembershipPriceAmount}>
+                          Free for life
+                        </span>
+                        <span className={layoutStyles.signupMembershipPriceNote}>
+                          {foundingOffer.remaining.toLocaleString()} of 1,000 spots left
+                        </span>
+                      </div>
+                      <div className={layoutStyles.signupMembershipFeatures}>
+                        <p className={layoutStyles.signupMembershipFeaturesHeading}>
+                          Founding member
+                        </p>
+                        <ul
+                          className={layoutStyles.signupMembershipFeaturesList}
+                          aria-label="Founding member benefits"
+                        >
+                          {[
+                            "Premium access, including referrals",
+                            "License verification fee waived",
+                            "Trusted Referrer badge",
+                            "No credit card",
+                          ].map((label) => (
+                            <li key={label} className={layoutStyles.signupMembershipFeatureRow}>
+                              <CheckIcon
+                                className={layoutStyles.signupMembershipFeatureCheck}
+                                aria-hidden
+                              />
+                              <span>{label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupSubmit}
+                      disabled={checkoutStartLoading}
+                      onClick={() => void startGuestCheckout("founding")}
+                    >
+                      {checkoutStartLoading ? "Continuing…" : "Claim founding access"}
+                    </button>
+                  </>
+                )}
+
+                {!paidCheckoutInfo && foundingOffer && !foundingOffer.available && (
                   <>
                     <div
                       className={layoutStyles.signupPlanSegment}
@@ -718,20 +811,22 @@ export function ChiropractorSignupFlow({
             <div
               className={`${layoutStyles.signupMembershipFooterLinks} ${layoutStyles.signupMembershipFooterBelowCard}`}
             >
-              <button
-                type="button"
-                className={layoutStyles.signupMembershipMutedButton}
-                disabled={checkoutStartLoading}
-                onClick={handleStartFree}
-              >
-                {checkoutStartLoading
-                  ? isReview
-                    ? "Continuing…"
-                    : "Redirecting to Stripe…"
-                  : isReview
-                    ? "Free profile — no verification fee"
-                    : "Free profile — verify license ($50)"}
-              </button>
+              {foundingOffer?.available ? null : (
+                <button
+                  type="button"
+                  className={layoutStyles.signupMembershipMutedButton}
+                  disabled={checkoutStartLoading || foundingOffer === null}
+                  onClick={handleStartFree}
+                >
+                  {checkoutStartLoading
+                    ? isReview
+                      ? "Continuing…"
+                      : "Redirecting to Stripe…"
+                    : isReview
+                      ? "Free profile — no verification fee"
+                      : "Free profile — verify license ($50)"}
+                </button>
+              )}
               <Link href="/" className={layoutStyles.signupMembershipBlueLink}>
                 Back to home
               </Link>
@@ -810,9 +905,11 @@ export function ChiropractorSignupFlow({
                         className={layoutStyles.signupAlertIcon}
                       />
                       <span>
-                        {paidCheckoutInfo.plan === "free"
-                          ? `Verified checkout as ${paidCheckoutInfo.email}.`
-                          : `Subscribed as ${paidCheckoutInfo.email}.`}{" "}
+                        {paidCheckoutInfo.plan === "founding"
+                          ? `Founding access confirmed as ${paidCheckoutInfo.email}. No card was charged.`
+                          : paidCheckoutInfo.plan === "free"
+                            ? `Verified checkout as ${paidCheckoutInfo.email}.`
+                            : `Subscribed as ${paidCheckoutInfo.email}.`}{" "}
                         Use the same email below.
                       </span>
                     </div>
