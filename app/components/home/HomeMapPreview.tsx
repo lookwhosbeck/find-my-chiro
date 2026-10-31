@@ -68,12 +68,12 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
       zoom: HERO_ZOOM,
       bearing: 0,
       pitch: 0,
-      /* Drop the continent slightly so the headline stays in the fade, and the US sits under the search. */
-      padding: { top: 72, bottom: 0, left: 0, right: 0 },
       interactive: false,
       attributionControl: false,
       fadeDuration: 0,
     });
+    /* Drop the continent slightly so the headline stays in the fade, and the US sits under the search. */
+    map.setPadding({ top: 72, bottom: 0, left: 0, right: 0 });
     map.on('style.load', () => {
       styleHeroBasemap(map);
       map.setFog({
