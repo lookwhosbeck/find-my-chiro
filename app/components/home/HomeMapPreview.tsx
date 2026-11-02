@@ -7,9 +7,23 @@ import styles from './home-marketing.module.css';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
+/** Wide Atlantic globe. The load animation rotates and zooms from here, matching the old scroll move. */
+const START_CENTER: [number, number] = [-30, 25];
+const START_ZOOM = 0.6;
+const START_BEARING = -25;
+
 /** Settled hero framing: continental US on a light globe, sitting behind the headline. */
 const HERO_CENTER: [number, number] = [-97.5, 38.2];
 const HERO_ZOOM = 3.05;
+const HERO_BEARING = 0;
+
+/** How long the load intro takes to settle. The old version played this over about a viewport of scroll. */
+const INTRO_MS = 2600;
+
+function easeOutCubic(t: number) {
+  const clamped = Math.max(0, Math.min(1, t));
+  return 1 - (1 - clamped) ** 3;
+}
 
 interface HomeMapPreviewProps {
   chiropractors: Chiropractor[];
@@ -37,8 +51,8 @@ function styleHeroBasemap(map: mapboxgl.Map) {
 }
 
 /**
- * Non-interactive globe behind the homepage hero. Opens on North America so the
- * headline and search sit on the map, instead of a separate card below the copy.
+ * Non-interactive globe behind the homepage hero. On load it rotates and zooms
+ * from a wide Atlantic view into the continental US, then stays put behind the headline.
  */
 export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,13 +74,14 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
   useEffect(() => {
     if (!containerRef.current || !MAPBOX_TOKEN) return;
     mapboxgl.accessToken = MAPBOX_TOKEN;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: 'mapbox://styles/mapbox/light-v11',
       projection: 'globe',
-      center: HERO_CENTER,
-      zoom: HERO_ZOOM,
-      bearing: 0,
+      center: reduceMotion ? HERO_CENTER : START_CENTER,
+      zoom: reduceMotion ? HERO_ZOOM : START_ZOOM,
+      bearing: reduceMotion ? HERO_BEARING : START_BEARING,
       pitch: 0,
       interactive: false,
       attributionControl: false,
@@ -87,8 +102,18 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
     map.on('load', () => {
       mapRef.current = map;
       setReady(true);
+      if (reduceMotion) return;
+      map.easeTo({
+        center: HERO_CENTER,
+        zoom: HERO_ZOOM,
+        bearing: HERO_BEARING,
+        duration: INTRO_MS,
+        easing: easeOutCubic,
+        essential: true,
+      });
     });
     return () => {
+      map.stop();
       map.remove();
       mapRef.current = null;
       setReady(false);
