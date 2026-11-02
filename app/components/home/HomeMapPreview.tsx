@@ -12,10 +12,13 @@ const START_CENTER: [number, number] = [-30, 25];
 const START_ZOOM = 0.6;
 const START_BEARING = -25;
 
-/** Settled hero framing: close enough for land greens and major highways behind the headline. */
-const HERO_CENTER: [number, number] = [-97.5, 38.2];
-const HERO_ZOOM = 6.1;
+/** Fallback when no signed-up chiropractors have coordinates yet. */
+const FALLBACK_CENTER: [number, number] = [-97.5, 38.2];
+const FALLBACK_ZOOM = 3.4;
 const HERO_BEARING = 0;
+/** Keep the settled view closer than city scale; 6+ felt too tight for the hero. */
+const HERO_MAX_ZOOM = 4.75;
+const HERO_MIN_ZOOM = 3.0;
 
 /** How long the load intro takes to settle. The old version played this over about a viewport of scroll. */
 const INTRO_MS = 2600;
@@ -23,6 +26,48 @@ const INTRO_MS = 2600;
 function easeOutCubic(t: number) {
   const clamped = Math.max(0, Math.min(1, t));
   return 1 - (1 - clamped) ** 3;
+}
+
+type HeroCamera = { center: [number, number]; zoom: number };
+
+/** Frame the settled camera around where platform chiropractors actually are. */
+function heroCameraForPoints(
+  map: mapboxgl.Map,
+  points: Array<{ latitude: number; longitude: number }>,
+): HeroCamera {
+  if (points.length === 0) {
+    return { center: FALLBACK_CENTER, zoom: FALLBACK_ZOOM };
+  }
+  if (points.length === 1) {
+    return {
+      center: [points[0].longitude, points[0].latitude],
+      zoom: Math.min(4.2, HERO_MAX_ZOOM),
+    };
+  }
+
+  const bounds = new mapboxgl.LngLatBounds();
+  for (const point of points) {
+    bounds.extend([point.longitude, point.latitude]);
+  }
+
+  const camera = map.cameraForBounds(bounds, {
+    padding: { top: 140, bottom: 96, left: 72, right: 72 },
+    maxZoom: HERO_MAX_ZOOM,
+    bearing: HERO_BEARING,
+  });
+  if (!camera?.center || camera.zoom == null) {
+    return { center: FALLBACK_CENTER, zoom: FALLBACK_ZOOM };
+  }
+
+  const lngLat =
+    typeof camera.center === 'object' && 'lng' in camera.center
+      ? camera.center
+      : mapboxgl.LngLat.convert(camera.center);
+
+  return {
+    center: [lngLat.lng, lngLat.lat],
+    zoom: Math.max(HERO_MIN_ZOOM, Math.min(camera.zoom, HERO_MAX_ZOOM)),
+  };
 }
 
 interface HomeMapPreviewProps {
@@ -96,17 +141,18 @@ function styleHeroBasemap(map: mapboxgl.Map) {
 
 /**
  * Non-interactive globe behind the homepage hero. On load it rotates and zooms
- * from a wide Atlantic view into the continental US, then stays put behind the headline.
+ * from a wide Atlantic view into the cluster of signed-up chiropractors, then stays put.
  */
 export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mappableRef = useRef<Array<{ latitude: number; longitude: number }>>([]);
   const [ready, setReady] = useState(false);
 
   const mappable = useMemo(
     () =>
       chiropractors.filter(
-        (c) =>
+        (c): c is Chiropractor & { latitude: number; longitude: number } =>
           c.latitude != null &&
           c.longitude != null &&
           Number.isFinite(c.latitude) &&
@@ -114,6 +160,7 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
       ),
     [chiropractors],
   );
+  mappableRef.current = mappable;
 
   useEffect(() => {
     if (!containerRef.current || !MAPBOX_TOKEN) return;
@@ -123,8 +170,8 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
       container: containerRef.current,
       style: 'mapbox://styles/mapbox/light-v11',
       projection: 'globe',
-      center: reduceMotion ? HERO_CENTER : START_CENTER,
-      zoom: reduceMotion ? HERO_ZOOM : START_ZOOM,
+      center: reduceMotion ? FALLBACK_CENTER : START_CENTER,
+      zoom: reduceMotion ? FALLBACK_ZOOM : START_ZOOM,
       bearing: reduceMotion ? HERO_BEARING : START_BEARING,
       pitch: 0,
       interactive: false,
@@ -146,10 +193,18 @@ export function HomeMapPreview({ chiropractors }: HomeMapPreviewProps) {
     map.on('load', () => {
       mapRef.current = map;
       setReady(true);
-      if (reduceMotion) return;
+      const target = heroCameraForPoints(map, mappableRef.current);
+      if (reduceMotion) {
+        map.jumpTo({
+          center: target.center,
+          zoom: target.zoom,
+          bearing: HERO_BEARING,
+        });
+        return;
+      }
       map.easeTo({
-        center: HERO_CENTER,
-        zoom: HERO_ZOOM,
+        center: target.center,
+        zoom: target.zoom,
         bearing: HERO_BEARING,
         duration: INTRO_MS,
         easing: easeOutCubic,
