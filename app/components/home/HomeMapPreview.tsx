@@ -12,9 +12,9 @@ const START_CENTER: [number, number] = [-30, 25];
 const START_ZOOM = 0.6;
 const START_BEARING = -25;
 
-/** Settled hero framing: continental US on a light globe, sitting behind the headline. */
+/** Settled hero framing: close enough for land greens and major highways behind the headline. */
 const HERO_CENTER: [number, number] = [-97.5, 38.2];
-const HERO_ZOOM = 3.05;
+const HERO_ZOOM = 6.1;
 const HERO_BEARING = 0;
 
 /** How long the load intro takes to settle. The old version played this over about a viewport of scroll. */
@@ -47,6 +47,50 @@ function styleHeroBasemap(map: mapboxgl.Map) {
   }
   if (map.getLayer('background')) {
     map.setPaintProperty('background', 'background-color', '#e7f3fb');
+  }
+
+  /* Light-v11 keeps parks gray and roads hairline; nudge them so the hero reads as land + highways. */
+  try {
+    if (map.getLayer('national-park')) {
+      map.setPaintProperty('national-park', 'fill-color', '#a8cfa8');
+      map.setPaintProperty('national-park', 'fill-opacity', 0.78);
+    }
+    if (map.getLayer('landuse')) {
+      map.setPaintProperty('landuse', 'fill-color', [
+        'match',
+        ['get', 'class'],
+        ['park', 'pitch', 'grass', 'cemetery', 'wood', 'scrub'],
+        '#b7d8b5',
+        ['residential', 'airport'],
+        'hsl(220, 8%, 94%)',
+        'hsl(220, 5%, 92%)',
+      ]);
+      map.setPaintProperty('landuse', 'fill-opacity', 0.6);
+    }
+    if (map.getLayer('road-simple')) {
+      map.setPaintProperty('road-simple', 'line-color', [
+        'match',
+        ['get', 'class'],
+        ['motorway', 'trunk'],
+        '#9aa3b2',
+        ['primary'],
+        '#b4bbc7',
+        'hsl(220, 1%, 100%)',
+      ]);
+      map.setPaintProperty('road-simple', 'line-width', [
+        'interpolate',
+        ['exponential', 1.5],
+        ['zoom'],
+        5,
+        ['match', ['get', 'class'], ['motorway', 'trunk'], 1.6, ['primary'], 0.9, 0],
+        8,
+        ['match', ['get', 'class'], ['motorway', 'trunk'], 3, ['primary'], 1.7, 0],
+        12,
+        ['match', ['get', 'class'], ['motorway', 'trunk'], 5, ['primary'], 2.6, 0],
+      ]);
+    }
+  } catch {
+    /* Style variants may omit these layer ids. */
   }
 }
 
