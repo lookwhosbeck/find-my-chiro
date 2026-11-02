@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * Idempotent: sends Brevo E2 (welcome + Loom) once the user is a confirmed chiropractor.
+ * Idempotent: sends Brevo E2 (welcome) once the user is a confirmed chiropractor.
  */
 export async function POST(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();

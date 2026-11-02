@@ -90,15 +90,14 @@ export async function sendBrevoSignupVerificationEmail(args: {
 }
 
 /**
- * E2 — Welcome + Loom (Chiropractor). Params: profileUrl, loomUrl (+ FIRSTNAME / LASTNAME for merge tags).
+ * E2 — Welcome (Chiropractor). Params: profileUrl (+ FIRSTNAME / LASTNAME for merge tags).
  */
 export async function sendBrevoChiropractorWelcomeEmail(args: {
   to: BrevoRecipient;
   profileUrl: string;
-  loomUrl: string;
   templateId: number;
 }): Promise<void> {
-  const { to, profileUrl, loomUrl, templateId } = args;
+  const { to, profileUrl, templateId } = args;
   const display = to.name?.trim() || to.email;
 
   await postBrevo({
@@ -106,7 +105,6 @@ export async function sendBrevoChiropractorWelcomeEmail(args: {
     templateId,
     params: {
       profileUrl,
-      loomUrl,
       ...recipientNameParams(display),
     },
   });

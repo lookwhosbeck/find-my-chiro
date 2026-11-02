@@ -30,14 +30,10 @@ export async function sendChiropractorWelcomeEmailIfNeeded(args: {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const loomUrl = process.env.CHIRO_WELCOME_LOOM_URL?.trim();
   const templateId = Number(process.env.BREVO_CHIRO_WELCOME_TEMPLATE_ID ?? '12');
 
   if (!url || !service || url === 'https://placeholder.supabase.co') {
     return { sent: false, skippedReason: 'supabase_not_configured' };
-  }
-  if (!loomUrl) {
-    return { sent: false, skippedReason: 'loom_url_not_configured' };
   }
 
   const admin = createClient(url, service);
@@ -72,7 +68,6 @@ export async function sendChiropractorWelcomeEmailIfNeeded(args: {
     await sendBrevoChiropractorWelcomeEmail({
       to: { email: args.email, name: displayName },
       profileUrl,
-      loomUrl,
       templateId,
     });
   } catch (e) {
