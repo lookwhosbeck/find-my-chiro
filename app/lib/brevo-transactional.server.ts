@@ -199,3 +199,28 @@ export async function sendBrevoReferralTemplateEmail(args: {
     params: args.params,
   });
 }
+
+/**
+ * E10 — Friend invite after chiro signup. Params: INVITER_NAME, signupUrl
+ * (+ FIRSTNAME / LASTNAME of invitee when known).
+ */
+export async function sendBrevoFriendInviteEmail(args: {
+  to: BrevoRecipient;
+  inviterName: string;
+  signupUrl: string;
+  templateId: number;
+}): Promise<void> {
+  const { to, inviterName, signupUrl, templateId } = args;
+  const display = to.name?.trim() || to.email;
+  const inviter = inviterName.trim() || 'A colleague';
+
+  await postBrevo({
+    to: [{ email: to.email, name: display }],
+    templateId,
+    params: {
+      INVITER_NAME: inviter,
+      signupUrl,
+      ...recipientNameParams(display),
+    },
+  });
+}

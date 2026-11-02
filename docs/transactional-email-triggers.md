@@ -31,8 +31,9 @@ Numeric IDs below match the current Brevo transactional templates (names as in B
 | — | *(optional)* Accept / decline notify referring | `POST /api/referrals/respond` | `BREVO_REFERRAL_ACCEPTED_TEMPLATE_ID` / `BREVO_REFERRAL_DECLINED_TEMPLATE_ID` (omit to skip) |
 | 19 | E8 60-Day Outcome Check | *(not wired in app)* | Longitudinal product; separate spec — do not use as accept/decline |
 | 20 | E9 First Referral Received Milestone | *(not wired in app)* | Engagement; separate from referral respond flow |
+| 29 | E10 Friend Invite (Chiropractor) | end of chiro signup (`POST /api/email/friend-invite`) | `sendFriendInviteEmail()` |
 
-Template HTML reads `params.*` (`params.FIRSTNAME`, `params.LASTNAME`, and the referral keys). Do not use `{{ contact.* }}` — the app does not create Brevo contacts, so those tags render blank. Referral merge keys are built in [`referral-emails.server.ts`](../app/lib/referral-emails.server.ts).
+Template HTML reads `params.*` (`params.FIRSTNAME`, `params.LASTNAME`, and the referral keys). Do not use `{{ contact.* }}` — the app does not create Brevo contacts, so those tags render blank. Referral merge keys are built in [`referral-emails.server.ts`](../app/lib/referral-emails.server.ts). Friend invite uses `params.INVITER_NAME` and `params.signupUrl` (see [`friend-invite-email.server.ts`](../app/lib/friend-invite-email.server.ts)).
 
 ## Longitudinal / patient follow-up (future)
 

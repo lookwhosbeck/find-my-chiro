@@ -69,6 +69,10 @@ export function ChiropractorSignupFlow({
   const [verifyCheckoutLoading, setVerifyCheckoutLoading] = useState(false);
   const [checkoutStartLoading, setCheckoutStartLoading] = useState(false);
   const [finalSubmitLoading, setFinalSubmitLoading] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSentTo, setInviteSentTo] = useState<string | null>(null);
   const [paidCheckoutInfo, setPaidCheckoutInfo] =
     useState<PaidCheckoutInfo | null>(null);
   const [reviewReady, setReviewReady] = useState(false);
@@ -492,11 +496,53 @@ export function ChiropractorSignupFlow({
       }
 
       setSubmitSuccess(true);
-      setTimeout(() => router.push("/account"), 2000);
     } catch (e: unknown) {
       setSubmitError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setFinalSubmitLoading(false);
+    }
+  };
+
+  const sendFriendInvite = async () => {
+    const email = inviteEmail.trim();
+    if (!email) {
+      setInviteError("Enter an email address.");
+      return;
+    }
+
+    setInviteLoading(true);
+    setInviteError(null);
+    setInviteSentTo(null);
+
+    try {
+      const session = await resolveBrowserSession(supabase);
+      if (!session?.access_token) {
+        setInviteError("Sign in to send invites.");
+        return;
+      }
+
+      const res = await fetch("/api/email/friend-invite", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setInviteError(body.error || "Could not send the invite.");
+        return;
+      }
+
+      setInviteSentTo(email);
+      setInviteEmail("");
+    } catch (e: unknown) {
+      setInviteError(
+        e instanceof Error ? e.message : "Could not send the invite.",
+      );
+    } finally {
+      setInviteLoading(false);
     }
   };
 
@@ -861,11 +907,97 @@ export function ChiropractorSignupFlow({
               )}
 
               {submitSuccess && !needsEmailVerify && (
-                <div
-                  className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertSuccess}`}
-                >
-                  <CheckCircledIcon className={layoutStyles.signupAlertIcon} />
-                  <span>Welcome! Redirecting to your account…</span>
+                <div className={layoutStyles.signupFormStack}>
+                  <div
+                    className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertSuccess}`}
+                  >
+                    <CheckCircledIcon
+                      className={layoutStyles.signupAlertIcon}
+                    />
+                    <span>You&apos;re in. Account created successfully.</span>
+                  </div>
+
+                  <h2 className={layoutStyles.signupFormSectionTitle}>
+                    Know another chiropractor who should join Movyn?
+                  </h2>
+                  <p className={layoutStyles.signupFormSubtext}>
+                    Send them an invite. We&apos;ll email a signup link that says
+                    you invited them.
+                  </p>
+
+                  <div className={layoutStyles.signupFields}>
+                    <div className={layoutStyles.signupField}>
+                      <label
+                        className={layoutStyles.signupLabel}
+                        htmlFor="signup-friend-invite-email"
+                      >
+                        Friend&apos;s email
+                      </label>
+                      <input
+                        id="signup-friend-invite-email"
+                        type="email"
+                        className={layoutStyles.signupInput}
+                        value={inviteEmail}
+                        onChange={(e) => {
+                          setInviteEmail(e.target.value);
+                          setInviteError(null);
+                        }}
+                        placeholder="colleague@clinic.com"
+                        autoComplete="email"
+                        disabled={inviteLoading}
+                      />
+                    </div>
+                  </div>
+
+                  {inviteSentTo && (
+                    <div
+                      className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertSuccess}`}
+                    >
+                      <CheckCircledIcon
+                        className={layoutStyles.signupAlertIcon}
+                      />
+                      <span>Invite sent to {inviteSentTo}.</span>
+                    </div>
+                  )}
+
+                  {inviteError && (
+                    <div
+                      className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertError}`}
+                    >
+                      <InfoCircledIcon
+                        className={layoutStyles.signupAlertIcon}
+                      />
+                      <span>{inviteError}</span>
+                    </div>
+                  )}
+
+                  <div className={layoutStyles.signupFormActions}>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupButtonGhost}
+                      onClick={() => router.push("/account")}
+                    >
+                      Skip for now
+                    </button>
+                    <button
+                      type="button"
+                      className={layoutStyles.signupSubmit}
+                      disabled={inviteLoading || !inviteEmail.trim()}
+                      onClick={() => void sendFriendInvite()}
+                    >
+                      {inviteLoading ? "Sending…" : "Send invite"}
+                    </button>
+                  </div>
+
+                  {inviteSentTo && (
+                    <button
+                      type="button"
+                      className={layoutStyles.signupSubmit}
+                      onClick={() => router.push("/account")}
+                    >
+                      Continue to account
+                    </button>
+                  )}
                 </div>
               )}
 
