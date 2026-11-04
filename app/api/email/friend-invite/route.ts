@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     inviteeEmail,
   });
 
-  if (!result.ok) {
+  if (result.ok === false) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 

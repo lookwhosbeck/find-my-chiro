@@ -28,6 +28,7 @@ async function loadFoundingAvailability(): Promise<PublicFoundingAvailability> {
 /** Stripe redemption count, cached briefly so the site banner does not call Stripe on every request. */
 export const getCachedFoundingAvailability = unstable_cache(
   loadFoundingAvailability,
-  ['founding-availability'],
-  { revalidate: 60 },
+  // Include promo id so rotating FOUNDING1000 after test redemptions busts the Data Cache.
+  ['founding-availability', process.env.STRIPE_FOUNDING_PROMOTION_CODE_ID ?? 'none'],
+  { revalidate: 60, tags: ['founding-availability'] },
 );

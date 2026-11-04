@@ -64,11 +64,11 @@ export async function POST(req: NextRequest) {
     .eq('stripe_checkout_session_id', claim.sessionId)
     .maybeSingle();
 
-  if (fetchErr || !row) {
-    return NextResponse.json({ error: 'Checkout claim not found' }, { status: 404 });
+  if (fetchErr) {
+    console.error('link-stripe-checkout claim fetch:', fetchErr);
   }
 
-  const linked = row.linked_user_id as string | null;
+  const linked = (row?.linked_user_id as string | null | undefined) ?? null;
   if (linked && linked !== user.id) {
     return NextResponse.json({ error: 'This checkout is already linked to another account' }, { status: 409 });
   }
@@ -86,8 +86,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Chiropractor account required' }, { status: 403 });
   }
 
-  const customerId = row.stripe_customer_id as string;
-  const subId = row.stripe_subscription_id as string | null;
+  // Prefer DB row when present; fall back to signed cookie (verify-return) if upsert failed.
+  const customerId =
+    (row?.stripe_customer_id as string | undefined) || claim.customerId;
+  const subId =
+    (row?.stripe_subscription_id as string | null | undefined) ?? claim.subscriptionId;
+
+  if (!customerId) {
+    return NextResponse.json({ error: 'Checkout claim not found' }, { status: 404 });
+  }
+
+  if (!row) {
+    const { error: upsertErr } = await admin.from('checkout_signup_claims').upsert(
+      {
+        stripe_checkout_session_id: claim.sessionId,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subId,
+        email: claim.email,
+        price_id: claim.priceId,
+      },
+      { onConflict: 'stripe_checkout_session_id' },
+    );
+    if (upsertErr) {
+      console.error('link-stripe-checkout claim upsert:', upsertErr);
+    }
+  }
 
   if (!subId) {
     try {

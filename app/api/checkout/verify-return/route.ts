@@ -125,9 +125,10 @@ export async function POST(req: NextRequest) {
       { onConflict: 'stripe_checkout_session_id' },
     );
 
+    // Cookie claim is authoritative for guest signup; DB row is best-effort
+    // (audit trigger historically broke inserts on tables without an `id` column).
     if (upsertErr) {
       console.error('verify-return upsert (payment):', upsertErr);
-      return NextResponse.json({ error: 'Could not save checkout claim' }, { status: 500 });
     }
 
     const payload: Omit<CheckoutClaimPayload, 'exp'> = {
@@ -190,9 +191,10 @@ export async function POST(req: NextRequest) {
     { onConflict: 'stripe_checkout_session_id' },
   );
 
+  // Cookie claim is authoritative for guest signup; DB row is best-effort
+  // (audit trigger historically broke inserts on tables without an `id` column).
   if (upsertErr) {
     console.error('verify-return upsert:', upsertErr);
-    return NextResponse.json({ error: 'Could not save checkout claim' }, { status: 500 });
   }
 
   const payload: Omit<CheckoutClaimPayload, 'exp'> = {

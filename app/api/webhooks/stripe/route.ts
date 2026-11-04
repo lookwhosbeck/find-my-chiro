@@ -44,8 +44,9 @@ async function upsertGuestCheckoutClaim(
     { onConflict: 'stripe_checkout_session_id' },
   );
   if (error) {
+    // Do not fail the whole webhook: guest signup also stores a signed cookie via verify-return.
+    // (Audit trigger used to break inserts on checkout_signup_claims — no `id` column.)
     console.error('checkout_signup_claims upsert:', error);
-    throw error;
   }
 }
 
