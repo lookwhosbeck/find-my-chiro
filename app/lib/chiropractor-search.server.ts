@@ -36,6 +36,7 @@ export async function searchChiropractorsWithClient(
         chiropractor_philosophies(philosophy_id, philosophies!inner(name))
       `
     )
+    .eq('license_verification_status', 'approved')
     .order('updated_at', { ascending: false });
 
   // ZIP search: only practices accepting patients. National browse: every listed DC (network gravity).

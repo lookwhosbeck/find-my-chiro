@@ -35,6 +35,7 @@ async function fetchHomeMapChiropractors(limit: number): Promise<Chiropractor[]>
     `,
     )
     .eq('accepting_new_patients', true)
+    .eq('license_verification_status', 'approved')
     .limit(limit)
     .order('updated_at', { ascending: false });
 
@@ -64,12 +65,12 @@ async function fetchHomeMapChiropractors(limit: number): Promise<Chiropractor[]>
 
 export const getCachedHomeMarqueeChiropractors = unstable_cache(
   async () => getChiropractors(14),
-  ['home-marquee-chiropractors'],
+  ['home-marquee-chiropractors-approved'],
   { revalidate: 300, tags: ['home-chiropractors'] },
 );
 
 export const getCachedHomeMapChiropractors = unstable_cache(
   async () => fetchHomeMapChiropractors(2000),
-  ['home-map-chiropractors-points'],
+  ['home-map-chiropractors-points-approved'],
   { revalidate: 300, tags: ['home-chiropractors'] },
 );

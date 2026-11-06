@@ -104,6 +104,7 @@ export async function getChiropractors(limit: number = 4): Promise<Chiropractor[
         chiropractor_philosophies(philosophies(name))
       `)
       .eq('accepting_new_patients', true)
+      .eq('license_verification_status', 'approved')
       .limit(limit)
       .order('updated_at', { ascending: false });
 

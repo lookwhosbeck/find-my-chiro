@@ -32,6 +32,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       )
       .eq('id', id)
       .eq('accepting_new_patients', true)
+      .eq('license_verification_status', 'approved')
       .maybeSingle();
 
     if (error) {
