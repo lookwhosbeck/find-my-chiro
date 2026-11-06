@@ -11,6 +11,25 @@ const GEO_CANDIDATE_CAP = 500;
 /** Browse mode (no ZIP): allow high limits so the map can show the full directory. */
 const BROWSE_FETCH_CAP = 5000;
 
+function directorySelect(includeFoundingMember: boolean): string {
+  const profileColumns = includeFoundingMember
+    ? 'first_name, last_name, email, avatar_url, founding_member'
+    : 'first_name, last_name, email, avatar_url';
+  return `
+        *,
+        profiles!inner(${profileColumns}),
+        organizations!inner(name, city, state, zip_code, phone, website, address_line_1, latitude, longitude),
+        chiropractor_modalities(modality_id, modalities!inner(name)),
+        chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
+        chiropractor_payment_models(payment_model_id, payment_models!inner(name)),
+        chiropractor_philosophies(philosophy_id, philosophies!inner(name))
+      `;
+}
+
+function isMissingFoundingMemberColumn(error: { code?: string; message?: string } | null): boolean {
+  return error?.code === '42703' && /founding_member/i.test(error.message || '');
+}
+
 export async function searchChiropractorsWithClient(
   supabase: SupabaseClient,
   filters: PatientSearchFilters,
@@ -23,31 +42,30 @@ export async function searchChiropractorsWithClient(
       : 25
   );
 
-  let query = supabase
-    .from('chiropractors')
-    .select(
-      `
-        *,
-        profiles!inner(first_name, last_name, email, avatar_url, founding_member),
-        organizations!inner(name, city, state, zip_code, phone, website, address_line_1, latitude, longitude),
-        chiropractor_modalities(modality_id, modalities!inner(name)),
-        chiropractor_focus_areas(focus_area_id, focus_areas!inner(name)),
-        chiropractor_payment_models(payment_model_id, payment_models!inner(name)),
-        chiropractor_philosophies(philosophy_id, philosophies!inner(name))
-      `
-    )
-    .eq('license_verification_status', 'approved')
-    .order('updated_at', { ascending: false });
-
-  // ZIP search: only practices accepting patients. National browse: every listed DC (network gravity).
-  if (baseZip) {
-    query = query.eq('accepting_new_patients', true);
-  }
-
   // ZIP: over-fetch for radius filtering. Browse: always load up to BROWSE_FETCH_CAP so scoring/sorting uses the
   // full directory pool; `limit` only trims the returned slice (list vs map can use same response).
   const fetchCap = baseZip ? GEO_CANDIDATE_CAP : BROWSE_FETCH_CAP;
-  const { data, error } = await query.limit(fetchCap);
+
+  const fetchDirectory = (includeFoundingMember: boolean) => {
+    let query = supabase
+      .from('chiropractors')
+      .select(directorySelect(includeFoundingMember))
+      .eq('license_verification_status', 'approved')
+      .order('updated_at', { ascending: false });
+
+    // ZIP search: only practices accepting patients. National browse: every listed DC (network gravity).
+    if (baseZip) {
+      query = query.eq('accepting_new_patients', true);
+    }
+
+    return query.limit(fetchCap);
+  };
+
+  let { data, error } = await fetchDirectory(true);
+  // Migration 20261031195158 adds this column. Until it is applied, keep the map directory intact.
+  if (isMissingFoundingMemberColumn(error)) {
+    ({ data, error } = await fetchDirectory(false));
+  }
 
   if (error) {
     console.error('Error searching chiropractors:', error);

@@ -29,7 +29,9 @@ export async function POST(req: NextRequest) {
     };
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // Service role so every approved practice is listed, including accounts whose profile role is admin.
+    // The handler returns the mapped public directory shape, not raw profile rows.
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!url || !key || url === 'https://placeholder.supabase.co') {
       return NextResponse.json([]);
