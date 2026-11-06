@@ -1,49 +1,61 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import type { EmailOtpType } from '@supabase/supabase-js';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import { sendChiropractorWelcomeEmailIfNeeded } from '@/app/lib/chiropractor-welcome-email.server';
 
 /**
- * Supabase Auth email confirmation / OAuth redirect handler.
- * Set Site URL and Redirect URLs in Supabase Dashboard to include this path.
+ * OAuth / PKCE `?code=` redirect handler.
+ * Email confirmation links should use `/auth/confirm` (token_hash + verifyOtp)
+ * so they work outside the signup browser. This route still accepts token_hash
+ * as a fallback for older links.
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const tokenHash = searchParams.get('token_hash');
+  const typeRaw = searchParams.get('type');
   const nextRaw = searchParams.get('next');
   const next = nextRaw?.startsWith('/') ? nextRaw : '/account';
 
-  if (!code) {
+  if (!code && !(tokenHash && typeRaw)) {
     return NextResponse.redirect(`${origin}/signin?error=auth_callback`);
   }
 
-  const cookieStore = await cookies();
+  const redirectResponse = NextResponse.redirect(`${origin}${next}`);
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch {
-            /* set from Server Component only — ignore if middleware context */
-          }
+          cookiesToSet.forEach(({ name, value, options }) => {
+            redirectResponse.cookies.set(name, value, options);
+          });
         },
       },
     },
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
-  if (error) {
-    console.error('auth callback exchange:', error.message);
-    return NextResponse.redirect(`${origin}/signin?error=auth_exchange`);
+  if (tokenHash && typeRaw) {
+    const { error } = await supabase.auth.verifyOtp({
+      type: typeRaw as EmailOtpType,
+      token_hash: tokenHash,
+    });
+    if (error) {
+      console.error('auth callback verifyOtp:', error.message);
+      return NextResponse.redirect(`${origin}/signin?error=auth_exchange`);
+    }
+  } else if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      console.error('auth callback exchange:', error.message);
+      return NextResponse.redirect(`${origin}/signin?error=auth_exchange`);
+    }
   }
 
   const {
@@ -65,5 +77,5 @@ export async function GET(request: Request) {
     });
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return redirectResponse;
 }

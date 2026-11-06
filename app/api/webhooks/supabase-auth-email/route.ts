@@ -7,8 +7,9 @@ import {
   sendBrevoSignupVerificationEmail,
   sendBrevoSimpleTransactional,
 } from '@/app/lib/brevo-transactional.server';
-import { defaultAuthCallbackUrl } from '@/app/lib/app-origin.server';
+import { canonicalAppOrigin, defaultAuthCallbackUrl } from '@/app/lib/app-origin.server';
 import {
+  buildAppAuthConfirmUrl,
   buildSupabaseAuthVerifyUrl,
   type SupabaseEmailActionType,
 } from '@/app/lib/supabase-auth-verify-url';
@@ -96,7 +97,15 @@ export async function POST(req: NextRequest) {
       if (!tokenHash) {
         return NextResponse.json({ error: 'Missing token_hash' }, { status: 400 });
       }
-      const verificationUrl = buildSupabaseAuthVerifyUrl(supabaseUrl, tokenHash, action, redirectToRaw);
+      // App /auth/confirm + verifyOtp (token_hash) — works on any device.
+      // Do not use Supabase /auth/v1/verify → ?code= PKCE exchange; that fails
+      // when the email is opened outside the signup browser (phone, Gmail app).
+      const verificationUrl = buildAppAuthConfirmUrl(
+        canonicalAppOrigin(),
+        tokenHash,
+        action,
+        '/account',
+      );
       await sendBrevoSignupVerificationEmail({
         to: { email: userEmail, name: displayName },
         verificationUrl,
@@ -122,7 +131,7 @@ export async function POST(req: NextRequest) {
       if (!tokenHash) {
         return NextResponse.json({ error: 'Missing token_hash' }, { status: 400 });
       }
-      const link = buildSupabaseAuthVerifyUrl(supabaseUrl, tokenHash, 'reauthentication', redirectToRaw);
+      const link = buildAppAuthConfirmUrl(canonicalAppOrigin(), tokenHash, 'reauthentication', '/account');
       const otp = str(email_data.token);
       await sendBrevoSimpleTransactional({
         to: { email: userEmail, name: displayName },
@@ -141,7 +150,12 @@ export async function POST(req: NextRequest) {
 
       // Supabase secure email change: current address uses token + token_hash_new; new address uses token_new + token_hash.
       if (token && tokenHashNew) {
-        const urlCurrent = buildSupabaseAuthVerifyUrl(supabaseUrl, tokenHashNew, 'email_change', redirectToRaw);
+        const urlCurrent = buildAppAuthConfirmUrl(
+          canonicalAppOrigin(),
+          tokenHashNew,
+          'email_change',
+          '/account',
+        );
         await sendBrevoSimpleTransactional({
           to: { email: userEmail, name: displayName },
           subject: 'Confirm your email change',
@@ -150,7 +164,7 @@ export async function POST(req: NextRequest) {
         });
       }
       if (newEmail && tokenNew && tokenHash) {
-        const urlNew = buildSupabaseAuthVerifyUrl(supabaseUrl, tokenHash, 'email_change', redirectToRaw);
+        const urlNew = buildAppAuthConfirmUrl(canonicalAppOrigin(), tokenHash, 'email_change', '/account');
         await sendBrevoSimpleTransactional({
           to: { email: newEmail, name: displayName },
           subject: 'Confirm your new email address',
@@ -164,7 +178,7 @@ export async function POST(req: NextRequest) {
     if (!tokenHash) {
       return NextResponse.json({ error: 'Unsupported auth email action' }, { status: 501 });
     }
-    const fallbackUrl = buildSupabaseAuthVerifyUrl(supabaseUrl, tokenHash, action, redirectToRaw);
+    const fallbackUrl = buildAppAuthConfirmUrl(canonicalAppOrigin(), tokenHash, action, '/account');
     await sendBrevoSimpleTransactional({
       to: { email: userEmail, name: displayName },
       subject: 'Movyn account',

@@ -56,8 +56,8 @@ After deployment, update Supabase:
 1. Go to: https://supabase.com/dashboard/project/rioybgvxkbsmwgqonbaa/auth/url-configuration
 2. Set:
    - **Site URL**: `https://movynalong.com`
-   - **Redirect URLs**: `https://movynalong.com/auth/callback` (add `https://www.movynalong.com/auth/callback` if you use www; add each Vercel preview URL you use for testing, e.g. `https://your-app-git-branch-team.vercel.app/auth/callback`)
-3. If you use the Send Email hook: hook URL `https://movynalong.com/api/webhooks/supabase-auth-email` (or your preview URL while testing)
+   - **Redirect URLs**: `https://movynalong.com/auth/callback`, `https://movynalong.com/auth/confirm`, `https://movynalong.com/reset-password` (add www / preview variants as needed, e.g. `https://your-app-git-branch-team.vercel.app/auth/confirm`)
+3. If you use the Send Email hook: hook URL `https://movynalong.com/api/webhooks/supabase-auth-email` (or your preview URL while testing). Signup verification emails link to `/auth/confirm?token_hash=...` (not Supabase `/auth/v1/verify`) so confirmation works on any device.
 
 ## That's It!
 

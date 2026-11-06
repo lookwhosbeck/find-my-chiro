@@ -26,7 +26,9 @@ export default function SignInPage() {
       if (qErr === 'auth_callback') {
         setError('Sign-in was interrupted. Try again or use a fresh link from your email.');
       } else if (qErr === 'auth_exchange') {
-        setError('We could not complete sign-in. Try again or contact support.');
+        setError(
+          'That verification link could not be completed. Try signing in with your password — your email may already be confirmed.',
+        );
       } else if (qErr === 'email_not_confirmed' || sp.get('notice') === 'verify_email') {
         setError(
           'Confirm your email before signing in. Check your inbox for the Movyn verification message.',
