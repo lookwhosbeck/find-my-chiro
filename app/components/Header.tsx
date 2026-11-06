@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { resolveBrowserSession } from "@/app/lib/auth-session-client";
+import { signOutBrowser } from "@/app/lib/sign-out-client";
 import { supabase } from "@/app/lib/supabase";
 import { PROFILE_UPDATED_EVENT } from "@/app/lib/profile-events";
 import { MovynLogo } from "@/app/components/MovynLogo";
@@ -165,18 +166,15 @@ export function Header({ embedded = false, surface = "onDark" }: HeaderProps) {
     if (signingOut) return;
     setSigningOut(true);
     setSheetOpen(false);
-    const goHome = () => {
-      window.location.assign("/");
-    };
-    const safetyNav = window.setTimeout(goHome, 1200);
+    // Optimistic UI so the nav flips immediately; cookies are cleared before reload.
+    setUser(null);
+    setProfile(null);
     void (async () => {
       try {
-        await supabase.auth.signOut({ scope: "local" });
-      } catch {
-        /* still navigate */
+        await signOutBrowser(supabase);
       } finally {
-        window.clearTimeout(safetyNav);
-        goHome();
+        // Hard nav so middleware + Header remount see cleared auth cookies.
+        window.location.assign("/");
       }
     })();
   };
