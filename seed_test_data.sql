@@ -65,6 +65,7 @@ INSERT INTO philosophies (name) VALUES
 ('Functional'),
 ('Sports Medicine'),
 ('Neurological'),
+('Nervous System Based'),
 ('Holistic Wellness'),
 ('Structural Correction'),
 ('Functional Medicine'),
