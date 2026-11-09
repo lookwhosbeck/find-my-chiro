@@ -122,7 +122,7 @@ function SearchPageContent() {
 
   const modalityOptions = ['Gonstead', 'Diversified', 'Activator', 'TRT', 'SOT', 'Thompson', 'Webster', 'Cox'];
   const focusAreaOptions = ['Pediatrics', 'Sports', 'Auto Injury', 'Wellness', 'Prenatal', 'Geriatric'];
-  const philosophyOptions = ['Evidence-Based', 'Holistic', 'Traditional', 'Functional', 'Sports Medicine', 'Neurological'];
+  const philosophyOptions = ['Evidence-Based', 'Holistic', 'Traditional', 'Functional', 'Sports Medicine', 'Neurological', 'Nervous System Based'];
   const paymentOptions = ['Cash-based', 'Insurance-based', 'Hybrid'];
 
   const performSearch = useCallback(async () => {

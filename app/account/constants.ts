@@ -31,6 +31,7 @@ export const PHILOSOPHY_OPTIONS = [
   'Functional',
   'Sports Medicine',
   'Neurological',
+  'Nervous System Based',
   'Holistic Wellness',
   'Structural Correction',
   'Functional Medicine',
