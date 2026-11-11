@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { canonicalAppOrigin } from '@/app/lib/app-origin.server';
 import { sendChiropractorProfileLiveEmailIfNeeded } from '@/app/lib/chiropractor-welcome-email.server';
 
 type AdminAuthResult =
@@ -163,9 +165,15 @@ export async function PATCH(req: NextRequest) {
   }
 
   const id = typeof body.id === 'string' ? body.id.trim() : '';
-  const status = body.status === 'approved' || body.status === 'rejected' ? body.status : null;
+  const status =
+    body.status === 'approved' || body.status === 'pending_review' || body.status === 'rejected'
+      ? body.status
+      : null;
   if (!id || !status) {
-    return NextResponse.json({ error: 'Expected { id: string, status: "approved" | "rejected" }' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Expected { id: string, status: "approved" | "pending_review" | "rejected" }' },
+      { status: 400 },
+    );
   }
 
   const admin = createClient(url, service, {
@@ -215,5 +223,66 @@ export async function PATCH(req: NextRequest) {
     void sendChiropractorProfileLiveEmailIfNeeded(id);
   }
 
+  if (beforeRow.license_verification_status !== updated.license_verification_status) {
+    revalidateTag('home-chiropractors');
+  }
+
   return NextResponse.json({ ok: true, id, verificationStatus: updated.license_verification_status });
+}
+
+export async function POST(req: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !service || url === 'https://placeholder.supabase.co') {
+    return NextResponse.json({ error: 'not_configured' }, { status: 501 });
+  }
+
+  const auth = await requireAdmin(req);
+  if (auth.ok === false) return auth.response;
+
+  const body = (await req.json().catch(() => null)) as { id?: unknown } | null;
+  const id = body && typeof body.id === 'string' ? body.id.trim() : '';
+  if (!id) {
+    return NextResponse.json({ error: 'Expected { id: string }' }, { status: 400 });
+  }
+
+  const admin = createClient(url, service, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: profile, error: profileErr } = await admin
+    .from('profiles')
+    .select('email, role')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (profileErr) {
+    console.error('admin chiropractors resend profile:', profileErr);
+    return NextResponse.json({ error: profileErr.message }, { status: 500 });
+  }
+  if (!profile?.email || profile.role !== 'chiropractor') {
+    return NextResponse.json({ error: 'Chiropractor not found' }, { status: 404 });
+  }
+
+  const { data: userData, error: userErr } = await admin.auth.admin.getUserById(id);
+  if (userErr || !userData.user) {
+    return NextResponse.json({ error: 'Auth user not found' }, { status: 404 });
+  }
+  if (userData.user.email_confirmed_at) {
+    return NextResponse.json({ error: 'This email is already confirmed.' }, { status: 409 });
+  }
+
+  const { error: resendErr } = await admin.auth.resend({
+    type: 'signup',
+    email: profile.email,
+    options: { emailRedirectTo: `${canonicalAppOrigin()}/auth/callback` },
+  });
+
+  if (resendErr) {
+    console.error('admin chiropractors resend:', resendErr);
+    return NextResponse.json({ error: resendErr.message }, { status: 502 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

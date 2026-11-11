@@ -35,12 +35,12 @@ export default function SignInPage() {
       } else if (qErr === 'verify_expired') {
         setCanResendVerification(true);
         setError(
-          'That confirmation link expired, so this email is not verified yet. Send a new link and open it within 1 hour.',
+          'That confirmation link expired, so this email is not verified yet. Send a new link and open it within 7 days.',
         );
       } else if (qErr === 'email_not_confirmed' || sp.get('notice') === 'verify_email') {
         setCanResendVerification(true);
         setError(
-          'Confirm your email before signing in. Verification links expire after 1 hour — send a new one if yours has.',
+          'Confirm your email before signing in. Verification links last 7 days — send a new one if yours has expired.',
         );
       }
     }
@@ -118,7 +118,7 @@ export default function SignInPage() {
       if (low.includes('email not confirmed') || low.includes('not confirmed')) {
         setCanResendVerification(true);
         message =
-          'Confirm your email before signing in. Verification links expire after 1 hour — send a new one if yours has.';
+          'Confirm your email before signing in. Verification links last 7 days — send a new one if yours has expired.';
       }
       setError(message);
     } finally {

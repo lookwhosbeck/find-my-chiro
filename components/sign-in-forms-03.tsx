@@ -146,7 +146,7 @@ export function SignInForms03({
 
               {resendStatus === 'sent' ? (
                 <div className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
-                  We sent a new verification email. Open it within 1 hour, then sign in.
+                  We sent a new verification email. Open it within 7 days, then sign in.
                 </div>
               ) : error ? (
                 <div className="space-y-3">

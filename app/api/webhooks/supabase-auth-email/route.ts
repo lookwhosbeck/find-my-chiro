@@ -13,6 +13,7 @@ import {
   buildSupabaseAuthVerifyUrl,
   type SupabaseEmailActionType,
 } from '@/app/lib/supabase-auth-verify-url';
+import { signEmailConfirmTicket } from '@/app/lib/email-confirm-ticket';
 
 export const runtime = 'nodejs';
 
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
         tokenHash,
         action,
         '/account',
+        signEmailConfirmTicket(str(user.id), tokenHash) ?? undefined,
       );
       await sendBrevoSignupVerificationEmail({
         to: { email: userEmail, name: displayName },

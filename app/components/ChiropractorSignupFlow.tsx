@@ -895,7 +895,7 @@ export function ChiropractorSignupFlow({
                   <InfoCircledIcon className={layoutStyles.signupAlertIcon} />
                   <span>
                     Check your email to confirm your address. The link expires in
-                    1 hour. Then{" "}
+                    7 days. Then{" "}
                     <Link
                       href="/signin"
                       className={layoutStyles.signupInlineLink}

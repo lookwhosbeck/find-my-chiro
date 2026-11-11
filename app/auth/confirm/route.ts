@@ -1,8 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import type { EmailOtpType } from '@supabase/supabase-js';
+import { createClient, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { sendChiropractorWelcomeEmailIfNeeded } from '@/app/lib/chiropractor-welcome-email.server';
+import { verifyEmailConfirmTicket } from '@/app/lib/email-confirm-ticket';
 
 const OTP_TYPES = new Set<string>([
   'signup',
@@ -53,10 +54,15 @@ export async function GET(request: NextRequest) {
 
   const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) {
-    console.error('auth confirm verifyOtp:', error.message);
-    // Signup links expire with the project's email OTP window (1 hour in production).
-    // Send people to sign-in with a resend action instead of a dead inbox link.
-    return NextResponse.redirect(`${origin}/signin?error=verify_expired`);
+    const ticket = searchParams.get('ticket');
+    const userId = ticket ? verifyEmailConfirmTicket(ticket, tokenHash) : null;
+    const renewed = userId
+      ? await signInWithFreshLink(supabase, userId)
+      : false;
+    if (!renewed) {
+      console.error('auth confirm verifyOtp:', error.message);
+      return NextResponse.redirect(`${origin}/signin?error=verify_expired`);
+    }
   }
 
   const {
@@ -79,4 +85,44 @@ export async function GET(request: NextRequest) {
   }
 
   return redirectResponse;
+}
+
+/**
+ * Supabase's own OTP window is shorter than 7 days. A signed ticket on the
+ * email link lets us mint a fresh session for that same user until the ticket expires.
+ */
+async function signInWithFreshLink(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !serviceKey) return false;
+
+  const admin = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: userData, error: userError } = await admin.auth.admin.getUserById(userId);
+  const email = userData.user?.email;
+  if (userError || !email) {
+    console.error('auth confirm ticket user:', userError?.message ?? 'missing email');
+    return false;
+  }
+
+  const { data: link, error: linkError } = await admin.auth.admin.generateLink({
+    type: 'magiclink',
+    email,
+  });
+  const hashedToken = link?.properties?.hashed_token;
+  if (linkError || !hashedToken) {
+    console.error('auth confirm ticket link:', linkError?.message ?? 'missing token');
+    return false;
+  }
+
+  const { error } = await supabase.auth.verifyOtp({
+    type: 'magiclink',
+    token_hash: hashedToken,
+  });
+  if (error) {
+    console.error('auth confirm ticket verify:', error.message);
+    return false;
+  }
+  return true;
 }

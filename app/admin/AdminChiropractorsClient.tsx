@@ -18,16 +18,14 @@ import {
 import { cn } from '@/lib/utils';
 import type { AdminChiroRow } from '@/app/lib/admin-chiropractors.server';
 
+function visibilityLabel(status: string): string {
+  if (status === 'approved') return 'On website';
+  if (status === 'rejected') return 'Rejected';
+  return 'Hidden';
+}
+
 function verificationBadge(status: string): { variant: BadgeProps['variant']; className?: string } {
   switch (status) {
-    case 'draft':
-      return { variant: 'secondary' };
-    case 'pending_review':
-      return {
-        variant: 'outline',
-        className:
-          'border-amber-500/40 bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-50',
-      };
     case 'approved':
       return {
         variant: 'outline',
@@ -37,7 +35,11 @@ function verificationBadge(status: string): { variant: BadgeProps['variant']; cl
     case 'rejected':
       return { variant: 'destructive' };
     default:
-      return { variant: 'outline' };
+      return {
+        variant: 'outline',
+        className:
+          'border-amber-500/40 bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-50',
+      };
   }
 }
 
@@ -58,9 +60,10 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
   const router = useRouter();
   const [rows, setRows] = useState<AdminChiroRow[]>(initialRows);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
 
-  const patchStatus = useCallback(async (id: string, status: 'approved' | 'rejected') => {
+  const patchStatus = useCallback(async (id: string, status: 'approved' | 'pending_review' | 'rejected') => {
     const supabase = createSupabaseClient();
     const session = await resolveBrowserSession(supabase);
     const token = session?.access_token;
@@ -87,6 +90,43 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
       }
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, verificationStatus: status } : r)));
       setLoadError(null);
+      setNotice(null);
+    } finally {
+      setActionId(null);
+    }
+  }, [router]);
+
+  const resendVerification = useCallback(async (id: string) => {
+    const supabase = createSupabaseClient();
+    const session = await resolveBrowserSession(supabase);
+    const token = session?.access_token;
+    if (!token) return;
+
+    setActionId(id);
+    try {
+      const res = await fetch('/api/admin/chiropractors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id }),
+      });
+      if (res.status === 403) {
+        router.replace(accountSettingsHref('profile'));
+        return;
+      }
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        setNotice(null);
+        setLoadError(body?.error || `Could not resend (${res.status})`);
+        if (res.status === 409) {
+          setRows((prev) => prev.map((r) => (r.id === id ? { ...r, emailConfirmed: true } : r)));
+        }
+        return;
+      }
+      setLoadError(null);
+      setNotice('Verification email sent.');
     } finally {
       setActionId(null);
     }
@@ -95,8 +135,19 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground max-w-3xl text-sm leading-relaxed">
-        Review verification status and subscription. Approve or reject to control public directory visibility.
+        New profiles stay hidden from the homepage carousel and the directory until you show them.
+        Hide takes a profile off the website without rejecting it. Resend the verification email when
+        someone has not confirmed their address.
       </p>
+
+      {notice ? (
+        <div
+          className="rounded-lg border border-emerald-600/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-50"
+          role="status"
+        >
+          {notice}
+        </div>
+      ) : null}
 
       {loadError ? (
         <div
@@ -115,7 +166,7 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
               <TableHead>Email</TableHead>
               <TableHead>Practice</TableHead>
               <TableHead>Subscription</TableHead>
-              <TableHead>Verification</TableHead>
+              <TableHead>Website</TableHead>
               <TableHead>Signed up</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -128,7 +179,24 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
                   <TableCell className="font-medium">
                     {[r.firstName, r.lastName].filter(Boolean).join(' ') || '—'}
                   </TableCell>
-                  <TableCell>{r.email || '—'}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div>{r.email || '—'}</div>
+                      {r.emailConfirmed ? (
+                        <p className="text-muted-foreground text-xs">Email confirmed</p>
+                      ) : r.email ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={actionId === r.id}
+                          onClick={() => void resendVerification(r.id)}
+                        >
+                          Resend verification
+                        </Button>
+                      ) : null}
+                    </div>
+                  </TableCell>
                   <TableCell>{r.practiceName || '—'}</TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="font-normal">
@@ -137,13 +205,23 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
                   </TableCell>
                   <TableCell>
                     <Badge variant={vb.variant} className={cn('font-normal', vb.className)}>
-                      {r.verificationStatus || '—'}
+                      {visibilityLabel(r.verificationStatus)}
                     </Badge>
                   </TableCell>
                   <TableCell>{formatDate(r.signedUpAt)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex flex-wrap justify-end gap-2">
-                      {r.verificationStatus !== 'approved' ? (
+                      {r.verificationStatus === 'approved' ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={actionId === r.id}
+                          onClick={() => void patchStatus(r.id, 'pending_review')}
+                        >
+                          Hide from website
+                        </Button>
+                      ) : (
                         <Button
                           type="button"
                           size="sm"
@@ -151,10 +229,10 @@ export function AdminChiropractorsClient({ initialRows }: { initialRows: AdminCh
                           disabled={actionId === r.id}
                           onClick={() => void patchStatus(r.id, 'approved')}
                         >
-                          Approve
+                          Show on website
                         </Button>
-                      ) : null}
-                      {r.verificationStatus !== 'rejected' ? (
+                      )}
+                      {r.verificationStatus !== 'rejected' && r.verificationStatus !== 'approved' ? (
                         <Button
                           type="button"
                           size="sm"

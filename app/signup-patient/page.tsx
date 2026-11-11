@@ -331,7 +331,7 @@ export default function PatientSignUpPage() {
                   <InfoCircledIcon className={layoutStyles.signupAlertIcon} />
                   <span>
                     Check your email to confirm your address. The link expires
-                    in 1 hour. Then{" "}
+                    in 7 days. Then{" "}
                     <Link href="/signin" className={layoutStyles.signupInlineLink}>
                       sign in
                     </Link>

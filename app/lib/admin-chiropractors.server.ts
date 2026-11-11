@@ -10,6 +10,7 @@ export type AdminChiroRow = {
   practiceName: string | null;
   subscriptionStatus: string | null;
   verificationStatus: string;
+  emailConfirmed: boolean | null;
   signedUpAt: string | null;
   submittedForReviewAt: string | null;
 };
@@ -54,6 +55,9 @@ export async function fetchAdminChiropractorRows(options?: { limit?: number; off
     return [];
   }
 
+  const ids = (rows || []).map((row: Record<string, unknown>) => String(row.id));
+  const confirmed = await emailConfirmedById(admin, ids);
+
   return (rows || []).map((row: Record<string, unknown>) => {
     const profiles = row.profiles as
       | {
@@ -73,8 +77,23 @@ export async function fetchAdminChiropractorRows(options?: { limit?: number; off
       practiceName: org?.name ?? null,
       subscriptionStatus: profiles?.subscription_status ?? null,
       verificationStatus: String(row.license_verification_status ?? ''),
+      emailConfirmed: confirmed.get(String(row.id)) ?? null,
       signedUpAt: profiles?.created_at ?? null,
       submittedForReviewAt: (row.submitted_for_review_at as string | null) ?? null,
     };
   });
+}
+
+async function emailConfirmedById(
+  admin: ReturnType<typeof createClient>,
+  ids: string[],
+): Promise<Map<string, boolean | null>> {
+  const entries = await Promise.all(
+    ids.map(async (id) => {
+      const { data, error } = await admin.auth.admin.getUserById(id);
+      if (error || !data.user) return [id, null] as const;
+      return [id, Boolean(data.user.email_confirmed_at)] as const;
+    }),
+  );
+  return new Map(entries);
 }

@@ -74,6 +74,7 @@ export function buildAppAuthConfirmUrl(
   tokenHash: string,
   emailActionType: SupabaseEmailActionType,
   nextPath = '/account',
+  ticket?: string,
 ): string {
   const base = appOrigin.replace(/\/$/, '');
   const next = nextPath.startsWith('/') ? nextPath : '/account';
@@ -82,6 +83,7 @@ export function buildAppAuthConfirmUrl(
     type: confirmOtpType(emailActionType),
     next,
   });
+  if (ticket) q.set('ticket', ticket);
   return `${base}/auth/confirm?${q.toString()}`;
 }
 
