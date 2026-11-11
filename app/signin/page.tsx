@@ -18,6 +18,9 @@ export default function SignInPage() {
   const [signingIn, setSigningIn] = useState(false);
   const [accountTab, setAccountTab] = useState<SignInAccountTab>('chiropractor');
   const [error, setError] = useState<string | null>(null);
+  const [canResendVerification, setCanResendVerification] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -29,9 +32,15 @@ export default function SignInPage() {
         setError(
           'That verification link could not be completed. Try signing in with your password — your email may already be confirmed.',
         );
-      } else if (qErr === 'email_not_confirmed' || sp.get('notice') === 'verify_email') {
+      } else if (qErr === 'verify_expired') {
+        setCanResendVerification(true);
         setError(
-          'Confirm your email before signing in. Check your inbox for the Movyn verification message.',
+          'That confirmation link expired, so this email is not verified yet. Send a new link and open it within 1 hour.',
+        );
+      } else if (qErr === 'email_not_confirmed' || sp.get('notice') === 'verify_email') {
+        setCanResendVerification(true);
+        setError(
+          'Confirm your email before signing in. Verification links expire after 1 hour — send a new one if yours has.',
         );
       }
     }
@@ -63,9 +72,30 @@ export default function SignInPage() {
     }
   };
 
+  const handleResendVerification = async (email: string) => {
+    setResendStatus('sending');
+    setResendMessage(null);
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo:
+          typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+      },
+    });
+    if (resendError) {
+      setResendStatus('idle');
+      setResendMessage(resendError.message || 'Could not send a new verification email.');
+      return;
+    }
+    setResendStatus('sent');
+  };
+
   const handleSignIn = async (values: SignInFormValues) => {
     setSigningIn(true);
     setError(null);
+    setCanResendVerification(false);
+    setResendMessage(null);
 
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -86,8 +116,9 @@ export default function SignInPage() {
           : 'Failed to sign in. Please check your credentials and try again.';
       const low = message.toLowerCase();
       if (low.includes('email not confirmed') || low.includes('not confirmed')) {
+        setCanResendVerification(true);
         message =
-          'Confirm your email before signing in. Check your inbox for the Movyn verification message.';
+          'Confirm your email before signing in. Verification links expire after 1 hour — send a new one if yours has.';
       }
       setError(message);
     } finally {
@@ -113,6 +144,10 @@ export default function SignInPage() {
       error={error}
       submitting={signingIn}
       signUpHref={signUpHref}
+      canResendVerification={canResendVerification}
+      resendStatus={resendStatus}
+      resendMessage={resendMessage}
+      onResendVerification={handleResendVerification}
     />
   );
 }

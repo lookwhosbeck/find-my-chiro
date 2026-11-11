@@ -35,6 +35,10 @@ export type SignInForms03Props = {
   error: string | null;
   submitting: boolean;
   signUpHref: string;
+  canResendVerification?: boolean;
+  resendStatus?: 'idle' | 'sending' | 'sent';
+  resendMessage?: string | null;
+  onResendVerification?: (email: string) => void;
 };
 
 export function SignInForms03({
@@ -44,6 +48,10 @@ export function SignInForms03({
   error,
   submitting,
   signUpHref,
+  canResendVerification = false,
+  resendStatus = 'idle',
+  resendMessage = null,
+  onResendVerification,
 }: SignInForms03Props) {
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(formSchema),
@@ -136,9 +144,36 @@ export function SignInForms03({
                 )}
               />
 
-              {error ? (
-                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {error}
+              {resendStatus === 'sent' ? (
+                <div className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                  We sent a new verification email. Open it within 1 hour, then sign in.
+                </div>
+              ) : error ? (
+                <div className="space-y-3">
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {error}
+                  </div>
+                  {canResendVerification && onResendVerification ? (
+                    <div className="space-y-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        disabled={resendStatus === 'sending' || !email.includes('@')}
+                        onClick={() => onResendVerification(email.trim())}
+                      >
+                        {resendStatus === 'sending' ? 'Sending…' : 'Send a new verification email'}
+                      </Button>
+                      {!email.includes('@') ? (
+                        <p className="text-sm text-muted-foreground">
+                          Enter your email above to send a new link.
+                        </p>
+                      ) : null}
+                      {resendMessage ? (
+                        <p className="text-sm text-destructive">{resendMessage}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

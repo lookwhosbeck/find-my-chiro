@@ -27,6 +27,7 @@ export default function PatientSignUpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [needsEmailVerify, setNeedsEmailVerify] = useState(false);
   const [patientPrefsTab, setPatientPrefsTab] = useState<
     "modalities" | "focus" | "payment"
   >("modalities");
@@ -131,6 +132,10 @@ export default function PatientSignUpPage() {
 
       if (result.success) {
         setSubmitSuccess(true);
+        if (result.needsEmailVerification) {
+          setNeedsEmailVerify(true);
+          return;
+        }
         setTimeout(() => {
           router.push("/account");
         }, 2000);
@@ -319,7 +324,23 @@ export default function PatientSignUpPage() {
             className={`${layoutStyles.signupCard} ${layoutStyles.signupCardWide}`}
           >
             <div className={layoutStyles.signupWideBody}>
-              {submitSuccess && (
+              {submitSuccess && needsEmailVerify && (
+                <div
+                  className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertInfo}`}
+                >
+                  <InfoCircledIcon className={layoutStyles.signupAlertIcon} />
+                  <span>
+                    Check your email to confirm your address. The link expires
+                    in 1 hour. Then{" "}
+                    <Link href="/signin" className={layoutStyles.signupInlineLink}>
+                      sign in
+                    </Link>
+                    .
+                  </span>
+                </div>
+              )}
+
+              {submitSuccess && !needsEmailVerify && (
                 <div
                   className={`${layoutStyles.signupAlert} ${layoutStyles.signupAlertSuccess}`}
                 >

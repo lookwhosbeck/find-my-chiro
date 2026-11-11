@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) {
     console.error('auth confirm verifyOtp:', error.message);
-    return NextResponse.redirect(`${origin}/signin?error=auth_exchange`);
+    // Signup links expire with the project's email OTP window (1 hour in production).
+    // Send people to sign-in with a resend action instead of a dead inbox link.
+    return NextResponse.redirect(`${origin}/signin?error=verify_expired`);
   }
 
   const {
